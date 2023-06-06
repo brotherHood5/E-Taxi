@@ -129,6 +129,7 @@ on:
     branches:
       - main
     paths:
+      - ".github/workflows/**"
       - "server/**"
 
 env:
