@@ -6,6 +6,7 @@ const getUserInfo = async (req, res) => {
 };
 
 
+
 const updateUser = async (req, res) => {};
 
 module.exports = {
