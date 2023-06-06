@@ -32,15 +32,15 @@ jobs:
       - name: Push Docker image
         run: docker push nguyenhau2506/e-tax:${{ github.sha }}  ./server/.
 
-    # - name: Deploy to server
-    #   env:
-    #     PRIVATE_KEY: ${{ secrets.SERVER_PRIVATE_KEY }}
-    #     HOST: ${{ secrets.SERVER_HOST }}
-    #     USER: ${{ secrets.SERVER_USER }}
-    #   run: |
-    #     echo "$PRIVATE_KEY" > private_key.pem
-    #     chmod 600 private_key.pem
-    #     scp -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.yml $USER@$HOST:/path/to/your/project
-    #     scp -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null .env $USER@$HOST:/path/to/your/project
-    #     ssh -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $USER@$HOST "cd /path/to/your/project && docker-compose pull && docker-compose up -d"
-    #     rm -f private_key.pem
+      - name: Deploy to server
+        env:
+          PRIVATE_KEY: ${{ secrets.SERVER_PRIVATE_KEY }}
+          HOST: ${{ secrets.SERVER_HOST }}
+          USER: ${{ secrets.SERVER_USER }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          scp -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.yml $USER@$HOST:/path/to/your/project
+          scp -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null .env $USER@$HOST:/path/to/your/project
+          ssh -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $USER@$HOST "cd /path/to/your/project && docker-compose pull && docker-compose up -d"
+          rm -f private_key.pem
