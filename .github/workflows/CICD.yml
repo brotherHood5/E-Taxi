@@ -1,3 +1,53 @@
+# name: CI/CD Pipeline
+
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - "server/**"
+# env:
+#   REGISTRY: "registry.digitalocean.com/somesandwich-fishtank"
+#   IMAGE_NAME: "myshop-intro-window-backend"
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout branch
+#         uses: actions/checkout@v3
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v2
+#         with:
+#           node-version: 14
+
+#       - name: Install dependencies
+#         run: npm i
+
+#       - name: Build Docker image
+#         run: docker build -t nguyenhau2506/e-tax:tagname ${{ github.sha }} ./server/.
+#         # run: docker build -t $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) ./server/.
+#       - name: Log in to Docker Hub
+#         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+
+#       - name: Push Docker image
+#         run: docker push docker.io/nguyenhau2506/e-tax:${{ g
+
+#       - name: Deploy to server
+#         env:
+#           PRIVATE_KEY: ${{ secrets.SERVER_PRIVATE_KEY }}
+#           HOST: ${{ secrets.SERVER_HOST }}
+#           USER: ${{ secrets.SERVER_USER }}
+#         run: |
+#           echo "$PRIVATE_KEY" > private_key.pem
+#           chmod 600 private_key.pem
+#           scp -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.yml $USER@$HOST:/path/to/your/project
+#           scp -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null .env $USER@$HOST:/path/to/your/project
+#           ssh -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $USER@$HOST "cd /path/to/your/project && docker-compose pull && docker-compose up -d"
+#           rm -f private_key.pem
+
 name: CI/CD Pipeline
 
 on:
@@ -6,6 +56,9 @@ on:
       - main
     paths:
       - "server/**"
+env:
+  REGISTRY: "registry.digitalocean.com/somesandwich-fishtank"
+  IMAGE_NAME: "myshop-intro-window-backend"
 
 jobs:
   build:
@@ -30,7 +83,7 @@ jobs:
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
 
       - name: Push Docker image
-        run: docker push nguyenhau2506/e-tax:${{ github.sha }}  ./server/.
+        run: docker push docker.io/nguyenhau2506/e-tax:${{ github.sha }}
 
       - name: Deploy to server
         env:
