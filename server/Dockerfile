@@ -10,9 +10,6 @@ COPY package*.json ./
 # Copy the Prisma schema to the working directory
 COPY prisma ./prisma/
 
-# Copy .env to the working directory
-COPY .env ./
-
 # Copy the rest of the application code to the working directory
 COPY . .
 
