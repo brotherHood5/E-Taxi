@@ -181,7 +181,7 @@ jobs:
             docker run -d \
             --restart always \
             --name $(echo $IMAGE_NAME | tr ':/' '-') \
-            -p 80:3000 \
+            -p 7772:3000 \
             -p 7773:443 \
             nguyenhau2506/e-tax:${{ github.sha }} \
             # Remove if error
