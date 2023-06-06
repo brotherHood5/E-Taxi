@@ -28,7 +28,7 @@ jobs:
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
 
       - name: Push Docker image
-        run: docker push nguyenhau2506/e-tax:${{ github.sha }}
+        run: docker push nguyenhau2506/e-tax:${{ github.sha }} -f server/Dockerfile .
 
     # - name: Deploy to server
     #   env:
