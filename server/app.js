@@ -10,6 +10,7 @@ const app = express();
 const errorHandler = require("./api/v1/middlewares/errorHandler.mdw");
 const responseHandler = require("./api/v1/middlewares/response.mdw");
 
+
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
