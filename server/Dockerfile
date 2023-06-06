@@ -7,12 +7,20 @@ WORKDIR /app
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
-# Install the dependencies
-RUN npm install
+# Copy the Prisma schema to the working directory
+COPY prisma ./prisma/
 
+# Copy .env to the working directory
+COPY .env ./
 
 # Copy the rest of the application code to the working directory
 COPY . .
+
+# Install the dependencies
+RUN npm install
+
+# Generate the Prisma client
+RUN npm run prisma_gen
 
 # Expose the port the application will run on
 EXPOSE 3000

@@ -1,5 +1,10 @@
+const { ErrorResponse } = require("../models/response.model");
+
 const errorHandler = (err, req, res, next) => {
-  console.log("Error Handler Middleware");
+  if (err instanceof Error) {
+    return res.jsonError(new ErrorResponse(err));
+  }
+
   return res.jsonError(err);
 };
 

@@ -1,8 +1,7 @@
-const { ValidationError } = require("sequelize");
 const jwt = require("jsonwebtoken");
 const AuthService = require("../services/auth.service");
 const UserService = require("../services/user.service");
-const { ErrorResponse, FailureResponse } = require("../models/response.model");
+const { FailureResponse } = require("../models/response.model");
 
 const loginWithPhone = async (req, res, next) => {
   const { phone_number, password } = req.body;
@@ -25,7 +24,7 @@ const loginWithPhone = async (req, res, next) => {
 
     return res.jsonSuccess({ token, user });
   } catch (error) {
-    next(new ErrorResponse(error));
+    next(error);
   }
 };
 
@@ -37,7 +36,7 @@ const verifyOTP = async (req, res, next) => {
     // send otp
     // save phone number to db
   } catch (error) {
-    next(new ErrorResponse(error));
+    next(error);
   }
 };
 
@@ -49,7 +48,7 @@ const finishSignup = async (req, res, next) => {
     // sign up with phone number and password
     // this step will create a new user with phone number and password
   } catch (error) {
-    next(new ErrorResponse(error));
+    next(error);
   }
 };
 
