@@ -1,43 +1,47 @@
-# This is a basic workflow to help you get started with Actions
+name: CI/CD Pipeline
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: ["main"]
-    paths:
-      - "server/**"
-  pull_request:
-    branches: ["main"]
+    branches:
+      - main
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
-    name: build and publish
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: docker build
-        uses: actions/docker/cli@master
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
-          args: build -t abhinavdhasmana/github-action-example-node .
-      - name: docker login
-        uses: actions/docker/login@master
-        env:
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      - name: docker push
-        uses: actions/docker/cli@master
-        with:
-          args: push abhinavdhasmana/github-action-example-node
+          node-version: 14
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Docker image
+        run: docker build -t nguyenhau2506/e-tax:${{ github.sha }} .
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+
+      - name: Push Docker image
+        run: docker push nguyenhau2506/e-tax:${{ github.sha }}
+
+    # - name: Deploy to server
+    #   env:
+    #     PRIVATE_KEY: ${{ secrets.SERVER_PRIVATE_KEY }}
+    #     HOST: ${{ secrets.SERVER_HOST }}
+    #     USER: ${{ secrets.SERVER_USER }}
+    #   run: |
+    #     echo "$PRIVATE_KEY" > private_key.pem
+    #     chmod 600 private_key.pem
+    #     scp -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.yml $USER@$HOST:/path/to/your/project
+    #     scp -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null .env $USER@$HOST:/path/to/your/project
+    #     ssh -i private_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $USER@$HOST "cd /path/to/your/project && docker-compose pull && docker-compose up -d"
+    #     rm -f private_key.pem
