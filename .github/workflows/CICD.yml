@@ -179,7 +179,7 @@ jobs:
             # Run a new container from the new image without the DB_CONNECTIONSTR environment variable
             docker run -d \
             --restart always \
-            --name $(echo $IMAGE_NAME) \
+            --name $(echo $IMAGE_NAME | tr ':/' '-') \
             -p 7772:80 \
             -p 7773:443 \
             nguyenhau2506/e-tax:${{ github.sha }}
