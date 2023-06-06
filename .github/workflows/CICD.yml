@@ -61,7 +61,7 @@ env:
   IMAGE_NAME: "myshop-intro-window-backend"
 
 jobs:
-  build and push:
+  build_and_push:
     runs-on: ubuntu-latest
 
     steps:

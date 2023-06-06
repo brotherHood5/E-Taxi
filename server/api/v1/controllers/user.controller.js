@@ -5,6 +5,7 @@ const getUserInfo = async (req, res) => {
   return res.jsonSuccess(user);
 };
 
+
 const updateUser = async (req, res) => {};
 
 module.exports = {
