@@ -176,7 +176,7 @@ jobs:
             # Login to registry
             docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}
             # Stop and remove the old container if it exists
-            docker stop $(echo $IMAGE_NAME) || true && docker rm -f $(echo $IMAGE_NAME) || true
+            docker stop $(echo $IMAGE_NAME | tr ':/' '-') || true && docker rm -f $(echo $IMAGE_NAME | tr ':/' '-') || true
             # Run a new container from the new image without the DB_CONNECTIONSTR environment variable
             docker run -d \
             --restart always \
