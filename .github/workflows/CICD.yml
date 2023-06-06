@@ -24,7 +24,7 @@ jobs:
         run: npm i
 
       - name: Build Docker image
-        run: docker build -t nguyenhau2506/e-tax:${{ github.sha }} .
+        run: docker build -t nguyenhau2506/e-tax:${{ github.sha }} ./server/.
 
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
