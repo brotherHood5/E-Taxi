@@ -183,10 +183,10 @@ jobs:
             --name $(echo $IMAGE_NAME | tr ':/' '-') \
             -p 7772:3000 \
             -p 7773:443 \
-            nguyenhau2506/e-tax:${{ github.sha }} \
+            nguyenhau2506/e-tax:${{ github.sha }}
             # Remove if error
             # Copy the .env file to the container
-            docker exec $(echo $IMAGE_NAME | tr ':/' '-') /bin/sh -c 'cat > .env << EOL 
+            docker exec $(echo $IMAGE_NAME | tr ':/' '-') /bin/sh -c 'cat > .env << 'EOL' 
             ${{ secrets.ENV_FILE }}
             EOL'
             # Restart the container
