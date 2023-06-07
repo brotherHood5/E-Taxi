@@ -4,6 +4,8 @@ const ExtractJWT = passportJWT.ExtractJwt;
 const JWTStrategy = passportJWT.Strategy;
 const UserService = require("../services/user.service");
 
+require("dotenv").config();
+
 var opts = {
   jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
   secretOrKey: process.env.JWT_SECRET,
