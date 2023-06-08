@@ -54,8 +54,9 @@ jobs:
             IMAGE_NAME
             REMOTE_PATH
           script: |
-            # Build docker image
-            docker build -t $(echo $IMAGE_NAME) $(echo $REMOTE_PATH | tail -1 | sed 's/$/\/$CONTAINER_NAME\/./')
+            cd /mnt/call-center 
+            # Build docker image 
+            docker build -t call-center-image .
             # Stop and remove the old container if it exists
             docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
             # Run a new container 
