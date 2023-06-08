@@ -11,7 +11,7 @@ on:
 env:
   CONTAINER_NAME: "call-center"
   IMAGE_NAME: "call-center-image"
-  REMOTE_PATH: "/mnt/call-center"
+  REMOTE_PATH: "/mnt"
 
 jobs:
   Deploy:
