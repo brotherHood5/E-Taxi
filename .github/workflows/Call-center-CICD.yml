@@ -55,7 +55,7 @@ jobs:
             REMOTE_PATH
           script: |
             # Build docker image
-            docker build -t $IMAGE_NAME $(echo $REMOTE_PATH | tail -1 | sed 's/$/\/$CONTAINER_NAME\/./')
+            docker build -t $(echo $IMAGE_NAME) $(echo $REMOTE_PATH | tail -1 | sed 's/$/\/$CONTAINER_NAME\/./')
             # Stop and remove the old container if it exists
             docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
             # Run a new container 
