@@ -129,7 +129,7 @@ on:
     branches:
       - develop
     paths:
-      - ".github/workflows/**"
+      - ".github/workflows/CICD.yml"
       - "server/**"
 
 env:
