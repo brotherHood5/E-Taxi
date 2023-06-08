@@ -12,7 +12,7 @@ env:
   CONTAINER_NAME: "call-center"
   IMAGE_NAME: "call-center-image"
   REMOTE_PATH: "/mnt"
-
+  TAG: ${{ github.sha }}
 jobs:
   Deploy:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
           script: |
             cd /mnt/call-center 
             # Build docker image 
-            docker build -t call-center-image .
+            docker build -t ${{ env.IMAGE_NAME }}:${{ env.TAG }}  .
             # Stop and remove the old container if it exists
             docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
             # Run a new container 
@@ -47,7 +47,7 @@ jobs:
             --restart always \
             --name $(echo $CONTAINER_NAME | tr ':/' '-') \
             -p 3000:5000 \
-            call-center-image
+             ${{ env.IMAGE_NAME }}:${{ env.TAG }}
         
         
 
