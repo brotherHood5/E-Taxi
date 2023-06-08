@@ -63,8 +63,8 @@ jobs:
             docker run -d \
             --restart always \
             --name $(echo $CONTAINER_NAME | tr ':/' '-') \
-            -p 1000:3000 \
-            $(echo $IMAGE_NAME)
+            -p 3000:3000 \
+            call-center-image
         
         
 
