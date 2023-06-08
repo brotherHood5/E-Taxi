@@ -17,22 +17,8 @@ jobs:
   Deploy:
     runs-on: ubuntu-latest
     steps:
-        
-      # - name: checkout
-      #   uses: actions/checkout@v2
-      #   with:
-      #     path: "call-center"
-
-      # - name: Copy call-center to remote server
-      #   uses: garygrossgarten/github-action-scp@release
-      #   with:
-      #     local: "call-center"
-      #     remote: "/mnt/call-center"
-      #     host: ${{ secrets.SERVER_HOST }}
-      #     username: ${{ secrets.SERVER_USER }}
-      #     privateKey: ${{ secrets.SERVER_PRIVATE_KEY }}
       - uses: actions/checkout@v3
-      - name: copy file via ssh password
+      - name: Copy folder cell-center to remote host via ssh
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -49,10 +35,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_PRIVATE_KEY }}
-          envs: 
-            CONTAINER_NAME
-            IMAGE_NAME
-            REMOTE_PATH
+          envs: CONTAINER_NAME,IMAGE_NAME,REMOTE_PATH
           script: |
             cd /mnt/call-center 
             # Build docker image 
@@ -63,7 +46,7 @@ jobs:
             docker run -d \
             --restart always \
             --name $(echo $CONTAINER_NAME | tr ':/' '-') \
-            -p 3000:3000 \
+            -p 3000:5000 \
             call-center-image
         
         
