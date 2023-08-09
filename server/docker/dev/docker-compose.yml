@@ -1,0 +1,81 @@
+version: "3.3"
+
+services:
+
+  e-taxi: 
+    build: 
+      context: ../..
+    image: e-taxi
+    env_file: ./docker-compose.env
+    environment:
+      - SERVICES=**/*.service.ts
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+      
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gw.rule=PathPrefix(`/`)"
+      - "traefik.http.services.api-callcenter.loadbalancer.server.port=3000"
+      - "traefik.http.services.api-customer.loadbalancer.server.port=3001"
+      - "traefik.http.services.api-driver.loadbalancer.server.port=3002"
+      - "traefik.http.services.socket.loadbalancer.server.port=3003"
+    networks:
+      - internal
+
+  mongo:
+    image: mongo
+    restart: always
+    volumes:
+      - e-taxi-data:/data/db
+    networks:
+      - internal
+    ports: 
+      - 27019:27017
+
+  nats:
+    image: nats
+    networks:
+      - internal  
+    ports:
+      - 4222:4222
+
+  redis:
+    image: redis:alpine
+    networks:
+      - internal
+    ports:
+      - 6379:6379
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    networks:
+      - internal
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true" # Don't do that in production!
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+    ports:
+      - 3000:3000
+      - 3001:3001
+      - 3002:3002
+      - 3003:3003
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - internal
+      - default
+
+networks:
+  internal:
+
+volumes:
+  e-taxi-data:

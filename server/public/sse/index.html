@@ -1,0 +1,102 @@
+<!-- <html>
+
+<head>
+    <script>
+        if (!!window.EventSource) {
+            var source = new EventSource('/api/v1/coord-system/receive')
+
+            source.addEventListener('message', function (e) {
+                document.getElementById('data').innerHTML = e.data
+            }, false)
+
+            source.addEventListener('open', function (e) {
+                document.getElementById('state').innerHTML = "Connected"
+            }, false)
+
+            source.addEventListener('error', function (e) {
+                const id_state = document.getElementById('state')
+                if (e.eventPhase == EventSource.CLOSED)
+                    source.close()
+                if (e.target.readyState == EventSource.CLOSED) {
+                    id_state.innerHTML = "Disconnected"
+                }
+                else if (e.target.readyState == EventSource.CONNECTING) {
+                    id_state.innerHTML = "Connecting..."
+                }
+            }, false)
+        } else {
+            console.log("Your browser doesn't support SSE")
+        }
+    </script>
+</head>
+
+<body>
+    <h1>SSE: <span id="state"></span></h1>
+    <h3>Data: <span id="data"></span></h3>
+</body>
+
+</html> -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+</head>
+
+<body>
+    <input type="button" id="stopButton" value="Stop Listening" />
+    <hr />
+    <h1>SSE: <span id="state"></span></h1>
+    <h3>Data: <span id="data"></span></h3>
+    <hr />
+    <div id="content"></div>
+    <script>
+        try {
+            if (!!window.EventSource) {
+                var source = new EventSource('/api/v1/coord-system/sse')
+
+                source.addEventListener('message', function (e) {
+                    try {
+                        const data = JSON.parse(e.data);
+                        document.getElementById('data').innerHTML = data
+                        document.getElementById('content').innerHTML += data + '<br/>';
+                    }
+                    catch (error) {
+                        document.getElementById('data').innerHTML = e.data
+                        document.getElementById('content').innerHTML += e.data + '<br/>';
+                    }
+
+                }, false)
+
+                source.addEventListener('open', function (e) {
+                    document.getElementById('state').innerHTML = "Connected"
+                    document.getElementById('content').innerHTML += 'Connections to the server established..<br/>';
+                }, false)
+
+                source.addEventListener('error', function (e) {
+                    const id_state = document.getElementById('state')
+                    if (e.eventPhase == EventSource.CLOSED)
+                        source.close()
+                    if (e.target.readyState == EventSource.CLOSED) {
+                        id_state.innerHTML = "Disconnected"
+                    }
+                    else if (e.target.readyState == EventSource.CONNECTING) {
+                        id_state.innerHTML = "Connecting..."
+                    }
+                }, false)
+            } else {
+                console.log("Your browser doesn't support SSE")
+            }
+
+            document.getElementById('stopButton').onclick = function () {
+                document.getElementById('content').innerHTML += 'Listening to server events stopped..<br/>';
+                source.close();
+            };
+        } catch (error) {
+            console.log(error);
+        }
+    </script>
+</body>
+
+</html>
