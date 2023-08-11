@@ -67,6 +67,8 @@ const verifyOtpParam: ActionParams = {
 const AuthMixin: AuthMixinSchema = {
 	settings: {},
 
+	dependencies: ["refreshTokens"],
+
 	actions: {
 		signup: {
 			restricted: ["api"],
@@ -77,8 +79,8 @@ const AuthMixin: AuthMixinSchema = {
 				const { phoneNumber, password } = ctx.params;
 
 				// Check if user exists
-				const user = await this.adapter.findOne({ phoneNumber });
-				if (user) {
+				const user = <IUserBase>await this.adapter.findOne({ phoneNumber });
+				if (user && user.enable) {
 					throw new ServiceError("Phone number is existed!", 422, [
 						{ field: "phoneNumber", message: "existed" },
 					]);
@@ -95,10 +97,10 @@ const AuthMixin: AuthMixinSchema = {
 					roles: [],
 				};
 
+				newUser = await this.actions.create({ ...newUser }, { parentCtx: ctx });
+
 				await this.actions.sendOtp({ phoneNumber }, { parentCtx: ctx });
 
-				// Create new user
-				newUser = await this.actions.create({ ...newUser }, { parentCtx: ctx });
 				const doc = await this.transformDocuments(ctx, {}, newUser);
 
 				// Generate access token

@@ -33,9 +33,10 @@ const ApiCallCenterService = {
 					"$node.*",
 					"callcenter.*",
 					"apiCallCenter.*",
-					"coord.system.*",
-					"bookings.*",
 					"staffs.*",
+					"bookingSystem.*",
+					"coordSystem.*",
+					"monitorSystem.*",
 				],
 
 				aliases: {

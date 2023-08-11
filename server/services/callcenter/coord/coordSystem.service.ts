@@ -1,46 +1,9 @@
 import type { Context, Service, ServiceSchema } from "moleculer";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Queue } from "queue-typescript";
+import type { IBooking } from "../../../entities";
+import { BookingStatus } from "../../../entities";
 import { AMQPMixin } from "../../../mixins";
-import JobObservableQueue from "./class/JobObservableQueue";
-import NewJobObserver from "./class/NewJobObserver";
-
-// class CoordStaffManager {
-// 	private staffs: CoordStaffClient[];
-
-// 	private availStaff: CoordStaffClient[];
-
-// 	constructor() {
-// 		this.staffs = [];
-// 		this.availStaff = [];
-// 	}
-
-// 	addStaff(staff: any): void {
-// 		this.staffs.push(staff);
-// 	}
-
-// 	getStaffs(): any[] {
-// 		return this.staffs;
-// 	}
-
-// 	getAvailableStaff(): any {
-// 		return this.availStaff.pop();
-// 	}
-// }
-
-interface CoordStaffClient {
-	id: string;
-	res: any;
-}
-
-function writeSSEResponse(res: any, sseId: any, data: any) {
-	try {
-		res.write(`id: ${sseId}\n`);
-		res.write(`data: ${data}\n\n`);
-	} catch (error) {
-		console.log(error);
-	}
-}
 
 // Danh sach nhan vien phan giai dia chi
 // - Ranh - Dang khong lam gi
@@ -54,100 +17,31 @@ function writeSSEResponse(res: any, sseId: any, data: any) {
 // - Neu co cong viec trong hang doi thi phan cong -> Ban
 // - Neu khong co cong viec trong hang doi thi chuyen sang ranh
 
-class CoordSystem {
-	private pendingJobs: Queue<any>;
-
-	private busyStaffs: Set<string> = new Set<string>();
-
-	private freeStaffs: { [key: string]: any } = {};
-
-	private runner?: NodeJS.Timer;
-
-	constructor() {
-		this.pendingJobs = new Queue<any>();
-		// this.pendingJobs.attachObserver("enqueue", new NewJobObserver());
-	}
-
-	addStaff(staff: CoordStaffClient): void {
-		console.log("Staff added: ", staff.id);
-		this.freeStaffs[staff.id] = staff.res;
-	}
-
-	removeStaff(id: string): void {
-		this.busyStaffs.delete(id);
-		delete this.freeStaffs[id];
-	}
-
-	makeStaffBusy(id: string): void {
-		if (this.busyStaffs.has(id)) {
-			return;
-		}
-		this.busyStaffs.add(id);
-	}
-
-	makeStaffAvailable(id: string): void {
-		if (!this.busyStaffs.has(id)) {
-			return;
-		}
-		this.busyStaffs.delete(id);
-	}
-
-	addJob(job: any): void {
-		this.pendingJobs.enqueue(job);
-	}
-
-	doJob(job: any): void {
-		// try {
-		// 	if (this.freeStaffs.length !== 0) {
-		// 		console.log(
-		// 			"Current",
-		// 			this.staffs.toArray().map((s) => s.id),
-		// 		);
-		// 		const staff = this.staffs.dequeue();
-		// 		this.busyStaffs.push(staff);
-		// 		console.log("Staff: ", staff.id);
-		// 		writeSSEResponse(staff.res, staff.id, job);
-		// 		// this.pendingJobs.dequeue();
-		// 		this.freeStaff(staff.id);
-		// 		console.log(
-		// 			"Current",
-		// 			this.staffs.toArray().map((s) => s.id),
-		// 		);
-		// 	}
-		// } catch (error) {
-		// 	console.log(error);
-		// }
-	}
-
-	run(): void {
-		this.runner = setInterval(() => {
-			if (this.pendingJobs.length === 0 || Object.keys(this.freeStaffs).length === 0) {
-				return;
-			}
-
-			const job = this.pendingJobs.front;
-			const staffId = Object.keys(this.freeStaffs)[0];
-			const staffRes = this.freeStaffs[staffId];
-			this.makeStaffBusy(staffId);
-			writeSSEResponse(staffRes, staffId, job);
-		}, 500);
-	}
-
-	stop(): void {
-		clearInterval(this.runner);
-	}
-}
-
 const CoordSystemService: ServiceSchema = {
 	name: "coordSystem",
 
 	mixins: [AMQPMixin],
+
+	settings: {
+		rest: "/coord-system",
+	},
+
 	AMQPQueues: {
-		"coord.system.receiveAddress": {
-			handler(this: Service, channel: any, msg: any): void {
-				const job = JSON.parse(msg.content.toString());
-				this.$coordSystem.addJob(job);
-				channel.ack(msg);
+		"coordSystem.address_resolve": {
+			async handler(this: Service, channel: any, msg: any): Promise<any> {
+				const req = JSON.parse(msg.content.toString());
+				const socketId = this.freeStaffQueue.shift();
+				if (socketId) {
+					this.addAMQPJob("monitorSystem.listen_event", {
+						id: req._id,
+						status: BookingStatus.COORDINATING,
+						data: this.staffSocket[socketId],
+					});
+					await this.actions.sendBookingReqToStaff({ socketId, req });
+					channel.ack(msg);
+				} else {
+					channel.nack(msg);
+				}
 			},
 			channel: {
 				assert: {
@@ -162,26 +56,75 @@ const CoordSystemService: ServiceSchema = {
 	},
 
 	actions: {
-		sse: {
-			handler(this: Service, ctx: Context<any, any>): void {
-				const res = ctx.params.$res;
-				this.logger.info(ctx.meta.user);
-				res.writeHead(200, {
-					"Content-Type": "text/event-stream",
-					"Cache-Control": "no-cache",
-					Connection: "keep-alive",
+		sendBookingReqToStaff: {
+			async handler(this: Service, ctx: Context<any, any>): Promise<void> {
+				await ctx.call("socket.broadcast", {
+					namespace: "/coord-system",
+					event: "receive_booking",
+					rooms: [ctx.params.socketId],
+					args: [ctx.params.req],
 				});
-				// res.on("close", () => {
-				// 	this.logger.info("Connection closed");
-				// });
+			},
+		},
 
-				// res.on("error", (err: any) => {
-				// 	this.logger.error(err);
-				// });
-				const sseId = new Date().getTime().toString();
-				writeSSEResponse(res, sseId, `Connected: ${sseId}`);
-				this.$coordSystem.addStaff({ id: sseId, res });
-				this.logger.info("Test");
+		resolvedAddress: {
+			async handler(this: Service, ctx: Context<any, any>): Promise<void> {
+				const { $socketId } = ctx.meta;
+				const { req }: { req: IBooking } = ctx.params;
+				if (req.status === BookingStatus.COORDINATING) {
+					if (
+						!req.pickupAddr.lat ||
+						!req.pickupAddr.lon ||
+						!req.destAddr.lat ||
+						!req.destAddr.lon
+					) {
+						return Promise.reject(new Error("Invalid address, please check again"));
+					}
+				}
+
+				// Free staff
+				if (this.staffSocket[$socketId]) {
+					this.freeStaffQueue.push($socketId);
+				}
+
+				this.addAMQPJob("bookingSystem.booking_process", req);
+				return Promise.resolve();
+			},
+		},
+
+		connect: {
+			handler(this: Service, ctx: Context<any, any>): boolean {
+				const { $socketId, user, $rooms } = ctx.meta;
+				if (!this.staffSocket[$socketId]) {
+					this.staffSocket[$socketId] = {
+						fullName: user.fullName,
+						id: user._id,
+						$rooms,
+						$socketId,
+					};
+					this.freeStaffQueue.push($socketId);
+				}
+				this.logger.info(this.staffSocket);
+				return true;
+			},
+		},
+
+		disconnect: {
+			handler(this: Service, ctx: Context<any, any>): any {
+				const socketId = ctx.params;
+
+				// Remove socket from staffSocket
+				if (this.staffSocket[socketId]) {
+					delete this.staffSocket[socketId];
+				}
+
+				// Remove socket from freeStaffQueue
+				const index = this.freeStaffQueue.indexOf(socketId);
+				if (index !== -1) {
+					this.freeStaffQueue.splice(index, 1);
+				}
+
+				return true;
 			},
 		},
 	},
@@ -190,22 +133,14 @@ const CoordSystemService: ServiceSchema = {
 
 	started() {
 		this.logger.info("Coord System started!");
-		this.$coordSystem = new CoordSystem();
-		// for (let i = 0; i < 10; i += 1) {
-		// 	this.$coordSystem.addJob({ id: i, data: `Hello ${i}` });
-		// }
-
-		this.$coordSystem.run();
-
-		// for (let i = 10; i < 20; i += 1) {
-		// 	this.$coordSystem.addJob({ id: i, data: `Hello ${i}` });
-		// }
+		this.staffSocket = {};
+		this.freeStaffQueue = [];
 	},
 
 	async stopped() {
-		await this.AMQPdispose();
-		this.logger.warn("Coord System stopped!");
-		this.$coordSystem.stop();
+		await this.amqpDispose();
+		this.staffSocket = {};
+		this.freeStaffQueue = [];
 	},
 };
 

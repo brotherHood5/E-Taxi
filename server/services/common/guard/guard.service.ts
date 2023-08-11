@@ -74,7 +74,7 @@ const GuardService: ServiceSchema = {
 					if (err) {
 						return reject(new InvalidTokenError("Invalid service token"));
 					}
-
+					this.logger.info("Decoded token:", decoded);
 					if (services && services.indexOf(decoded.service) === -1) {
 						return reject(
 							new ForbiddenServiceError(

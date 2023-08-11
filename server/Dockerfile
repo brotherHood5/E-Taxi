@@ -35,9 +35,9 @@ FROM node:lts-alpine
 RUN mkdir /app
 WORKDIR /app
 
-COPY package.json .
+COPY package.json package-lock.json ./
 
-RUN npm i --silent --development
+RUN npm ci --silent
 
 COPY . .
 

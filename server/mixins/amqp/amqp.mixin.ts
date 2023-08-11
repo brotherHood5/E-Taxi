@@ -19,7 +19,7 @@ const validateOption = (queueOption: any) =>
 const AmqpService: ServiceSchema = {
 	name: "amqp",
 	settings: {
-		url: process.env.AMQP_URL,
+		AMQPUrl: process.env.AMQP_URL,
 	},
 
 	actions: {},
@@ -58,8 +58,7 @@ const AmqpService: ServiceSchema = {
 			this.logger.info(`AMQP Job ${name} added to queue`);
 		},
 
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		async AMQPdispose() {
+		async amqpDispose() {
 			if (this.AMQPConn) {
 				await this.AMQPConn.close();
 				this.AMQPConn = null;
@@ -76,13 +75,13 @@ const AmqpService: ServiceSchema = {
 	},
 
 	async started() {
-		if (!this.settings.url) {
+		if (!this.settings.AMQPUrl) {
 			throw new Errors.ServiceSchemaError("Missing options URL", null);
 		}
 
 		this.logger.warn("Connecting to AMQP server...");
 		try {
-			this.AMQPConn = await amqp.connect(this.settings.url);
+			this.AMQPConn = await amqp.connect(this.settings.AMQPUrl);
 			if (this.schema.AMQPQueues) {
 				_.forIn(this.schema.AMQPQueues, async (option, name) => {
 					if (typeof option.handler !== "function") {
@@ -111,7 +110,7 @@ const AmqpService: ServiceSchema = {
 	},
 
 	async stopped() {
-		await this.AMQPdispose();
+		await this.amqpDispose();
 	},
 };
 

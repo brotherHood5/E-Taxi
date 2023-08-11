@@ -108,24 +108,26 @@ const CustomersService: CustomersServiceSchema = {
 			},
 		},
 		get: {
-			restricted: ["api", "bookings"],
-			auth: true,
-			// roles: [UserRole.ADMIN],
-		},
-		update: {
 			restricted: ["api"],
 			auth: true,
 			// roles: [UserRole.ADMIN],
+		},
+
+		update: {
+			restricted: ["api"],
+			auth: true,
 		},
 		remove: {
 			restricted: ["api"],
 			auth: true,
 			// roles: [UserRole.ADMIN],
 		},
+
 		find: {
-			restricted: ["api"],
+			restricted: ["api", "bookingSystem"],
 			auth: true,
-			// roles: [UserRole.ADMIN, UserRole.CUSTOMER],
+			roles: [UserRole.ADMIN, UserRole.STAFF],
+			cache: false,
 		},
 
 		me: {
