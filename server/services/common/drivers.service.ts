@@ -1,18 +1,18 @@
 import type { ActionParams, Context } from "moleculer";
-import { Config } from "../../../common";
-import { createTestCustomers } from "../../../helpers/seed";
-import { AuthMixin, DbMixin } from "../../../mixins";
+import { Config } from "../../common";
+import { DriverStatus, VehicleType } from "../../entities";
+import { createTestDrivers } from "../../helpers/seed";
+import { AuthMixin, DbMixin } from "../../mixins";
 import type {
 	ActionCreateParams,
-	CustomersServiceSchema,
-	CustomersThis,
-} from "../../../types/common/customer";
-import type { UserAuthMeta } from "../../../types/common/user";
-import { UserRole } from "../../../types/common/user";
+	DriversServiceSchema,
+	DriversThis,
+} from "../../types/common/driver";
+import { UserRole } from "../../types/common/user";
 
 const phoneNumberRegex = /^0[0-9]{9}$/;
 
-const validateCustomerBase: ActionParams = {
+const validateDriverBase: ActionParams = {
 	phoneNumber: {
 		type: "string",
 		min: 10,
@@ -30,12 +30,24 @@ const validateCustomerBase: ActionParams = {
 		enum: Object.values(UserRole),
 		optional: true,
 	},
+	driverStatus: {
+		type: "array",
+		items: "string",
+		enum: Object.values(DriverStatus),
+		optional: true,
+	},
+	vehicleType: {
+		type: "array",
+		items: "string",
+		enum: Object.values(VehicleType),
+		optional: true,
+	},
 };
 
-const CustomersService: CustomersServiceSchema = {
-	name: "customers",
-	authToken: Config.CUSTOMERS_AUTH_TOKEN,
-	mixins: [DbMixin("customers"), AuthMixin],
+const DriversService: DriversServiceSchema = {
+	name: "drivers",
+	authToken: Config.DRIVERS_AUTH_TOKEN,
+	mixins: [DbMixin("drivers"), AuthMixin],
 
 	settings: {
 		// Available fields in the responses
@@ -44,6 +56,8 @@ const CustomersService: CustomersServiceSchema = {
 			"fullName",
 			"phoneNumber",
 			"phoneNumberVerified",
+			"driverStatus",
+			"vehicleType",
 			"enable",
 			"active",
 			"roles",
@@ -73,6 +87,18 @@ const CustomersService: CustomersServiceSchema = {
 				enum: Object.values(UserRole),
 				optional: true,
 			},
+			driverStatus: {
+				type: "array",
+				items: "string",
+				enum: Object.values(DriverStatus),
+				optional: true,
+			},
+			vehicleType: {
+				type: "array",
+				items: "string",
+				enum: Object.values(VehicleType),
+				optional: true,
+			},
 		},
 
 		indexes: [{ phoneNumber: 1 }],
@@ -87,65 +113,40 @@ const CustomersService: CustomersServiceSchema = {
 	actions: {
 		create: {
 			restricted: ["api"],
-			auth: true,
-			// roles: [UserRole.ADMIN],
 			params: {
-				...validateCustomerBase,
+				...validateDriverBase,
 				passwordHash: { type: "string" },
 			},
-			async handler(this: CustomersThis, ctx: Context<ActionCreateParams>) {
-				ctx.params.roles = [UserRole.CUSTOMER];
+			async handler(this: DriversThis, ctx: Context<ActionCreateParams>) {
+				ctx.params.roles = [UserRole.DRIVER];
 				const entity = await this._create(ctx, ctx.params);
 				return entity;
 			},
 		},
 		list: {
 			restricted: ["api"],
-			auth: true,
-			// roles: [UserRole.ADMIN],
 			cache: {
 				ttl: 60 * 2, // 2min
 			},
 		},
 		get: {
 			restricted: ["api"],
-			auth: true,
-			// roles: [UserRole.ADMIN],
 		},
-
 		update: {
 			restricted: ["api"],
-			auth: true,
 		},
 		remove: {
 			restricted: ["api"],
-			auth: true,
-			// roles: [UserRole.ADMIN],
 		},
-
 		find: {
-			restricted: ["api", "bookingSystem"],
-			auth: true,
-			roles: [UserRole.ADMIN, UserRole.STAFF],
-			cache: false,
-		},
-
-		me: {
 			restricted: ["api"],
-			rest: "GET /me",
-			auth: true,
-			roles: [UserRole.CUSTOMER],
-			async handler(this: CustomersThis, ctx: Context<any, UserAuthMeta>) {
-				const entity = await this._get(ctx, { id: ctx.meta.user._id });
-				return this.transformDocuments(ctx, {}, entity);
-			},
 		},
 	},
 
 	methods: {
-		async seedDB(this: CustomersThis) {
-			const customers = createTestCustomers(10);
-			await this.adapter.insertMany(customers);
+		async seedDB(this: DriversThis) {
+			const drivers = createTestDrivers(10);
+			await this.adapter.insertMany(drivers);
 		},
 	},
 
@@ -161,4 +162,4 @@ const CustomersService: CustomersServiceSchema = {
 	},
 };
 
-export default CustomersService;
+export default DriversService;

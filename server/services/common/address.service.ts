@@ -1,7 +1,7 @@
-import { Config } from "../../../common";
-import { createTestAddresses } from "../../../helpers/seed";
-import { DbMixin } from "../../../mixins";
-import type { AddresssServiceSchema } from "../../../types/common/address";
+import { Config } from "../../common";
+import { createTestAddresses } from "../../helpers/seed";
+import { DbMixin } from "../../mixins";
+import type { AddresssServiceSchema } from "../../types/common/address";
 
 const AddressService: AddresssServiceSchema = {
 	name: "address",
@@ -9,6 +9,7 @@ const AddressService: AddresssServiceSchema = {
 	mixins: [DbMixin("address")],
 
 	settings: {
+		rest: "",
 		fields: [
 			"_id",
 			"homeNo",
@@ -21,7 +22,21 @@ const AddressService: AddresssServiceSchema = {
 			"createdAt",
 			"updatedAt",
 		],
+
+		entityValidator: {
+			homeNo: "string",
+			street: "string",
+			ward: "string",
+			district: "string",
+			city: "string",
+			lat: "number|optional",
+			lon: "number|optional",
+			createdAt: "date|optional",
+			updatedAt: "date|optional",
+		},
 	},
+
+	actions: {},
 
 	methods: {
 		async seedDB(this) {

@@ -1,7 +1,7 @@
 import type { Service, ServiceSchema } from "moleculer";
-import type { DriverEntity, IBooking, StaffEntity } from "../../../entities";
-import { BookingStatus } from "../../../entities";
-import { AMQPMixin } from "../../../mixins";
+import type { DriverEntity, IBooking, StaffEntity } from "../../entities";
+import { BookingStatus } from "../../entities";
+import { AMQPMixin } from "../../mixins";
 
 const MonitorSystemService: ServiceSchema = {
 	name: "monitorSystem",

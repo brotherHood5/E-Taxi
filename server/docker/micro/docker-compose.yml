@@ -1,0 +1,291 @@
+version: "3.3"
+
+services:
+  apiCallCenter:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: api/apiCallCenter.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+    links:
+      - mongo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.apiCallCenter.entrypoints=apiCallCenterPort"
+      - "traefik.http.routers.apiCallCenter.rule=PathPrefix(`/`)"
+      - "traefik.http.services.apiCallCenter.loadbalancer.server.port=3000"
+
+  apiCustomer:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: api/apiCustomer.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+    links:
+      - mongo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.apiCustomer.entrypoints=apiCustomerPort"
+      - "traefik.http.routers.apiCustomer.rule=PathPrefix(`/`)"
+      - "traefik.http.services.apiCustomer.loadbalancer.server.port=3001"
+
+  apiDriver:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: api/apiDriver.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+    links:
+      - mongo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.apiDriver.entrypoints=apiDriverPort"
+      - "traefik.http.routers.apiDriver.rule=PathPrefix(`/`)"
+      - "traefik.http.services.apiDriver.loadbalancer.server.port=3002"
+      
+  socket:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/socket.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.socket.entrypoints=socketPort"
+      - "traefik.http.routers.socket.rule=PathPrefix(`/`)"
+      - "traefik.http.services.socket.loadbalancer.server.port=3003"
+
+  guard:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/guard.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+  
+  geo:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/geo.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+
+  customers:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/customers/*.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+
+  drivers:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/drivers/*.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+
+  staffs:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/staffs/*.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+
+  sms:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/sms.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+   
+  refreshTokens:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/refreshTokens.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+
+  address:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/address.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+
+  bookingSystem:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    restart: on-failure
+    env_file: docker-compose.env
+    environment:
+      SERVICES: callcenter/booking*.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+
+  coordSystem:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    restart: on-failure
+    env_file: docker-compose.env
+    environment:
+      SERVICES: callcenter/coord*.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+   
+  monitorSystem:
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    restart: on-failure
+    env_file: docker-compose.env
+    environment:
+      SERVICES: callcenter/monitor*.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+
+  mongo:
+    image: mongo
+    volumes:
+      - e-taxi-data:/data/db
+      - e-taxi-data:/data/configdb 
+    ports: 
+      - 27020:27017
+    
+  nats:
+    image: nats
+    ports:
+      - 4222:4222
+   
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - e-taxi-data:/data
+      
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 5s
+      timeout: 15s
+      retries: 1
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - e-taxi-data:/var/lib/rabbitmq
+    
+  traefik:
+    image: traefik:latest
+    depends_on:
+      - apiCallCenter
+      - apiDriver
+      - apiCustomer
+      - socket
+    command:
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=true" # Don't do that in production!
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.apiCallCenterPort.address=:4000"
+      - "--entrypoints.apiDriverPort.address=:4001"
+      - "--entrypoints.apiCustomerPort.address=:4002"
+      - "--entrypoints.socketPort.address=:4003"
+    ports:
+      - 4000:4000
+      - 4001:4001
+      - 4002:4002
+      - 4003:4003
+
+      - 5050:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+  
+volumes:
+  e-taxi-data:

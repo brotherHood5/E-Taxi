@@ -1,8 +1,8 @@
 import type { Context, Service, ServiceSettingSchema } from "moleculer";
 import type { Entry, Options, Query } from "node-geocoder";
 import NodeGeocoder from "node-geocoder";
-import { Config } from "../../../common";
-import type { GuardServiceSchema } from "../../../types/common";
+import { Config } from "../../common";
+import type { GuardServiceSchema } from "../../types/common";
 
 export type GeoSettings = ServiceSettingSchema;
 

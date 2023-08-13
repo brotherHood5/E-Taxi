@@ -1,9 +1,9 @@
 import type { Service, ServiceSchema } from "moleculer";
-import { Config } from "../../../common";
-import type { IBooking } from "../../../entities";
-import { BookingStatus } from "../../../entities";
-import { AMQPMixin, DbMixin } from "../../../mixins";
-import { MongoObjectId } from "../../../types";
+import { Config } from "../../common";
+import type { IBooking } from "../../entities";
+import { BookingStatus } from "../../entities";
+import { AMQPMixin, DbMixin } from "../../mixins";
+import { MongoObjectId } from "../../types";
 
 const BookingService: ServiceSchema = {
 	name: "bookingSystem",

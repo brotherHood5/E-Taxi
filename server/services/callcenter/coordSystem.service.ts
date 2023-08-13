@@ -1,9 +1,9 @@
 import type { Context, Service, ServiceSchema } from "moleculer";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Queue } from "queue-typescript";
-import type { IBooking } from "../../../entities";
-import { BookingStatus } from "../../../entities";
-import { AMQPMixin } from "../../../mixins";
+import type { IBooking } from "../../entities";
+import { BookingStatus } from "../../entities";
+import { AMQPMixin } from "../../mixins";
 
 // Danh sach nhan vien phan giai dia chi
 // - Ranh - Dang khong lam gi

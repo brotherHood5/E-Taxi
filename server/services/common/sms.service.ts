@@ -1,9 +1,9 @@
 import type { Context } from "moleculer";
 import TwilioClient from "twilio";
-import { Config } from "../../../common";
-import { SmsConfigError, SmsCreateError, SmsSendError } from "../../../core/errors";
-import type { SendSmsParams, SmsServiceSchema, SmsThis } from "../../../types/common";
-import { SmsSendParamsValidator } from "../../../types/common";
+import { Config } from "../../common";
+import { SmsConfigError, SmsCreateError, SmsSendError } from "../../core/errors";
+import type { SendSmsParams, SmsServiceSchema, SmsThis } from "../../types/common";
+import { SmsSendParamsValidator } from "../../types/common";
 
 const SmsService: SmsServiceSchema = {
 	name: "sms",

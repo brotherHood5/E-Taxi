@@ -2,24 +2,20 @@
 import bcrypt from "bcryptjs";
 import { pick } from "lodash";
 import type { ActionParams, Context } from "moleculer";
-import { Config } from "../../../common";
-import { ServiceError } from "../../../core/errors";
-import type { RefreshToken, StaffEntity } from "../../../entities";
-import { generateJWT, verifyJWT } from "../../../helpers/jwt.helper";
-import { createTestStaffs } from "../../../helpers/seed";
-import { DbMixin } from "../../../mixins";
+import { Config } from "../../common";
+import { ServiceError } from "../../core/errors";
+import type { RefreshToken, StaffEntity } from "../../entities";
+import { generateJWT, verifyJWT } from "../../helpers/jwt.helper";
+import { createTestStaffs } from "../../helpers/seed";
+import { DbMixin } from "../../mixins";
 import type {
 	AuthRefreshTokenParams,
 	AuthResolveTokenParams,
 	AuthValidateRoleParams,
-} from "../../../types";
-import type {
-	ActionCreateParams,
-	StaffsServiceSchema,
-	StaffsThis,
-} from "../../../types/common/staff";
-import type { UserAuthMeta } from "../../../types/common/user";
-import { UserRole } from "../../../types/common/user";
+} from "../../types";
+import type { ActionCreateParams, StaffsServiceSchema, StaffsThis } from "../../types/common/staff";
+import type { UserAuthMeta } from "../../types/common/user";
+import { UserRole } from "../../types/common/user";
 
 const validateStaffBase: ActionParams = {
 	username: {

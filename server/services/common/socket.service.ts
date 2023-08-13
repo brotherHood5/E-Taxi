@@ -1,18 +1,18 @@
-import type { Context, Service } from "moleculer";
+import type { Context } from "moleculer";
 import SocketIOService from "moleculer-io";
 import ApiGateway from "moleculer-web";
-import { Config } from "../../../common";
+import { Config } from "../../common";
 import type {
 	AuthResolveTokenParams,
 	IUserBase,
-	NotifServiceSchema,
-	NotifThis,
-} from "../../../types";
-import { SmsSendParamsValidator } from "../../../types/common";
+	SocketServiceSchema,
+	SocketThis,
+} from "../../types";
+import { SmsSendParamsValidator } from "../../types/common";
 
 const ApiGatewayErrors = ApiGateway.Errors;
 
-const SocketService: NotifServiceSchema = {
+const SocketService: SocketServiceSchema = {
 	name: "socket",
 	authToken: Config.NOTIF_AUTH_TOKEN,
 	mixins: [SocketIOService as any],
@@ -168,7 +168,7 @@ const SocketService: NotifServiceSchema = {
 				],
 			},
 
-			async handler(this: NotifThis, ctx: Context<any, any>): Promise<any> {
+			async handler(this: SocketThis, ctx: Context<any, any>): Promise<any> {
 				const { provider, data } = ctx.params;
 				this.logger.info("notify", provider, data);
 

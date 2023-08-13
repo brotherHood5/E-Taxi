@@ -1,91 +1,58 @@
 version: "3.3"
 
 services:
-
-  dev:
-    image: node:current-alpine
-    expose:
-      - "4000"
-     
-    ports:
-      - "4000:4000"
-     
-    env_file: docker-compose.env
-    working_dir: /app
-    volumes:
-      - ../..:/app
-
-    command: /bin/sh -c "npm install && npm run dev"
-    # command: /bin/sh -c "npm install && npm run build && npm run start"
-
-    # links:
-    #   - mongo
-    # depends_on:
-    #   - mongo
-    #   - nats
-    #   - redis
-    #   - rabbitmq
-
-  # e-taxi: 
-  #   image: e-taxi
-  #   env_file: ./docker-compose.env
-  #   environment:
-  #     - SERVICES=**/*.service.ts
+  # dev:
+  #   build: 
+  #     context: ../..
+  #     dockerfile: Dockerfile
+  #     target: dev
+  #   image: e-taxi-dev
+  #   restart: on-failure
+  #   ports:
+  #     - "3000:3000"
+  #     - "3001:3001"
+  #     - "3002:3002"
+  #     - "3003:3003"
+  #   env_file: docker-compose.env
+  #   working_dir: /app
+  #   volumes:
+  #     - ../..:/app
+  #   #command: /bin/sh -c "npm install && npm run dev"
+  #   links:
+  #     - mongo
   #   depends_on:
   #     - nats
   #     - redis
   #     - mongo
   #     - rabbitmq
-      
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.api-gw.rule=PathPrefix(`/`)"
-  #     - "traefik.http.services.api-callcenter.loadbalancer.server.port=3000"
-  #     - "traefik.http.services.api-customer.loadbalancer.server.port=3001"
-  #     - "traefik.http.services.api-driver.loadbalancer.server.port=3002"
-  #     - "traefik.http.services.socket.loadbalancer.server.port=3003"
-  #   networks:
-  #     - internal
 
-  # mongo:
-  #   image: mongo
-  #   # volumes:
-  #   #   - ../..:/data/db
-  #   ports: 
-  #     - 27019:27017
+  mongo:
+    image: mongo
+    volumes:
+      - e-taxi-dev:/data/db
+      - e-taxi-dev:/data/configdb
+    ports: 
+      - 27019:27017
 
-  # nats:
-  #   image: nats
-  #   ports:
-  #     - 4222:4222
+  nats:
+    image: nats
+    ports:
+      - 4222:4222
 
-  # redis:
-  #   image: redis:alpine
-  #   ports:
-  #     - 6379:6379
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - e-taxi-dev:/data
 
-  # rabbitmq:
-  #   image: rabbitmq:3.12-management
-  #   ports:
-  #     - 5672:5672
-  #     - 15672:15672
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - e-taxi-dev:/var/lib/rabbitmq
 
-  # traefik:
-  #   image: traefik:v2.10
-  #   command:
-  #     - "--api.insecure=true" # Don't do that in production!
-  #     - "--providers.docker=true"
-  #     - "--providers.docker.exposedbydefault=false"
-  #   ports:
-  #     - 3000:3000
-  #     - 3001:3001
-  #     - 3002:3002
-  #     - 3003:3003
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
-  #   networks:
-  #     - internal
-  #     - default
-
-# volumes:
-#   e-taxi-data:
+volumes:
+  e-taxi-dev:
