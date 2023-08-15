@@ -1,0 +1,58 @@
+version: "3.3"
+
+services:
+  # dev:
+  #   build: 
+  #     context: ../..
+  #     dockerfile: Dockerfile
+  #     target: dev
+  #   image: e-taxi-dev
+  #   restart: on-failure
+  #   ports:
+  #     - "3000:3000"
+  #     - "3001:3001"
+  #     - "3002:3002"
+  #     - "3003:3003"
+  #   env_file: docker-compose.env
+  #   working_dir: /app
+  #   volumes:
+  #     - ../..:/app
+  #   #command: /bin/sh -c "npm install && npm run dev"
+  #   links:
+  #     - mongo
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+
+  mongo:
+    image: mongo
+    volumes:
+      - e-taxi-dev:/data/db
+      - e-taxi-dev:/data/configdb
+    ports: 
+      - 27019:27017
+
+  nats:
+    image: nats
+    ports:
+      - 4222:4222
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - e-taxi-dev:/data
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - e-taxi-dev:/var/lib/rabbitmq
+
+volumes:
+  e-taxi-dev:

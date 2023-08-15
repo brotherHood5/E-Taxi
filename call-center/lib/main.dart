@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:web/screens/coord_picker/check_auth.dart';
+import 'package:web/screens/coord_picker/coord_picker.dart';
+import 'package:web/screens/coord_picker/login.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,10 +33,16 @@ class MyApp extends StatelessWidget {
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'E-Taxi'),
+      // home: const MyHomePage(title: 'E-Taxi'),
       debugShowCheckedModeBanner: false,
+      initialRoute: CoordSystem.route,
+      routes: {
+        CoordSystem.route: (context) => const CheckAuth(),
+      },
+      builder: EasyLoading.init(),
     );
   }
 }
