@@ -19,17 +19,6 @@ void main() async {
   await EasyLocalization.ensureInitialized();
   await dotenv.load(fileName: '.env');
 
-  // WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(
-  //   options: DefaultFirebaseOptions.currentPlatform,
-  // );
-  // FirebaseAuth.instance.authStateChanges().listen((User? user) {
-  //   if (user == null) {
-  //     debugPrint('User is currently signed out!');
-  //   } else {
-  //     debugPrint('User is signed in!');
-  //   }
-  // });
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('vi', 'VN')],
@@ -64,7 +53,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.orange,
       ),
-      home: const MainScreen(),
+      home: const WelcomeScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
