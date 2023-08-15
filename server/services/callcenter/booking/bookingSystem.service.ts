@@ -21,7 +21,7 @@ const BookingService: ServiceSchema = {
 
 	actions: {
 		book: {
-			rest: "POST /a",
+			rest: "GET /book",
 			handler(this: Service, ctx: any): any {
 				const data = {
 					address: "123 Main St",

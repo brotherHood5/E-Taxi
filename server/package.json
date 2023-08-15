@@ -4,7 +4,7 @@
   "description": "My Moleculer-based microservices project",
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
-    "dev": "ts-node ./node_modules/moleculer/bin/moleculer-runner.js --config moleculer.config.ts -e --hot --repl services",
+    "dev": "ts-node ./node_modules/moleculer/bin/moleculer-runner.js --config moleculer.config.ts -e --hot --repl",
     "start": "ts-node ./node_modules/moleculer/bin/moleculer-runner.js --config moleculer.config.ts",
     "test:types": "concurrently npm:prettier npm:lint npm:typecheck",
     "typecheck": "tsc --noEmit && echo \"tsc: no typecheck errors\"",

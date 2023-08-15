@@ -4,7 +4,7 @@
 import type { Context, Service, ServiceSchema } from "moleculer";
 
 const MathService: ServiceSchema = {
-	name: "test123",
+	name: "math",
 	events: {},
 	actions: {
 		login(ctx: Context<any, any>) {
@@ -30,9 +30,9 @@ const MathService: ServiceSchema = {
 			this.logger.info("meta", ctx.meta);
 			const rooms = ["room2", "room3"];
 			await this.broker.call("notif.broadcast", {
-				event: "event",
+				event: "notifyGPS",
 				// namespace: "/",
-				rooms,
+				// rooms,
 				args: [
 					`Hello from ${ctx.meta.$socketId} - from room: ${JSON.stringify(
 						ctx.meta.$rooms,

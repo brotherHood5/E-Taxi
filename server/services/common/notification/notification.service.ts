@@ -141,39 +141,39 @@ const NotifService: NotifServiceSchema = {
 	},
 
 	methods: {
-		async socketAuthorize(socket: any) {
-			this.logger.info("Login using token:", socket.handshake.auth.token);
-			const accessToken = socket.handshake.auth.token;
-			const { service } = socket.handshake.query;
-			if (!service) {
-				return Promise.reject(
-					new ApiGatewayErrors.UnAuthorizedError("NO_PROVIDER_SERVICE", null),
-				);
-			}
-			if (accessToken) {
-				try {
-					const user = await this.broker.call<
-						IUserBase | undefined,
-						AuthResolveTokenParams
-					>(`${service}.resolveToken`, { token: accessToken });
-					if (user && user.active) {
-						return await Promise.resolve(user);
-					}
-				} catch (error) {
-					return Promise.reject(
-						new ApiGatewayErrors.UnAuthorizedError(
-							ApiGatewayErrors.ERR_INVALID_TOKEN,
-							null,
-						),
-					);
-				}
-			}
+		// async socketAuthorize(socket: any) {
+		// 	this.logger.info("Login using token:", socket.handshake.auth.token);
+		// 	const accessToken = socket.handshake.auth.token;
+		// 	const { service } = socket.handshake.query;
+		// 	if (!service) {
+		// 		return Promise.reject(
+		// 			new ApiGatewayErrors.UnAuthorizedError("NO_PROVIDER_SERVICE", null),
+		// 		);
+		// 	}
+		// 	if (accessToken) {
+		// 		try {
+		// 			const user = await this.broker.call<
+		// 				IUserBase | undefined,
+		// 				AuthResolveTokenParams
+		// 			>(`${service}.resolveToken`, { token: accessToken });
+		// 			if (user && user.active) {
+		// 				return await Promise.resolve(user);
+		// 			}
+		// 		} catch (error) {
+		// 			return Promise.reject(
+		// 				new ApiGatewayErrors.UnAuthorizedError(
+		// 					ApiGatewayErrors.ERR_INVALID_TOKEN,
+		// 					null,
+		// 				),
+		// 			);
+		// 		}
+		// 	}
 
-			// No token.
-			return Promise.reject(
-				new ApiGatewayErrors.UnAuthorizedError(ApiGatewayErrors.ERR_NO_TOKEN, null),
-			);
-		},
+		// 	// No token.
+		// 	return Promise.reject(
+		// 		new ApiGatewayErrors.UnAuthorizedError(ApiGatewayErrors.ERR_NO_TOKEN, null),
+		// 	);
+		// },
 
 		socketSaveMeta(socket, ctx) {
 			this.logger.info("socketSaveMeta", ctx.meta);

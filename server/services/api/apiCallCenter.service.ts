@@ -33,14 +33,14 @@ const ApiCallCenterService = {
 					"$node.*",
 					"callcenter.*",
 					"apiCallCenter.*",
-					"coord.system.*",
-					"bookings.*",
+					"coordSystem.*",
+					"bookingSystem.*",
 					"staffs.*",
 				],
 
 				aliases: {
 					"GET /coord-system/sse": {
-						action: "coord.system.sse",
+						action: "coordSystem.sse",
 						passReqResToParams: true,
 					},
 				},
