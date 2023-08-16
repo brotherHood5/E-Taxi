@@ -1,19 +1,19 @@
 import type { Context } from "moleculer";
 import SocketIOService from "moleculer-io";
 import ApiGateway from "moleculer-web";
-import { Config } from "../../../common";
+import { Config } from "../../common";
 import type {
 	AuthResolveTokenParams,
 	IUserBase,
-	NotifServiceSchema,
-	NotifThis,
-} from "../../../types";
-import { SmsSendParamsValidator } from "../../../types/common";
+	SocketServiceSchema,
+	SocketThis,
+} from "../../types";
+import { SmsSendParamsValidator } from "../../types/common";
 
 const ApiGatewayErrors = ApiGateway.Errors;
 
-const NotifService: NotifServiceSchema = {
-	name: "notif",
+const SocketService: SocketServiceSchema = {
+	name: "socket",
 	authToken: Config.NOTIF_AUTH_TOKEN,
 	mixins: [SocketIOService as any],
 
@@ -28,13 +28,67 @@ const NotifService: NotifServiceSchema = {
 			maxAge: 3600,
 		},
 		logRequest: "info",
+		logRequestParams: "info",
 		logClientConnection: "info",
 		logResponse: "info",
 
 		// Socket IO settings
 		io: {
 			namespaces: {
-				"/": {
+				"/coord-system": {
+					authorization: true,
+					events: {
+						call: {
+							whitelist: ["**"],
+							onBeforeCall: (
+								ctx: any,
+								socket: any,
+								action: any,
+								params: any,
+								opts: any,
+							): any => {
+								ctx.meta = opts.meta;
+							},
+							onAfterCall: (ctx: any, socket: any, res: any): any => {},
+						},
+
+						async disconnect(data, ack) {
+							// eslint-disable-next-line @typescript-eslint/no-this-alias
+							const socket = this;
+							await socket.$service.broker.call("coordSystem.disconnect", socket.id);
+						},
+					},
+				},
+
+				"/monitor": {
+					authorization: false,
+					events: {
+						call: {
+							whitelist: ["monitorSystem.*"],
+						},
+					},
+				},
+
+				"/drivers": {
+					authorization: true,
+					events: {
+						call: {
+							whitelist: ["**"],
+							onBeforeCall: (
+								ctx: any,
+								socket: any,
+								action: any,
+								params: any,
+								opts: any,
+							): any => {
+								ctx.meta = opts.meta;
+							},
+							onAfterCall: (ctx: any, socket: any, res: any): any => {},
+						},
+					},
+				},
+
+				"/customers": {
 					authorization: true,
 					events: {
 						call: {
@@ -114,7 +168,7 @@ const NotifService: NotifServiceSchema = {
 				],
 			},
 
-			async handler(this: NotifThis, ctx: Context<any, any>): Promise<any> {
+			async handler(this: SocketThis, ctx: Context<any, any>): Promise<any> {
 				const { provider, data } = ctx.params;
 				this.logger.info("notify", provider, data);
 
@@ -141,42 +195,44 @@ const NotifService: NotifServiceSchema = {
 	},
 
 	methods: {
-		// async socketAuthorize(socket: any) {
-		// 	this.logger.info("Login using token:", socket.handshake.auth.token);
-		// 	const accessToken = socket.handshake.auth.token;
-		// 	const { service } = socket.handshake.query;
-		// 	if (!service) {
-		// 		return Promise.reject(
-		// 			new ApiGatewayErrors.UnAuthorizedError("NO_PROVIDER_SERVICE", null),
-		// 		);
-		// 	}
-		// 	if (accessToken) {
-		// 		try {
-		// 			const user = await this.broker.call<
-		// 				IUserBase | undefined,
-		// 				AuthResolveTokenParams
-		// 			>(`${service}.resolveToken`, { token: accessToken });
-		// 			if (user && user.active) {
-		// 				return await Promise.resolve(user);
-		// 			}
-		// 		} catch (error) {
-		// 			return Promise.reject(
-		// 				new ApiGatewayErrors.UnAuthorizedError(
-		// 					ApiGatewayErrors.ERR_INVALID_TOKEN,
-		// 					null,
-		// 				),
-		// 			);
-		// 		}
-		// 	}
+		async socketAuthorize(socket: any) {
+			this.logger.info("Login using token:", socket.handshake.auth.token);
+			const accessToken = socket.handshake.auth.token;
+			const { refreshToken } = socket.handshake.auth;
+			const { service } = socket.handshake.query;
 
-		// 	// No token.
-		// 	return Promise.reject(
-		// 		new ApiGatewayErrors.UnAuthorizedError(ApiGatewayErrors.ERR_NO_TOKEN, null),
-		// 	);
-		// },
+			if (!service) {
+				return Promise.reject(
+					new ApiGatewayErrors.UnAuthorizedError("NO_PROVIDER_SERVICE", null),
+				);
+			}
+
+			if (accessToken) {
+				try {
+					const user = await this.broker.call<
+						IUserBase | undefined,
+						AuthResolveTokenParams
+					>(`${service}.resolveToken`, { token: accessToken });
+					if (user) {
+						return await Promise.resolve(user);
+					}
+				} catch (error) {
+					return Promise.reject(
+						new ApiGatewayErrors.UnAuthorizedError(
+							ApiGatewayErrors.ERR_INVALID_TOKEN,
+							null,
+						),
+					);
+				}
+			}
+
+			// No token.
+			return Promise.reject(
+				new ApiGatewayErrors.UnAuthorizedError(ApiGatewayErrors.ERR_NO_TOKEN, null),
+			);
+		},
 
 		socketSaveMeta(socket, ctx) {
-			this.logger.info("socketSaveMeta", ctx.meta);
 			this.socketSaveUser(socket, ctx.meta.user);
 		},
 
@@ -186,10 +242,9 @@ const NotifService: NotifServiceSchema = {
 				user: socket.client.user,
 				$rooms: Array.from(socket.rooms.keys()),
 			};
-			this.logger.info("getMeta", meta);
 			return meta;
 		},
 	},
 };
 
-export default NotifService;
+export default SocketService;

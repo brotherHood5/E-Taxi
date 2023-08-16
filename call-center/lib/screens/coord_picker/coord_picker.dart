@@ -1,29 +1,32 @@
 import 'dart:convert';
-import 'dart:js_interop';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
-import 'package:lorem_ipsum/lorem_ipsum.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_client_sse/flutter_client_sse.dart';
+import 'package:socket_io_client/socket_io_client.dart';
 import 'package:web/constant.dart';
+import 'package:web/model/BookingReq.dart';
 
 import '../../helper.dart';
+import '../../model/Location.dart';
 import '../../model/Staff.dart';
+import '../../stream_socket.dart';
 import 'login.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:universal_html/html.dart' as html;
 
 class CoordSystem extends StatefulWidget {
   static const String route = '/coord-system';
-
   const CoordSystem({super.key});
 
   @override
   State<CoordSystem> createState() => _CoordSystemState();
 }
 
+StreamSocket streamSocket = StreamSocket();
+
 class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
   MapController mapController = MapController(
-    initPosition: GeoPoint(latitude: 14.599512, longitude: 120.984222),
+    initPosition: GeoPoint(latitude: 10.762622, longitude: 106.660172),
     areaLimit: const BoundingBox.world(),
   );
 
@@ -35,20 +38,65 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
 
   late String accessToken;
   late Staff user;
-
+  late IO.Socket _socket;
+  bool _isSocketConnected = false;
+  bool _isPickupResolving = false; // Dang phan gia dia chi don
   @override
   void initState() {
     super.initState();
+    _getInitData();
     mapController.addObserver(this);
+
+    html.window.onUnload.listen((event) async {
+      debugPrint("Reload");
+      _disconnectSocket();
+    });
   }
 
   @override
   void dispose() {
+    debugPrint("Dispose");
     mapController.dispose();
+    _disconnectSocket();
     super.dispose();
   }
 
-  var addressTxt = loremIpsum(words: 60);
+  var homeNo = "", street = "", city = "", ward = "", district = "";
+  BookingReq? currentRequest = null;
+
+  void _initSocket({required String accessToken}) {
+    if (_isSocketConnected) return;
+
+    _socket = IO.io(
+        SOCKET_URL,
+        OptionBuilder()
+            .setTransports(['websocket'])
+            .disableAutoConnect()
+            .setAuth({'token': accessToken})
+            .setQuery({"service": "staffs"})
+            .build());
+
+    _socket.onConnect((data) {
+      _isSocketConnected = true;
+      _socket.emit("call", "coordSystem.connect");
+    });
+    _socket.onConnectError((data) => debugPrint("Connect Error"));
+    _socket.onDisconnect((data) => _isSocketConnected = false);
+
+    _socket.on("receive_booking", (data) {
+      streamSocket.addResponse(data);
+    });
+
+    _socket.connect();
+  }
+
+  void _disconnectSocket() {
+    debugPrint("Socket Disconnect");
+    if (_isSocketConnected) {
+      _socket.disconnect(); // Disconnect the socket when the widget is disposed
+      _isSocketConnected = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,51 +177,85 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
                           EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                       width: MediaQuery.of(context).size.width,
                       child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Location",
-                                style: theme.textTheme.titleMedium?.merge(
-                                    TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green))),
-                            const SizedBox(height: 4.0),
-                            Text("Home NO.",
-                                style: theme.textTheme.titleSmall?.merge(
-                                    TextStyle(fontWeight: FontWeight.bold))),
-                            Text(addressTxt,
-                                softWrap: true,
-                                style: theme.textTheme.bodySmall),
-                            const SizedBox(height: 4.0),
-                            Text("Street",
-                                style: theme.textTheme.titleSmall?.merge(
-                                    TextStyle(fontWeight: FontWeight.bold))),
-                            Text(addressTxt,
-                                softWrap: true,
-                                style: theme.textTheme.bodySmall),
-                            const SizedBox(height: 4.0),
-                            Text("Province",
-                                style: theme.textTheme.titleSmall?.merge(
-                                    TextStyle(fontWeight: FontWeight.bold))),
-                            Text(addressTxt,
-                                softWrap: true,
-                                style: theme.textTheme.bodySmall),
-                            const SizedBox(height: 4.0),
-                            Text("City",
-                                style: theme.textTheme.titleSmall?.merge(
-                                    TextStyle(fontWeight: FontWeight.bold))),
-                            Text(addressTxt,
-                                softWrap: true,
-                                style: theme.textTheme.bodySmall),
-                            const SizedBox(height: 4.0),
-                            Text("Formatted Address",
-                                style: theme.textTheme.bodyMedium?.merge(
-                                    TextStyle(fontWeight: FontWeight.bold))),
-                            Text(addressTxt,
-                                softWrap: true,
-                                style: theme.textTheme.bodySmall),
-                          ],
-                        ),
+                        child: StreamBuilder(
+                            stream: streamSocket.getResponse,
+                            builder: (BuildContext context,
+                                AsyncSnapshot<Map<String, dynamic>> snapshot) {
+                              if (snapshot.hasData &&
+                                  snapshot.data!.isNotEmpty) {
+                                currentRequest =
+                                    BookingReq.fromMap(snapshot.data!);
+                                debugPrint(
+                                    "Receive booking: ${currentRequest.toString()}");
+                                addressResolve();
+                              } else {
+                                homeNo = "";
+                                street = "";
+                                district = "";
+                                city = "";
+                                ward = "";
+                              }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("Location",
+                                      style: theme.textTheme.titleMedium?.merge(
+                                          TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green))),
+                                  const SizedBox(height: 4.0),
+                                  Text("Home NO.",
+                                      style: theme.textTheme.titleSmall?.merge(
+                                          TextStyle(
+                                              fontWeight: FontWeight.bold))),
+                                  Text(homeNo,
+                                      softWrap: true,
+                                      style: theme.textTheme.bodySmall),
+                                  const SizedBox(height: 4.0),
+                                  Text("Street",
+                                      style: theme.textTheme.titleSmall?.merge(
+                                          TextStyle(
+                                              fontWeight: FontWeight.bold))),
+                                  Text(street,
+                                      softWrap: true,
+                                      style: theme.textTheme.bodySmall),
+                                  const SizedBox(height: 4.0),
+                                  Text("Ward",
+                                      style: theme.textTheme.titleSmall?.merge(
+                                          TextStyle(
+                                              fontWeight: FontWeight.bold))),
+                                  Text(ward,
+                                      softWrap: true,
+                                      style: theme.textTheme.bodySmall),
+                                  const SizedBox(height: 4.0),
+                                  Text("District",
+                                      style: theme.textTheme.titleSmall?.merge(
+                                          TextStyle(
+                                              fontWeight: FontWeight.bold))),
+                                  Text(district,
+                                      softWrap: true,
+                                      style: theme.textTheme.bodySmall),
+                                  const SizedBox(height: 4.0),
+                                  Text("City",
+                                      style: theme.textTheme.titleSmall?.merge(
+                                          TextStyle(
+                                              fontWeight: FontWeight.bold))),
+                                  Text(city,
+                                      softWrap: true,
+                                      style: theme.textTheme.bodySmall),
+                                  const SizedBox(height: 4.0),
+                                  Text("Formatted Address",
+                                      style: theme.textTheme.bodyMedium?.merge(
+                                          TextStyle(
+                                              fontWeight: FontWeight.bold))),
+                                  Text(
+                                      "$homeNo, $street, $ward, $district, $city",
+                                      softWrap: true,
+                                      style: theme.textTheme.bodySmall),
+                                ],
+                              );
+                            }),
                       ),
                     )),
                   ],
@@ -256,7 +338,7 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
                     child: Row(
                       children: [
                         ElevatedButton(
-                            onPressed: () {}, child: const Text("Booking")),
+                            onPressed: bookFunc, child: const Text("Booking")),
                         Expanded(
                           child: ButtonBar(
                             alignment: MainAxisAlignment.end,
@@ -266,12 +348,7 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
                                 child: const Text("Coordinate"),
                               ),
                               ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    latController.clear();
-                                    lonController.clear();
-                                  });
-                                },
+                                onPressed: clearInput,
                                 child: const Text("Clear"),
                               ),
                             ],
@@ -286,8 +363,8 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
                       child: OSMFlutter(
                         isPicker: true,
                         controller: mapController,
-                        initZoom: 15,
-                        stepZoom: 1.0,
+                        initZoom: 10,
+                        stepZoom: 2.0,
                         userLocationMarker: UserLocationMaker(
                           personMarker: const MarkerIcon(
                             icon: Icon(
@@ -358,6 +435,30 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
     return value;
   }
 
+  void clearInput() {
+    latController.clear();
+    lonController.clear();
+  }
+
+  void addressResolve() {
+    var pickupAddr = currentRequest!.pickupAddr;
+    var destAddr = currentRequest!.destAddr;
+    var currAddr;
+
+    if (pickupAddr.lat == null || pickupAddr.lon == null) {
+      _isPickupResolving = true;
+      currAddr = pickupAddr;
+    } else {
+      currAddr = destAddr;
+    }
+
+    homeNo = currAddr.homeNo;
+    street = currAddr.street;
+    district = currAddr.district;
+    city = currAddr.city;
+    ward = currAddr.ward;
+  }
+
   Future<void> coordFunc() async {
     if (latController.text.isNotEmpty && lonController.text.isNotEmpty) {
       await mapController.changeLocation(GeoPoint(
@@ -366,33 +467,50 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
     }
   }
 
+  Future<void> bookFunc() async {
+    if (currentRequest == null) return;
+
+    debugPrint("Call Booking");
+    if (latController.text.isNotEmpty && lonController.text.isNotEmpty) {
+      await coordFunc();
+      if (_isPickupResolving) {
+        currentRequest?.pickupAddr.lat = double.parse(latController.text);
+        currentRequest?.pickupAddr.lon = double.parse(lonController.text);
+
+        _isPickupResolving = false;
+      } else {
+        currentRequest?.destAddr.lat = double.parse(latController.text);
+        currentRequest?.destAddr.lon = double.parse(lonController.text);
+      }
+
+      if (currentRequest!.pickupAddr.hasCoordinate() &&
+          currentRequest!.destAddr.hasCoordinate()) {
+        _socket.emit(
+            "call", ["coordSystem.resolvedAddress", currentRequest?.toMap()]);
+
+        // Clear screen
+        currentRequest = null;
+        streamSocket.addResponse({});
+        clearInput();
+      } else {
+        streamSocket.addResponse(currentRequest!.toMap());
+      }
+    }
+  }
+
   Future<bool> _getInitData() async {
     Map<String, dynamic> data = await getStoredData();
     accessToken = data['accessToken'];
     user = data['user'];
-    _sseSubcribe(
-      accessToken: accessToken,
-      user: user,
-    );
-
     return true;
-  }
-
-  void _sseSubcribe({required String accessToken, required Staff user}) {
-    SSEClient.subscribeToSSE(url: COORD_SSE_URL, header: {
-      "Authorization": "Bearer $accessToken",
-      "Accept": "text/event-stream",
-      "Cache-Control": "no-cache",
-    }).listen((event) {
-      print('Id: ' + event.id!);
-      print('Event: ' + event.event!);
-      print('Data: ' + event.data!);
-    });
   }
 
   @override
   Future<void> mapIsReady(bool isReady) async {
-    debugPrint("Map Loaded");
+    if (isReady) {
+      debugPrint("Map Loaded");
+      _initSocket(accessToken: accessToken);
+    }
   }
 
   @override

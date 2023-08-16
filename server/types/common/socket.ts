@@ -3,10 +3,10 @@ import type { IOSetting } from "moleculer-io";
 import type { ApiSettingsSchema } from "moleculer-web";
 import type { GuardServiceSchema } from "./interfaces";
 
-export interface NotifServiceSettings extends ApiSettingsSchema {
+export interface SocketServiceSettings extends ApiSettingsSchema {
 	io?: IOSetting;
 }
 
-export type NotifServiceSchema = GuardServiceSchema<NotifServiceSettings>;
+export type SocketServiceSchema = GuardServiceSchema<SocketServiceSettings>;
 
-export type NotifThis = Service<NotifServiceSettings>;
+export type SocketThis = Service<SocketServiceSettings>;

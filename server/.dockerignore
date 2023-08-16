@@ -3,4 +3,10 @@ node_modules
 test
 .vscode
 data
-env
+dist
+.git*
+.jest.config.js
+.prettier*
+.eslint*
+.editorconfig
+README.md

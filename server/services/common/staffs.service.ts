@@ -2,24 +2,20 @@
 import bcrypt from "bcryptjs";
 import { pick } from "lodash";
 import type { ActionParams, Context } from "moleculer";
-import { Config } from "../../../common";
-import { ServiceError } from "../../../core/errors";
-import type { RefreshToken, StaffEntity } from "../../../entities";
-import { generateJWT, verifyJWT } from "../../../helpers/jwt.helper";
-import { createTestStaffs } from "../../../helpers/seed";
-import { DbMixin } from "../../../mixins";
+import { Config } from "../../common";
+import { ServiceError } from "../../core/errors";
+import type { RefreshToken, StaffEntity } from "../../entities";
+import { generateJWT, verifyJWT } from "../../helpers/jwt.helper";
+import { createTestStaffs } from "../../helpers/seed";
+import { DbMixin } from "../../mixins";
 import type {
 	AuthRefreshTokenParams,
 	AuthResolveTokenParams,
 	AuthValidateRoleParams,
-} from "../../../types";
-import type {
-	ActionCreateParams,
-	StaffsServiceSchema,
-	StaffsThis,
-} from "../../../types/common/staff";
-import type { UserAuthMeta } from "../../../types/common/user";
-import { UserRole } from "../../../types/common/user";
+} from "../../types";
+import type { ActionCreateParams, StaffsServiceSchema, StaffsThis } from "../../types/common/staff";
+import type { UserAuthMeta } from "../../types/common/user";
+import { UserRole } from "../../types/common/user";
 
 const validateStaffBase: ActionParams = {
 	username: {
@@ -37,6 +33,8 @@ const StaffsService: StaffsServiceSchema = {
 	name: "staffs",
 	authToken: Config.STAFFS_AUTH_TOKEN,
 	mixins: [DbMixin("staffs")],
+
+	dependencies: ["refreshTokens"],
 
 	settings: {
 		// Available fields in the responses
@@ -62,7 +60,7 @@ const StaffsService: StaffsServiceSchema = {
 		indexes: [{ username: 1 }],
 
 		accessTokenSecret: Config.ACCESS_TOKEN_SECRET || "test",
-		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY || "30m",
+		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY || "7d",
 
 		refreshTokenExpiry: Config.REFRESH_TOKEN_EXPIRY || 24 * 60 * 60 * 7,
 	},
@@ -85,16 +83,18 @@ const StaffsService: StaffsServiceSchema = {
 		list: {
 			restricted: ["api"],
 			auth: true,
-			roles: [UserRole.ADMIN],
+			// roles: [UserRole.ADMIN, UserRole.STAFF],
 			cache: {
 				ttl: 60 * 2, // 2min
 			},
 		},
+
 		get: {
 			restricted: ["api"],
 			auth: true,
-			roles: [UserRole.ADMIN],
+			roles: [UserRole.ADMIN, UserRole.STAFF],
 		},
+
 		update: {
 			restricted: ["api"],
 			auth: true,
@@ -108,11 +108,11 @@ const StaffsService: StaffsServiceSchema = {
 		find: {
 			restricted: ["api"],
 			auth: true,
-			roles: [UserRole.ADMIN],
+			roles: [UserRole.ADMIN, UserRole.STAFF],
 		},
 
 		login: {
-			restricted: ["api"],
+			// restricted: ["api"],
 			rest: "POST /login",
 			params: {
 				username: { type: "string" },
@@ -191,6 +191,8 @@ const StaffsService: StaffsServiceSchema = {
 				refreshToken: { type: "string" },
 			},
 			async handler(this: StaffsThis, ctx: Context<AuthRefreshTokenParams>): Promise<any> {
+				this.logger.info("Resolve token:", ctx.params);
+
 				const refreshToken: RefreshToken = await ctx.call(
 					"refreshTokens.verifyToken",
 					ctx.params,
@@ -260,6 +262,15 @@ const StaffsService: StaffsServiceSchema = {
 	beforeEntityUpdate(entity: any) {
 		entity.updatedAt = new Date();
 		return entity;
+	},
+
+	async started() {
+		this.logger.info("Staffs service started.");
+		const res = await this.actions.login({
+			username: "20127665",
+			password: "Vinh1706!",
+		});
+		this.logger.warn(res);
 	},
 };
 

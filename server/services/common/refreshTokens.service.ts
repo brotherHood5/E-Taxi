@@ -1,17 +1,17 @@
 import type { Context } from "moleculer";
 import { v4 as uuidv4 } from "uuid";
-import { Config } from "../../../common";
-import { ServiceError } from "../../../core/errors/global";
-import type { RefreshToken } from "../../../entities/refreshToken.entity";
-import { DbMixin } from "../../../mixins/db";
-import { MongoObjectId } from "../../../types/common";
+import { Config } from "../../common";
+import { ServiceError } from "../../core/errors/global";
+import type { RefreshToken } from "../../entities/refreshToken.entity";
+import { DbMixin } from "../../mixins/db";
+import { MongoObjectId } from "../../types/common";
 import type {
 	ObjectId,
 	TokenGenerateParams,
 	TokenServiceSchema,
 	TokenThis,
 	TokenVerifyParams,
-} from "../../../types/common";
+} from "../../types/common";
 
 const AuthService: TokenServiceSchema = {
 	name: "refreshTokens",

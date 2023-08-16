@@ -1,12 +1,12 @@
 import { sign, verify } from "jsonwebtoken";
 import type { Context, ServiceSchema } from "moleculer";
-import { Config } from "../../../common";
+import { Config } from "../../common";
 import {
 	ForbiddenServiceError,
 	InvalidTokenError,
 	TokenGenerationError,
-} from "../../../core/errors/guard.service.error";
-import CleanCacheMixin from "../../../mixins/cache.cleaner.mixin";
+} from "../../core/errors/guard.service.error";
+import CleanCacheMixin from "../../mixins/cache.cleaner.mixin";
 
 const GuardService: ServiceSchema = {
 	name: "guard",
@@ -74,7 +74,7 @@ const GuardService: ServiceSchema = {
 					if (err) {
 						return reject(new InvalidTokenError("Invalid service token"));
 					}
-
+					this.logger.info("Decoded token:", decoded);
 					if (services && services.indexOf(decoded.service) === -1) {
 						return reject(
 							new ForbiddenServiceError(

@@ -74,7 +74,7 @@ export default function apiAuthMixin(service: string): Partial<ServiceSchema> {
 								IUserBase | undefined,
 								AuthResolveTokenParams
 							>(`${service}.resolveToken`, { token });
-							if (user && user.active) {
+							if (user) {
 								return await Promise.resolve(user);
 							}
 						} catch (error) {
@@ -127,7 +127,6 @@ export default function apiAuthMixin(service: string): Partial<ServiceSchema> {
 				const allRoles = [...aroles, ...oroles].filter(Boolean);
 
 				const roles = [...new Set(allRoles)];
-
 				const valid = await ctx.call<boolean, AuthValidateRoleParams>(
 					`${service}.validateRole`,
 					{ roles },

@@ -34,11 +34,8 @@ class _CheckAuthState extends State<CheckAuth> {
   }
 
   Future<Widget> _checkAuth() async {
-    print("Checking auth...");
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? accessToken = prefs.getString('accessToken');
-    print("Access Token: ");
-    print(accessToken);
     await Future.delayed(Duration(seconds: 1));
 
     if (accessToken != null) {

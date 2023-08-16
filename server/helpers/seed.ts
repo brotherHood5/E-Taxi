@@ -1,6 +1,6 @@
 import { fakerVI as faker } from "@faker-js/faker";
 import _ from "lodash";
-import type { CustomerEntity, DriverEntity, StaffEntity } from "../entities";
+import type { AddressEntity, CustomerEntity, DriverEntity, StaffEntity } from "../entities";
 import { UserRole } from "../types/common";
 import { hashPassword } from "./password.helper";
 
@@ -92,4 +92,24 @@ export function createTestStaffs(n = 10): StaffEntity[] {
 		roles: [UserRole.STAFF],
 	});
 	return list;
+}
+
+export function createTestAddresses(n = 10): AddressEntity[] {
+	return _.times(n, () => {
+		const currentDate = faker.date.recent({ days: faker.number.int({ min: 1, max: 10 }) });
+		return {
+			homeNo: faker.location.streetAddress(),
+			street: faker.location.street(),
+			ward: faker.location.state(),
+			district: faker.location.county(),
+			city: faker.location.city(),
+			lat: faker.location.latitude() || undefined,
+			lon: faker.location.longitude() || undefined,
+			createdAt: currentDate,
+			updatedAt: faker.date.soon({
+				days: faker.number.int({ min: 1, max: 10 }),
+				refDate: currentDate,
+			}),
+		} as AddressEntity;
+	});
 }
