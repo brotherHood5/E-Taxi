@@ -65,4 +65,4 @@ dist/
 
 .vscode
 
-.env
+.env*

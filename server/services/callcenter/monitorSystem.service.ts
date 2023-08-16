@@ -75,6 +75,7 @@ const MonitorSystemService: ServiceSchema = {
 					msg = `[${request.phoneNumber}] - Unknown status`;
 					break;
 			}
+
 			await this.broker.call("socket.broadcast", {
 				namespace: "/monitor",
 				event: "log",

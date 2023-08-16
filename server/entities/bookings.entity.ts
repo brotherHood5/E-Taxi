@@ -13,12 +13,11 @@ export enum BookingStatus {
 export interface IBooking {
 	_id?: ObjectIdNull;
 	phoneNumber: string;
-	driver?: ObjectId;
+	driverId?: ObjectIdNull;
 	vehicleType: string;
-	pickupAddr: IAddress;
-	destAddr: IAddress;
+	pickupAddr: IAddress | ObjectId;
+	destAddr: IAddress | ObjectId;
 	status: BookingStatus;
-	count?: number;
 	createdAt?: Date;
 	updatedAt?: Date;
 }

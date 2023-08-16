@@ -1,21 +1,9 @@
 import type { Context, Service, ServiceSchema } from "moleculer";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Queue } from "queue-typescript";
-import type { IBooking } from "../../entities";
+import type { IAddress, IBooking } from "../../entities";
 import { BookingStatus } from "../../entities";
 import { AMQPMixin } from "../../mixins";
-
-// Danh sach nhan vien phan giai dia chi
-// - Ranh - Dang khong lam gi
-// - Ban - Dang lam viec
-
-// Khi co cong viec moi
-// - Neu co nhan vien ranh thi phan cong -> Ban
-// - Neu khong co nhan vien ranh thi doi cho den khi co nhan vien ranh
-
-// Khi nhan vien ban hoan thanh cong viec
-// - Neu co cong viec trong hang doi thi phan cong -> Ban
-// - Neu khong co cong viec trong hang doi thi chuyen sang ranh
 
 const CoordSystemService: ServiceSchema = {
 	name: "coordSystem",
@@ -31,10 +19,13 @@ const CoordSystemService: ServiceSchema = {
 			async handler(this: Service, channel: any, msg: any): Promise<any> {
 				const req = JSON.parse(msg.content.toString());
 				const socketId = this.freeStaffQueue.shift();
+
 				if (socketId) {
+					req.status = BookingStatus.COORDINATING;
+
 					this.addAMQPJob("monitorSystem.listen_event", {
 						id: req._id,
-						status: BookingStatus.COORDINATING,
+						status: req.status,
 						data: this.staffSocket[socketId],
 					});
 					await this.actions.sendBookingReqToStaff({ socketId, req });
@@ -58,6 +49,7 @@ const CoordSystemService: ServiceSchema = {
 	actions: {
 		sendBookingReqToStaff: {
 			async handler(this: Service, ctx: Context<any, any>): Promise<void> {
+				this.staffsTask[ctx.params.socketId] = { request: ctx.params.req };
 				await ctx.call("socket.broadcast", {
 					namespace: "/coord-system",
 					event: "receive_booking",
@@ -70,7 +62,10 @@ const CoordSystemService: ServiceSchema = {
 		resolvedAddress: {
 			async handler(this: Service, ctx: Context<any, any>): Promise<void> {
 				const { $socketId } = ctx.meta;
-				const { req }: { req: IBooking } = ctx.params;
+				const req = ctx.params as IBooking;
+				req.pickupAddr = req.pickupAddr as IAddress;
+				req.destAddr = req.destAddr as IAddress;
+
 				if (req.status === BookingStatus.COORDINATING) {
 					if (
 						!req.pickupAddr.lat ||
@@ -83,7 +78,8 @@ const CoordSystemService: ServiceSchema = {
 				}
 
 				// Free staff
-				if (this.staffSocket[$socketId]) {
+				if ($socketId && this.staffSocket[$socketId]) {
+					delete this.staffsTask[$socketId];
 					this.freeStaffQueue.push($socketId);
 				}
 
@@ -113,15 +109,22 @@ const CoordSystemService: ServiceSchema = {
 			handler(this: Service, ctx: Context<any, any>): any {
 				const socketId = ctx.params;
 
-				// Remove socket from staffSocket
 				if (this.staffSocket[socketId]) {
-					delete this.staffSocket[socketId];
-				}
+					// Remove socket from freeStaffQueue
+					const index = this.freeStaffQueue.indexOf(socketId);
+					if (index !== -1) {
+						// If no task, remove from freeStaffQueue
+						this.freeStaffQueue.splice(index, 1);
+					} else {
+						// If has task
+						// Requeue task
+						const task = this.staffsTask[socketId];
+						delete this.staffsTask[socketId];
+						this.addAMQPJob("coordSystem.address_resolve", task.request);
+					}
 
-				// Remove socket from freeStaffQueue
-				const index = this.freeStaffQueue.indexOf(socketId);
-				if (index !== -1) {
-					this.freeStaffQueue.splice(index, 1);
+					// Remove socket from staffSocket
+					delete this.staffSocket[socketId];
 				}
 
 				return true;
@@ -134,6 +137,7 @@ const CoordSystemService: ServiceSchema = {
 	started() {
 		this.logger.info("Coord System started!");
 		this.staffSocket = {};
+		this.staffsTask = {};
 		this.freeStaffQueue = [];
 	},
 
