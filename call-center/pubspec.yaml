@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_osm_plugin: ^0.55.3
+  flutter_osm_plugin: ^0.60.1
   lorem_ipsum: any
   rounded_loading_button: ^2.0.8
   http: any

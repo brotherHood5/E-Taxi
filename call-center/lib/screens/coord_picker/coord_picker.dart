@@ -361,36 +361,42 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
                     child: Container(
                       padding: const EdgeInsets.all(8.0),
                       child: OSMFlutter(
-                        isPicker: true,
                         controller: mapController,
-                        initZoom: 10,
-                        stepZoom: 2.0,
-                        userLocationMarker: UserLocationMaker(
-                          personMarker: const MarkerIcon(
+                        osmOption: OSMOption(
+                          isPicker: true,
+                          zoomOption: ZoomOption(
+                            minZoomLevel: 2.0,
+                            maxZoomLevel: 18.0,
+                            initZoom: 10,
+                            stepZoom: 2.0,
+                          ),
+                          userLocationMarker: UserLocationMaker(
+                            personMarker: const MarkerIcon(
+                              icon: Icon(
+                                Icons.location_history_rounded,
+                                color: Colors.red,
+                                size: 48,
+                              ),
+                            ),
+                            directionArrowMarker: const MarkerIcon(
+                              icon: Icon(
+                                Icons.double_arrow,
+                                size: 48,
+                              ),
+                            ),
+                          ),
+                          roadConfiguration: RoadOption(
+                            roadColor: Colors.yellowAccent,
+                          ),
+                          markerOption: MarkerOption(
+                              defaultMarker: const MarkerIcon(
                             icon: Icon(
-                              Icons.location_history_rounded,
+                              Icons.location_on,
                               color: Colors.red,
-                              size: 48,
+                              size: 56,
                             ),
-                          ),
-                          directionArrowMarker: const MarkerIcon(
-                            icon: Icon(
-                              Icons.double_arrow,
-                              size: 48,
-                            ),
-                          ),
+                          )),
                         ),
-                        roadConfiguration: RoadOption(
-                          roadColor: Colors.yellowAccent,
-                        ),
-                        markerOption: MarkerOption(
-                            defaultMarker: const MarkerIcon(
-                          icon: Icon(
-                            Icons.location_on,
-                            color: Colors.red,
-                            size: 56,
-                          ),
-                        )),
                       ),
                     ),
                   ),
