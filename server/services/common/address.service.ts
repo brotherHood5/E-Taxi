@@ -31,12 +31,17 @@ const AddressService: AddresssServiceSchema = {
 			city: "string",
 			lat: "number|optional",
 			lon: "number|optional",
+			count: { type: "number", optional: true },
 			createdAt: "date|optional",
 			updatedAt: "date|optional",
 		},
 	},
 
-	actions: {},
+	actions: {
+		get: {
+			cache: false,
+		},
+	},
 
 	methods: {
 		async seedDB(this) {
