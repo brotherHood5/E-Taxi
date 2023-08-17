@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:web/constant.dart';
+import '../../model/TopAddress.dart';
 import 'bookingForm.dart';
+import 'package:http/http.dart' as http;
 
 class Dashboard extends StatefulWidget {
   static const String route = '/dashboard';
@@ -13,201 +18,105 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   @override
   bool isExpanded = false;
+  String? phoneNumber;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<List<TopAddress>> _getTop5Address() async {
+    final res = await http.get(
+      Uri.parse(TOP5_ADDRESS_URL)
+          .replace(queryParameters: {"phoneNumber": "$phoneNumber"}),
+    );
+
+    if (res.statusCode == 200) {
+      List jsonRes = json.decode(res.body);
+      var data = jsonRes.map((data) => TopAddress.fromMap(data)).toList();
+      return data;
+    } else {
+      throw Exception("Error");
+    }
+  }
+
+  void onPhoneNumberChanged(text) {
+    setState(() {
+      phoneNumber = text;
+    });
+    print(text);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
           //Let's start by adding the Navigation Rail
-
           Expanded(
             child: Padding(
-              padding: EdgeInsets.all(60.0),
+              padding: EdgeInsets.only(top: 30.0, left: 30.0, right: 30.0),
               child: SingleChildScrollView(
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.comment,
-                                        size: 26.0,
-                                        color: Colors.red,
-                                      ),
-                                      SizedBox(
-                                        width: 15.0,
-                                      ),
-                                      Text(
-                                        "Comments",
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 26.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: 20.0,
-                                  ),
-                                  Text(
-                                    "+32 Comments",
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
+                        Expanded(
+                          child: BookingForm(
+                            onPhoneNumberChanged: onPhoneNumberChanged,
                           ),
                         ),
-                        Flexible(
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.comment,
-                                        size: 26.0,
-                                        color: Colors.red,
-                                      ),
-                                      SizedBox(
-                                        width: 15.0,
-                                      ),
-                                      Text(
-                                        "Comments",
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 26.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: 20.0,
-                                  ),
-                                  Text(
-                                    "+32 Comments",
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
+                        SizedBox(
+                          width: 40.0,
+                        ),
+                        Expanded(
+                          // To make sure DataTable takes up the available space
+                          child: FutureBuilder<List<TopAddress>>(
+                              future: _getTop5Address(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return DataTable(
+                                      headingRowColor:
+                                          MaterialStateProperty.resolveWith(
+                                              (states) => Colors.grey.shade200),
+                                      columns: [
+                                        DataColumn(label: Text("No")),
+                                        DataColumn(label: Text("Top address")),
+                                        DataColumn(label: Text("Counts")),
+                                      ],
+                                      rows: List.generate(snapshot.data!.length,
+                                          (index) {
+                                        var data = snapshot.data![index];
+                                        print("Data");
+                                        print(data);
+
+                                        var addr = data.address;
+                                        var list = [
+                                          addr.homeNo,
+                                          addr.street,
+                                          addr.ward,
+                                          addr.district,
+                                          addr.city,
+                                        ];
+                                        var formattedAddr = list.join(", ");
+                                        return DataRow(cells: [
+                                          DataCell(Text("${index + 1}")),
+                                          DataCell(Text(formattedAddr)),
+                                          DataCell(Text(data.count.toString())),
+                                        ]);
+                                      }));
+                                }
+
+                                return Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }),
                         ),
                       ],
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Flexible(
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.comment,
-                                        size: 26.0,
-                                        color: Colors.red,
-                                      ),
-                                      SizedBox(
-                                        width: 15.0,
-                                      ),
-                                      Text(
-                                        "Comments",
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 26.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: 20.0,
-                                  ),
-                                  Text(
-                                    "+32 Comments",
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Flexible(
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.comment,
-                                        size: 26.0,
-                                        color: Colors.red,
-                                      ),
-                                      SizedBox(
-                                        width: 15.0,
-                                      ),
-                                      Text(
-                                        "Comments",
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 26.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: 20.0,
-                                  ),
-                                  Text(
-                                    "+32 Comments",
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+
                     //Now let's set the article section
                     SizedBox(
                       height: 30.0,
@@ -223,11 +132,12 @@ class _DashboardState extends State<Dashboard> {
                             headingRowColor: MaterialStateProperty.resolveWith(
                                 (states) => Colors.grey.shade200),
                             columns: [
-                              DataColumn(label: Text("ID")),
-                              DataColumn(label: Text("Article Title")),
-                              DataColumn(label: Text("Creation Date")),
-                              DataColumn(label: Text("Views")),
-                              DataColumn(label: Text("Comments")),
+                              DataColumn(label: Text("No")),
+                              DataColumn(label: Text("home No")),
+                              DataColumn(label: Text("Street")),
+                              DataColumn(label: Text("Ward")),
+                              DataColumn(label: Text("District")),
+                              DataColumn(label: Text("City")),
                             ],
                             rows: [
                               DataRow(cells: [
@@ -237,6 +147,7 @@ class _DashboardState extends State<Dashboard> {
                                 DataCell(Text("${DateTime.now()}")),
                                 DataCell(Text("2.3K Views")),
                                 DataCell(Text("102Comments")),
+                                DataCell(Text("102Comments")),
                               ]),
                               DataRow(cells: [
                                 DataCell(Text("1")),
@@ -244,6 +155,7 @@ class _DashboardState extends State<Dashboard> {
                                     Text("How to build a Flutter Mobile App")),
                                 DataCell(Text("${DateTime.now()}")),
                                 DataCell(Text("21.3K Views")),
+                                DataCell(Text("1020Comments")),
                                 DataCell(Text("1020Comments")),
                               ]),
                               DataRow(cells: [
@@ -253,6 +165,7 @@ class _DashboardState extends State<Dashboard> {
                                 DataCell(Text("${DateTime.now()}")),
                                 DataCell(Text("2.3M Views")),
                                 DataCell(Text("10K Comments")),
+                                DataCell(Text("1020Comments")),
                               ]),
                             ]),
                         //Now let's set the pagination
@@ -260,34 +173,45 @@ class _DashboardState extends State<Dashboard> {
                           height: 40.0,
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
             ),
           ),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 30.0, vertical: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(onPressed: () {}, child: const Text("Booking")),
+                const SizedBox(
+                  width: 16.0,
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text("Clear"),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
+      // ElevatedButton(onPressed: () {}, child: const Text("Booking")),
+
       //let's add the floating action button
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          openModal(context);
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Colors.deepPurple.shade400,
-      ),
     );
   }
 
-  void openModal(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Book a taxi'),
-          content: BookingForm(),
-        );
-      },
-    );
-  }
+  // void openModal(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text('Book a taxi'),
+  //         content: BookingForm(),
+  //       );
+  //     },
+  //   );
 }

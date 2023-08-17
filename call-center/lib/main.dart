@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
       ),
       // home: const MyHomePage(title: 'E-Taxi'),
       debugShowCheckedModeBanner: false,
-      initialRoute: CoordSystem.route,
+      initialRoute: Dashboard.route,
       routes: {
         Dashboard.route: (context) => const Dashboard(),
         CoordSystem.route: (context) => const CheckAuth(),
