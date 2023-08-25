@@ -7,14 +7,14 @@ import '../../core/colors/hex.color.dart';
 
 enum FormData { Name, Phone, Email, Gender, password, ConfirmPassword }
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+class SScreen extends StatefulWidget {
+  const SScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<SScreen> createState() => _SScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _SScreenState extends State<SScreen> {
   Color enabled = const Color.fromARGB(255, 63, 56, 89);
   Color enabledtxt = Colors.white;
   Color deaible = Colors.grey;

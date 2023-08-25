@@ -25,7 +25,16 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
 
   void onOtpCompleted(String pin) async {
     setState(() {
-      enabled = true;
+      isOtpWrong = true;
+      if (isOtpWrong) {
+        Future.delayed(
+            const Duration(seconds: 3),
+            () => {
+                  setState(() {
+                    isOtpWrong = false;
+                  })
+                });
+      }
     });
     debugPrint(pin);
   }
@@ -40,6 +49,26 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  Future<void> onVerifyOtp() async {
+    setState(() {
+      isOtpWrong = false;
+    });
+    // var res = await Auth.verifyOtp(widget.phoneNumber, otp);
+    // if (res.statusCode == 200) {
+    //   var body = jsonDecode(res.body);
+    //   await saveCredential(
+    //     accessToken: body["accessToken"],
+    //     refreshToken: body["refreshToken"],
+    //   );
+    //   Navigator.of(context).pushReplacement(
+    //       MaterialPageRoute(builder: (context) => const MainScreen()));
+    // } else {
+    //   setState(() {
+    //     isOtpWrong = true;
+    //   });
+    // }
   }
 
   void startTimer() {
@@ -76,84 +105,83 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        shadowColor: Colors.transparent,
         leading: IconButton(
-            color: Colors.black,
             onPressed: () => Navigator.of(context).pop(false),
             icon: const Icon(Icons.arrow_back)),
       ),
-      body: Container(
-        margin: const EdgeInsets.only(top: topMarginInWelcomeScreen),
-        child: SingleChildScrollView(
-            child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: layoutMedium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                "otp_screen_title".tr(),
-                style: theme.textTheme.headlineSmall!.merge(const TextStyle(
-                  fontWeight: FontWeight.w600,
-                )),
-              ),
-              const SizedBox(height: layoutSmall),
-              RichText(
-                  text: TextSpan(
-                      text: "otp_screen_hint_1".tr(),
-                      style: theme.textTheme.titleMedium,
-                      children: [
-                    TextSpan(
-                        text:
-                            " ${widget.phonePrefix}  ${widget.phoneNumber}.\n",
-                        style: TextStyle(
-                            color: theme.textTheme.titleMedium!.color,
-                            fontSize: theme.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.w600)),
-                    TextSpan(
-                        text: "otp_screen_hint_2".tr(),
-                        style: theme.textTheme.titleMedium),
-                  ])),
-              const SizedBox(height: layoutXLarge),
-              OTPTextField(
-                hasError: isOtpWrong,
-                obscureText: true,
-                length: otpLength,
-                width: MediaQuery.of(context).size.width,
-                fieldWidth: otpFieldWidth,
-                style: const TextStyle(
-                  fontSize: 25,
-                ),
-                textFieldAlignment: MainAxisAlignment.start,
-                spaceBetween: layoutMedium,
-                fieldStyle: FieldStyle.box,
-                outlineBorderRadius: borderRadiusSmall,
-                onChanged: (pin) => {},
-                onCompleted: onOtpCompleted,
-              ),
-              if (isOtpWrong) const SizedBox(height: layoutSmall),
-              if (isOtpWrong)
+      body: Center(
+        child: Container(
+          margin: const EdgeInsets.only(top: layoutLarge),
+          child: SingleChildScrollView(
+              child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: layoutMedium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 Text(
-                  "invalid_otp".tr(),
-                  style: theme.textTheme.titleMedium!.merge(TextStyle(
-                    color: theme.colorScheme.error,
+                  "otp_screen_title".tr(),
+                  style: theme.textTheme.headlineSmall!.merge(const TextStyle(
+                    fontWeight: FontWeight.w600,
                   )),
                 ),
-              const SizedBox(height: layoutXXLarge),
-              Container(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton(
-                    onPressed: onResendOtpBtn,
-                    style: ButtonStyle(
-                        elevation: MaterialStateProperty.all(0),
-                        overlayColor: MaterialStateProperty.resolveWith(
-                            (states) => Colors.transparent)),
-                    child: Text(
-                        "${toBeginningOfSentenceCase("resend_otp_text".tr())!}${!enabled ? " (${formatTime(_secondsRemaining)})" : ""}"),
-                  )),
-            ],
-          ),
-        )),
+                const SizedBox(height: layoutSmall),
+                RichText(
+                    text: TextSpan(
+                        text: "otp_screen_hint_1".tr(),
+                        style: theme.textTheme.titleMedium,
+                        children: [
+                      TextSpan(
+                          text:
+                              " ${widget.phonePrefix}  ${widget.phoneNumber}.\n",
+                          style: TextStyle(
+                              color: theme.textTheme.titleMedium!.color,
+                              fontSize: theme.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.w600)),
+                      TextSpan(
+                          text: "otp_screen_hint_2".tr(),
+                          style: theme.textTheme.titleMedium),
+                    ])),
+                const SizedBox(height: layoutXLarge),
+                OTPTextField(
+                  hasError: isOtpWrong,
+                  obscureText: false,
+                  length: otpLength,
+                  width: MediaQuery.of(context).size.width,
+                  fieldWidth: otpFieldWidth,
+                  style: const TextStyle(
+                    fontSize: 20,
+                  ),
+                  textFieldAlignment: MainAxisAlignment.start,
+                  spaceBetween: layoutMedium,
+                  fieldStyle: FieldStyle.box,
+                  outlineBorderRadius: borderRadiusSmall,
+                  onChanged: (pin) => {},
+                  onCompleted: onOtpCompleted,
+                ),
+                if (isOtpWrong) const SizedBox(height: layoutSmall),
+                if (isOtpWrong)
+                  Text(
+                    "invalid_otp".tr(),
+                    style: theme.textTheme.titleMedium!.merge(TextStyle(
+                      color: theme.colorScheme.error,
+                    )),
+                  ),
+                const SizedBox(height: layoutXXLarge),
+                Container(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton(
+                      onPressed: onResendOtpBtn,
+                      style: ButtonStyle(
+                          elevation: MaterialStateProperty.all(0),
+                          overlayColor: MaterialStateProperty.resolveWith(
+                              (states) => Colors.transparent)),
+                      child: Text(
+                          "${toBeginningOfSentenceCase("resend_otp_text".tr())!}${!enabled ? " (${formatTime(_secondsRemaining)})" : ""}"),
+                    )),
+              ],
+            ),
+          )),
+        ),
       ),
     );
   }

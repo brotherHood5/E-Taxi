@@ -92,9 +92,85 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     )),
               ),
+              Container(
+                padding: const EdgeInsets.only(
+                    top: layoutXXLarge,
+                    left: layoutMedium,
+                    right: layoutMedium),
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              elevation: 0,
+                              shape: CircleBorder(),
+                              padding: EdgeInsets.all(8),
+                              backgroundColor:
+                                  theme.primaryColor.withOpacity(0.7),
+                              foregroundColor: Colors.red,
+                            ),
+                            child: Image.asset(
+                              "assets/images/motorbike.png",
+                              width: 48,
+                              height: 48,
+                            ),
+                          ),
+                          const SizedBox(height: layoutSmall),
+                          Text("Xe máy", style: theme.textTheme.bodyMedium)
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              elevation: 0,
+                              shape: const CircleBorder(),
+                              padding: EdgeInsets.all(8),
+                              backgroundColor:
+                                  theme.primaryColor.withOpacity(0.7),
+                              foregroundColor: Colors.red,
+                            ),
+                            child: Image.asset(
+                              "assets/images/car.png",
+                              width: 48,
+                              height: 48,
+                            ),
+                          ),
+                          const SizedBox(height: layoutSmall),
+                          Text("4 chỗ", style: theme.textTheme.bodyMedium)
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              elevation: 0,
+                              shape: CircleBorder(),
+                              padding: EdgeInsets.all(8),
+                              backgroundColor:
+                                  theme.primaryColor.withOpacity(0.7),
+                              foregroundColor: Colors.red,
+                            ),
+                            child: Image.asset(
+                              "assets/images/van.png",
+                              width: 48,
+                              height: 48,
+                            ),
+                          ),
+                          const SizedBox(height: layoutSmall),
+                          Text("7 chỗ", style: theme.textTheme.bodyMedium)
+                        ],
+                      ),
+                    ]),
+              ),
+              const SizedBox(height: layoutSmall),
               Expanded(
                   child: Container(
-                padding: const EdgeInsets.only(top: layoutXXLarge),
                 child: SingleChildScrollView(
                   child: Column(children: [
                     Container(

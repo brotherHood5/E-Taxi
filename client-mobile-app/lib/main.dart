@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
-import 'package:grab_clone/screens/main.dart';
-import 'package:grab_clone/screens/auth/login.dart';
+import 'package:grab_clone/screens/main_layout.dart';
+import 'package:grab_clone/screens/auth/logins.dart';
 import 'package:grab_clone/screens/auth/sign_up.dart';
+import 'package:grab_clone/screens/onboarding/splash_screen.dart';
 import 'package:grab_clone/screens/onboarding/verify_phone_number.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'firebase_options.dart';
 
-import 'package:grab_clone/screens/onboarding/welcome.dart';
+import 'package:grab_clone/screens/onboarding/login.dart';
 // import 'screens/home.dart';
 // import 'screens/onboarding/splash_screen.dart';
 
@@ -53,8 +52,9 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.orange,
       ),
-      home: const WelcomeScreen(),
+      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
+      builder: EasyLoading.init(),
     );
   }
 }
