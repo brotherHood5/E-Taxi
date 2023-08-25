@@ -77,8 +77,8 @@ const CustomersService: CustomersServiceSchema = {
 
 		indexes: [{ phoneNumber: 1 }],
 
-		accessTokenSecret: Config.ACCESS_TOKEN_SECRET || "test",
-		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY || "30m",
+		accessTokenSecret: Config.ACCESS_TOKEN_SECRET,
+		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY,
 
 		refreshTokenExpiry: Config.REFRESH_TOKEN_EXPIRY || 24 * 60 * 60 * 7,
 		otpExpireMin: Config.OTP_EXPIRE_MIN || 1,
@@ -158,6 +158,14 @@ const CustomersService: CustomersServiceSchema = {
 	beforeEntityUpdate(entity: any) {
 		entity.updatedAt = new Date();
 		return entity;
+	},
+
+	async started() {
+		const res = await this.actions.login({
+			phoneNumber: "0972360214",
+			password: "Vinh1706!",
+		});
+		this.logger.warn("Customer:", res.accessToken);
 	},
 };
 
