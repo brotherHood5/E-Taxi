@@ -24,11 +24,11 @@ const AddressService: AddresssServiceSchema = {
 		],
 
 		entityValidator: {
-			homeNo: "string",
-			street: "string",
-			ward: "string",
-			district: "string",
-			city: "string",
+			homeNo: "string|optional",
+			street: "string|optional",
+			ward: "string|optional",
+			district: "string|optional",
+			city: "string|optional",
 			lat: "number|optional",
 			lon: "number|optional",
 			count: { type: "number", optional: true },

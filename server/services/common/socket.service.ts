@@ -1,4 +1,4 @@
-import type { Context } from "moleculer";
+import type { Context, Service } from "moleculer";
 import SocketIOService from "moleculer-io";
 import ApiGateway from "moleculer-web";
 import { Config } from "../../common";
@@ -49,13 +49,20 @@ const SocketService: SocketServiceSchema = {
 							): any => {
 								ctx.meta = opts.meta;
 							},
-							onAfterCall: (ctx: any, socket: any, res: any): any => {},
 						},
 
 						async disconnect(data, ack) {
-							// eslint-disable-next-line @typescript-eslint/no-this-alias
-							const socket = this;
-							await socket.$service.broker.call("coordSystem.disconnect", socket.id);
+							try {
+								// eslint-disable-next-line @typescript-eslint/no-this-alias
+								const socket = this;
+								console.log(socket.client.user);
+								await socket.$service.broker.call(
+									"coordSystem.disconnect",
+									(socket.client.user as IUserBase)._id,
+								);
+							} catch (error) {
+								/* empty */
+							}
 						},
 					},
 				},
@@ -83,7 +90,18 @@ const SocketService: SocketServiceSchema = {
 							): any => {
 								ctx.meta = opts.meta;
 							},
-							onAfterCall: (ctx: any, socket: any, res: any): any => {},
+						},
+						async disconnect(data, ack) {
+							try {
+								// eslint-disable-next-line @typescript-eslint/no-this-alias
+								const socket = this;
+								await socket.$service.broker.emit(
+									"drivers.disconnect",
+									(socket.client.user as IUserBase)._id,
+								);
+							} catch (error) {
+								/* empty */
+							}
 						},
 					},
 				},
@@ -102,7 +120,6 @@ const SocketService: SocketServiceSchema = {
 							): any => {
 								ctx.meta = opts.meta;
 							},
-							onAfterCall: (ctx: any, socket: any, res: any): any => {},
 						},
 					},
 				},
@@ -115,7 +132,8 @@ const SocketService: SocketServiceSchema = {
 			params: {
 				room: "string",
 			},
-			handler(ctx: Context<any, any>): void {
+			handler(this: Service, ctx: Context<any, any>): void {
+				this.logger.info("join", ctx.params.room);
 				ctx.meta.$join = ctx.params.room;
 				if (ctx.options.parentCtx) {
 					ctx.options.parentCtx.meta = ctx.meta;
@@ -170,7 +188,6 @@ const SocketService: SocketServiceSchema = {
 
 			async handler(this: SocketThis, ctx: Context<any, any>): Promise<any> {
 				const { provider, data } = ctx.params;
-				this.logger.info("notify", provider, data);
 
 				if (provider === "sms") {
 					const result = await ctx.call("sms.send", data, {
@@ -196,9 +213,7 @@ const SocketService: SocketServiceSchema = {
 
 	methods: {
 		async socketAuthorize(socket: any) {
-			this.logger.info("Login using token:", socket.handshake.auth.token);
 			const accessToken = socket.handshake.auth.token;
-			const { refreshToken } = socket.handshake.auth;
 			const { service } = socket.handshake.query;
 
 			if (!service) {
@@ -214,6 +229,7 @@ const SocketService: SocketServiceSchema = {
 						AuthResolveTokenParams
 					>(`${service}.resolveToken`, { token: accessToken });
 					if (user) {
+						await this.socketJoinRooms(socket, user._id);
 						return await Promise.resolve(user);
 					}
 				} catch (error) {
