@@ -187,7 +187,7 @@ const AuthMixin: AuthMixinSchema = {
 					throw new ServiceError(err.message, 422);
 				}
 
-				await this.broker.call("notif.notify", {
+				await this.broker.call("socket.notify", {
 					provider: "sms",
 					data: { to: phoneNumber, message },
 				});
