@@ -1,4 +1,4 @@
-import { VehicleType } from "@entities";
+import { VehicleType } from "../../../../../entities";
 import type DriverSeatFinderStrategy from "./DriverSeatFinderStrategy ";
 import FourSeatStrategy from "./FourSeatStrategy";
 import SevenSeatStrategy from "./SevenSeatStrategy";

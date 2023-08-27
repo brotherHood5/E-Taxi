@@ -1,0 +1,80 @@
+name: Deploy to server
+
+on:
+  push:
+    branches: [server]
+
+env:
+    REMOTE_PATH: /mnt/server
+    DOCKER_ID: dqvinh1706
+    REPONAME: e-taxi-micro
+    
+jobs:
+    build_and_push:
+        runs-on: ubuntu-latest
+    
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+
+            - name: Create env file
+              run: |
+                touch .env
+                echo "${{ secrets.SERVER_ENV_PROD }}" > .env
+                cat .env
+                ls -a
+            
+            # - name: Login to DockerHub
+            #   uses: docker/login-action@v2
+            #   with:
+            #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+            #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+            # - name: Build and push image
+            #   run: |
+            #     cd docker/micro
+            #     docker compose build
+            #     docker compose push
+           
+    deploy:
+        needs: build_and_push
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Copy folder server to remote host via ssh
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                host: ${{ secrets.SERVER_HOST }}
+                username: ${{ secrets.SERVER_USER }}
+                key: ${{ secrets.SERVER_PRIVATE_KEY }}
+                overwrite: true
+                source: "./server"
+                target: ${{ env.REMOTE_PATH }}
+            
+            # - name: Deploy via ssh
+            #   uses: appleboy/ssh-action@master
+            #   with:
+            #     script_stop: true
+            #     host: ${{ secrets.SERVER_HOST }}
+            #     username: ${{ secrets.SERVER_USER }}
+            #     key: ${{ secrets.SERVER_PRIVATE_KEY }}
+            #     envs: REMOTE_PATH
+            #     script: |
+            #         echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            #         docker pull ${{ env.DOCKER_ID }}/${{ env.REPONAME }}:latest
+            #         cd $REMOTE_PATH/docker/micro
+            #         chmod +x docker-compose.yml start.sh
+            #         ./start.sh                    
+
+            # - name: Deploy via ssh
+            #   uses: appleboy/ssh-action@master
+            #   with:
+            #     script_stop: true
+            #     host: ${{ secrets.SERVER_HOST }}
+            #     username: ${{ secrets.SERVER_USER }}
+            #     key: ${{ secrets.SERVER_PRIVATE_KEY }}
+            #     envs: REMOTE_PATH
+            #     script: |
+            #         cd $REMOTE_PATH
+            #         cd docker/micro
+            #         chmod +x docker-compose.yml start.sh

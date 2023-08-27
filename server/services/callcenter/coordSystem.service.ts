@@ -1,6 +1,6 @@
-import { BookingStatus } from "@entities";
-import type { IAddress, IBooking } from "@entities";
 import type { Context, Service, ServiceSchema } from "moleculer";
+import { BookingStatus } from "../../entities";
+import type { IAddress, IBooking } from "../../entities";
 import { AMQPMixin } from "../../mixins";
 
 const CoordSystemService: ServiceSchema = {
