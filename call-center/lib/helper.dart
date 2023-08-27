@@ -9,7 +9,7 @@ import 'model/Staff.dart';
 
 Future<Map<String, dynamic>> getStoredData() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  Staff staff = Staff.fromJson(jsonDecode(prefs.getString('user')!));
+  Staff staff = Staff.fromMap(jsonDecode(prefs.getString('user')!));
 
   return {
     'user': staff,

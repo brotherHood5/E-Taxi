@@ -3,6 +3,7 @@ import 'package:web/screens/coord_picker/check_auth.dart';
 import 'package:web/screens/coord_picker/coord_picker.dart';
 import 'package:web/screens/coord_picker/login.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:web/screens/dash_board/dashboard.dart';
 
 void main() {
   runApp(const MyApp());
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: CoordSystem.route,
       routes: {
+        Dashboard.route: (context) => const Dashboard(),
         CoordSystem.route: (context) => const CheckAuth(),
       },
       builder: EasyLoading.init(),

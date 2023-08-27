@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:socket_io_client/socket_io_client.dart';
 import 'package:web/screens/coord_picker/coord_picker.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import '../../constant.dart';
 import '../../helper.dart';
@@ -141,6 +143,7 @@ class _LoginState extends State<Login> {
         await prefs.setString('refreshToken', data['refreshToken']);
 
         await Future.delayed(Duration(seconds: 1));
+
         Navigator.of(context).pushReplacement(MaterialPageRoute(
             builder: (BuildContext context) => const CoordSystem()));
         _btnController.reset();
