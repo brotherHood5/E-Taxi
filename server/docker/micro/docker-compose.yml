@@ -129,6 +129,18 @@ services:
       - rabbitmq
       - guard
 
+  address_customers:
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/address_customer.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+      - guard
+
   drivers:
     image: e-taxi-micro:latest
     env_file: docker-compose.env
