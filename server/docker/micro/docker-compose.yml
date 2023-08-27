@@ -307,8 +307,8 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.apiCallCenterPort.address=:4000"
-      - "--entrypoints.apiDriverPort.address=:4001"
-      - "--entrypoints.apiCustomerPort.address=:4002"
+      - "--entrypoints.apiCustomerPort.address=:4001"
+      - "--entrypoints.apiDriverPort.address=:4002"
       - "--entrypoints.socketPort.address=:4003"
     ports:
       - 4000:4000
