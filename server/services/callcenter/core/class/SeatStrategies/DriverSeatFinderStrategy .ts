@@ -1,4 +1,4 @@
-import type { IDriver } from "@entities";
+import type { IDriver } from "../../../../../entities";
 
 interface DriverSeatFinderStrategy {
 	findDriver(drivers: IDriver[]): IDriver[];

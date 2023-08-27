@@ -14,7 +14,7 @@ const ApiGatewayErrors = ApiGateway.Errors;
 
 const SocketService: SocketServiceSchema = {
 	name: "socket",
-	authToken: Config.NOTIF_AUTH_TOKEN,
+	authToken: Config.SOCKET_AUTH_TOKEN,
 	mixins: [SocketIOService as any],
 
 	settings: {

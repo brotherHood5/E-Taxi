@@ -1,5 +1,5 @@
-import type { IDriver } from "@entities";
-import { VehicleType } from "@entities";
+import type { IDriver } from "../../../../../entities";
+import { VehicleType } from "../../../../../entities";
 import type DriverSeatFinderStrategy from "./DriverSeatFinderStrategy ";
 
 class TwoSeatStrategy implements DriverSeatFinderStrategy {

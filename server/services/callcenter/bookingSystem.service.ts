@@ -1,7 +1,7 @@
-import { Config } from "@common";
-import { BookingStatus, VehicleType } from "@entities";
-import type { AddressEntity, IAddress, IBooking, IDriver } from "@entities";
 import type { Cachers, Service, ServiceSchema } from "moleculer";
+import { Config } from "../../common";
+import type { AddressEntity, IAddress, IBooking, IDriver } from "../../entities";
+import { BookingStatus, VehicleType } from "../../entities";
 import { AMQPMixin, DbMixin } from "../../mixins";
 import type { ObjectId } from "../../types";
 import { MongoObjectId } from "../../types";

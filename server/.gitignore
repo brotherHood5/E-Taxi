@@ -66,3 +66,4 @@ dist/
 .vscode
 
 .env*
+.env.dev

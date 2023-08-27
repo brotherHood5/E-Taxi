@@ -86,9 +86,6 @@ const CustomersService: CustomersServiceSchema = {
 
 	actions: {
 		create: {
-			restricted: ["api"],
-			auth: true,
-			// roles: [UserRole.ADMIN],
 			params: {
 				...validateCustomerBase,
 				passwordHash: { type: "string" },
@@ -99,6 +96,7 @@ const CustomersService: CustomersServiceSchema = {
 				return entity;
 			},
 		},
+
 		list: {
 			restricted: ["api"],
 			auth: true,
@@ -109,23 +107,19 @@ const CustomersService: CustomersServiceSchema = {
 		},
 		get: {
 			restricted: ["api"],
-			auth: true,
 			// roles: [UserRole.ADMIN],
 		},
 
 		update: {
 			restricted: ["api"],
-			auth: true,
 		},
 		remove: {
 			restricted: ["api"],
-			auth: true,
 			// roles: [UserRole.ADMIN],
 		},
 
 		find: {
 			restricted: ["api", "bookingSystem"],
-			auth: true,
 			roles: [UserRole.ADMIN, UserRole.STAFF],
 			cache: false,
 		},
