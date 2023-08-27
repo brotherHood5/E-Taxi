@@ -10,41 +10,20 @@ env:
     REPONAME: e-taxi-micro
     
 jobs:
-    build_and_push:
-        runs-on: ubuntu-latest
-    
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: server
-                
-            - name: Create env file
-              run: |
-                touch .env
-                echo "${{ secrets.SERVER_ENV_PROD }}" > .env
-                cat .env
-                ls -a
-            
-            # - name: Login to DockerHub
-            #   uses: docker/login-action@v2
-            #   with:
-            #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-            #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-            # - name: Build and push image
-            #   run: |
-            #     cd docker/micro
-            #     docker compose build
-            #     docker compose push
-           
     deploy:
-        needs: build_and_push
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3
               with:
                 ref: server
+
+            - name: Create env file
+              run: |
+                cd ./server
+                touch .env
+                echo "${{ secrets.SERVER_ENV_PROD }}" > .env
+                cat .env
+                ls -a
 
             - name: Copy folder server to remote host via ssh
               uses: appleboy/scp-action@v0.1.4
@@ -53,7 +32,7 @@ jobs:
                 username: ${{ secrets.SERVER_USER }}
                 key: ${{ secrets.SERVER_PRIVATE_KEY }}
                 overwrite: true
-                source: "."
+                source: "./server"
                 target: ${{ env.REMOTE_PATH }}
             
             # - name: Deploy via ssh
