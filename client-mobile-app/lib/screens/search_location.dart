@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grab_clone/widgets/search_app_bar.dart';
 import 'package:grab_clone/widgets/search_text_field.dart';
 
 class SearchLocationScreen extends StatefulWidget {
@@ -9,32 +10,21 @@ class SearchLocationScreen extends StatefulWidget {
 }
 
 class _SearchLocationScreenState extends State<SearchLocationScreen> {
+  void onSrcChange(String text) {
+    // Do something with the received text
+    print('Received text: $text');
+  }
+
+  void onDesChange(String text) {
+    // Do something with the received text
+    print('Received text: $text');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         body: Column(children: [
-      Container(
-        margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-        height: MediaQuery.of(context).size.height * 0.2,
-        color: Colors.red,
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            child: const BackButton(),
-          ),
-          Container(
-            width: MediaQuery.of(context).size.width * 0.8,
-            child: Column(children: [
-              Placeholder(
-                fallbackHeight: 20,
-              )
-            ]),
-          ),
-        ]),
-      ),
-      Center(
-        child: Text("Search Location"),
-      ),
+      // SearchAppBar(),
     ]));
   }
 }

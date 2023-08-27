@@ -1,6 +1,25 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+class ApiConstants {
+  static bool isDev = true;
+
+  // Local
+  static String host = '10.0.2.2';
+  static int port = 3001;
+
+  // Remote
+  static String remoteHost = "hausuper-s.me";
+  static int remotePort = 4001;
+
+  // Url
+  static String baseUrl = isDev ? 'http://$host:$port/api/v1' : prodUrl;
+  static String prodUrl = 'http://$remoteHost:$remotePort/api/v1';
+
+  // Endpoints
+  static String customersEndpoint = '$baseUrl/customers';
+}
+
 const topMarginInWelcomeScreen = 150.0;
 
 const minTouchSize = 48.0;
@@ -19,8 +38,8 @@ const passwordLength = 6;
 const passwordFieldWidth = 50.0;
 const passwordTryTimes = 5;
 
-const otpLength = 4;
-const otpFieldWidth = 50.0;
+const otpLength = 6;
+const otpFieldWidth = 48.0;
 const resendOtpTime = 10; // seconds
 
 const smallIcon = 16.0;
@@ -32,6 +51,9 @@ var highlightLoadingColor = Colors.grey[200]!;
 const shortDuration = Duration(milliseconds: 200);
 const mediumDuration = Duration(milliseconds: 400);
 const longDuration = Duration(milliseconds: 500);
+
+var passwordRegExp =
+    RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$');
 
 var navigationBarItems = [
   BottomNavigationBarItem(

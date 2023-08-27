@@ -1,11 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:grab_clone/constants.dart';
 import 'package:grab_clone/screens/search_location.dart';
 import 'package:grab_clone/widgets/location_list_item.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../widgets/skeletons/skeleton_location_list_item.dart';
+import 'onboarding/place_picker.dart';
 
 class Location {
   final String name;
@@ -92,9 +94,103 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     )),
               ),
+              Container(
+                padding: const EdgeInsets.only(
+                    top: layoutXXLarge,
+                    left: layoutMedium,
+                    right: layoutMedium),
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                      pageBuilder: (context, animation,
+                                              secondaryAnimation) =>
+                                          const PlacePicker(),
+                                      transitionDuration: shortDuration,
+                                      transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
+                                        return SlideTransition(
+                                          position: Tween<Offset>(
+                                            begin: const Offset(0, 1),
+                                            end: Offset.zero,
+                                          ).animate(animation),
+                                          child: child,
+                                        );
+                                      }));
+                            },
+                            style: ElevatedButton.styleFrom(
+                              elevation: 0,
+                              shape: CircleBorder(),
+                              padding: EdgeInsets.all(8),
+                              backgroundColor:
+                                  theme.primaryColor.withOpacity(0.7),
+                              foregroundColor: Colors.red,
+                            ),
+                            child: Image.asset(
+                              "assets/images/motorbike.png",
+                              width: 48,
+                              height: 48,
+                            ),
+                          ),
+                          const SizedBox(height: layoutSmall),
+                          Text("Xe máy", style: theme.textTheme.bodyMedium)
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              elevation: 0,
+                              shape: const CircleBorder(),
+                              padding: EdgeInsets.all(8),
+                              backgroundColor:
+                                  theme.primaryColor.withOpacity(0.7),
+                              foregroundColor: Colors.red,
+                            ),
+                            child: Image.asset(
+                              "assets/images/car.png",
+                              width: 48,
+                              height: 48,
+                            ),
+                          ),
+                          const SizedBox(height: layoutSmall),
+                          Text("4 chỗ", style: theme.textTheme.bodyMedium)
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              elevation: 0,
+                              shape: CircleBorder(),
+                              padding: EdgeInsets.all(8),
+                              backgroundColor:
+                                  theme.primaryColor.withOpacity(0.7),
+                              foregroundColor: Colors.red,
+                            ),
+                            child: Image.asset(
+                              "assets/images/van.png",
+                              width: 48,
+                              height: 48,
+                            ),
+                          ),
+                          const SizedBox(height: layoutSmall),
+                          Text("7 chỗ", style: theme.textTheme.bodyMedium)
+                        ],
+                      ),
+                    ]),
+              ),
+              const SizedBox(height: layoutSmall),
               Expanded(
                   child: Container(
-                padding: const EdgeInsets.only(top: layoutXXLarge),
                 child: SingleChildScrollView(
                   child: Column(children: [
                     Container(
@@ -148,23 +244,38 @@ class _HomeScreenState extends State<HomeScreen> {
             left: layoutMedium,
             right: layoutMedium,
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            const SearchLocationScreen(),
-                        transitionDuration: shortDuration,
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 1),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          );
-                        }));
+              onTap: () async {
+                // Navigator.push(
+                //     context,
+                //     PageRouteBuilder(
+                //         pageBuilder: (context, animation, secondaryAnimation) =>
+                //             const SearchLocationScreen(),
+                //         transitionDuration: shortDuration,
+                //         transitionsBuilder:
+                //             (context, animation, secondaryAnimation, child) {
+                //           return SlideTransition(
+                //             position: Tween<Offset>(
+                //               begin: const Offset(0, 1),
+                //               end: Offset.zero,
+                //             ).animate(animation),
+                //             child: child,
+                //           );
+                //         }));
+                GeoPoint? p = await showSimplePickerLocation(
+                  context: context,
+                  isDismissible: true,
+                  title: "Title dialog",
+                  textConfirmPicker: "pick",
+                  zoomOption: const ZoomOption(
+                    initZoom: 15,
+                    stepZoom: 2,
+                    minZoomLevel: 12,
+                    maxZoomLevel: 19,
+                  ),
+                  initCurrentUserPosition: UserTrackingOption(
+                    enableTracking: false,
+                  ),
+                );
               },
               child: Container(
                   height: kToolbarHeight,

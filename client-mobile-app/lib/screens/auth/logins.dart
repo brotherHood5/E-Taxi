@@ -5,17 +5,17 @@ import 'package:otp_text_field/style.dart';
 
 import '../../constants.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen(
+class LsScreen extends StatefulWidget {
+  const LsScreen(
       {super.key, required this.phoneNumber, this.phonePrefix = "+84"});
   final String phoneNumber;
   final String phonePrefix;
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LsScreen> createState() => _LsScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LsScreenState extends State<LsScreen> {
   int remainTryTimes = passwordTryTimes;
   bool isOtpWrong = false;
   void onOtpCompleted(String pin) async {
