@@ -288,7 +288,6 @@ services:
       - 4003:4003
 
       - 5050:80
-      - 443:443
       - 8080:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
