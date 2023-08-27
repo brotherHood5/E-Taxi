@@ -32,7 +32,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_dotenv: ^5.1.0
-  flutter_osm_plugin: ^0.60.1
+  flutter_osm_plugin: ^0.60.3
   hidable: ^1.0.4
   intl: any
   otp_text_field: ^1.1.3

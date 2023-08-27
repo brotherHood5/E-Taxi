@@ -67,3 +67,8 @@ Future<void> saveCredential({
         : Future<void>.value(true),
   ]);
 }
+
+Future<void> clearPreference() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+}

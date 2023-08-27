@@ -1,11 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:grab_clone/constants.dart';
 import 'package:grab_clone/screens/search_location.dart';
 import 'package:grab_clone/widgets/location_list_item.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../widgets/skeletons/skeleton_location_list_item.dart';
+import 'onboarding/place_picker.dart';
 
 class Location {
   final String name;
@@ -103,7 +105,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       Column(
                         children: [
                           ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () async {
+                              Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                      pageBuilder: (context, animation,
+                                              secondaryAnimation) =>
+                                          const PlacePicker(),
+                                      transitionDuration: shortDuration,
+                                      transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
+                                        return SlideTransition(
+                                          position: Tween<Offset>(
+                                            begin: const Offset(0, 1),
+                                            end: Offset.zero,
+                                          ).animate(animation),
+                                          child: child,
+                                        );
+                                      }));
+                            },
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               shape: CircleBorder(),
@@ -224,23 +244,38 @@ class _HomeScreenState extends State<HomeScreen> {
             left: layoutMedium,
             right: layoutMedium,
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            const SearchLocationScreen(),
-                        transitionDuration: shortDuration,
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 1),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          );
-                        }));
+              onTap: () async {
+                // Navigator.push(
+                //     context,
+                //     PageRouteBuilder(
+                //         pageBuilder: (context, animation, secondaryAnimation) =>
+                //             const SearchLocationScreen(),
+                //         transitionDuration: shortDuration,
+                //         transitionsBuilder:
+                //             (context, animation, secondaryAnimation, child) {
+                //           return SlideTransition(
+                //             position: Tween<Offset>(
+                //               begin: const Offset(0, 1),
+                //               end: Offset.zero,
+                //             ).animate(animation),
+                //             child: child,
+                //           );
+                //         }));
+                GeoPoint? p = await showSimplePickerLocation(
+                  context: context,
+                  isDismissible: true,
+                  title: "Title dialog",
+                  textConfirmPicker: "pick",
+                  zoomOption: const ZoomOption(
+                    initZoom: 15,
+                    stepZoom: 2,
+                    minZoomLevel: 12,
+                    maxZoomLevel: 19,
+                  ),
+                  initCurrentUserPosition: UserTrackingOption(
+                    enableTracking: false,
+                  ),
+                );
               },
               child: Container(
                   height: kToolbarHeight,

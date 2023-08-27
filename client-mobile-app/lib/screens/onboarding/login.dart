@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
+import '../main_layout.dart';
 import './sign_up.dart';
 import '../../../api/Auth.dart';
 import '../../../constants.dart';
@@ -86,16 +87,15 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         final res = await Auth.login(phoneNumber, password);
         await Future.delayed(const Duration(seconds: 3));
-        print(res.statusCode);
-        print(res.body);
         if (res.statusCode == 200) {
-          // Navigator.of(context).pushReplacementNamed('/home');
           var body = jsonDecode(res.body);
           EasyLoading.dismiss();
           saveCredential(
               userJsonEncoded: jsonEncode(body["user"]),
               accessToken: body["accessToken"],
               refreshToken: body["refreshToken"]);
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MainScreen()));
           return;
         }
 

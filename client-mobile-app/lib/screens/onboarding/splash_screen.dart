@@ -18,10 +18,12 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   Future<Map<String, dynamic>?> checkCredentials() async {
+    // await clearPreference();
     var data = await getStoredData();
     print("checkCredentials");
+
     if (data["accessToken"] == null) {
-      return data;
+      return null;
     }
 
     // Check if token is valid
@@ -70,21 +72,24 @@ class _SplashScreenState extends State<SplashScreen> {
     return FutureBuilder(
         future: checkCredentials(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done &&
-              snapshot.hasData) {
-            var user = snapshot.data?["user"];
-            if (user.phoneNumberVerified) {
-              // return const SignUpScreen();
-              return const MainScreen();
-            } else {
-              return VerifyPhoneNumberScreen(
-                phoneNumber: user.phoneNumber,
-              );
+          print(snapshot.connectionState);
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.hasData) {
+              var user = snapshot.data?["user"];
+              if (user.phoneNumberVerified) {
+                // return const SignUpScreen();
+                return const MainScreen();
+              } else {
+                return VerifyPhoneNumberScreen(
+                  phoneNumber: user.phoneNumber,
+                );
+              }
             }
-          }
 
-          if (snapshot.hasError || snapshot.data == null) {
-            return const LoginScreen();
+            if (snapshot.hasError || snapshot.data == null) {
+              return const LoginScreen();
+              // return const SignUpScreen();
+            }
           }
 
           return _defaultWidget;

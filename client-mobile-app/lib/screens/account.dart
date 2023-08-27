@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:grab_clone/constants.dart';
-import 'package:grab_clone/helpers/helper.dart';
+import '../constants.dart';
+import '../helpers/helper.dart';
 
 import '../models/Customer.dart';
+import 'onboarding/login.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -92,7 +93,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                   ),
-                                )
+                                ),
                               ],
                             ),
                           ),
@@ -102,6 +103,15 @@ class _AccountScreenState extends State<AccountScreen> {
                         height: layoutMedium,
                       ),
                       Text("Số điện thoại: ${user.phoneNumber}"),
+                      ElevatedButton(
+                          onPressed: () async {
+                            await clearPreference();
+                            await Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const LoginScreen()));
+                          },
+                          child: Text("Đăng xuất")),
                     ],
                   ),
                 ));

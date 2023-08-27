@@ -95,6 +95,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     Future<void> signup([bool mounted = true]) async {
       String phoneNumber = _phoneNumberController.text;
       String password = _passwordController.text;
+      FocusManager.instance.primaryFocus?.unfocus();
 
       EasyLoading.show(
           status: "Đang đăng ký",
@@ -103,8 +104,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       try {
         final res = await Auth.signUp(phoneNumber, password);
-        print(res.statusCode);
-        print(res.body);
         if (res.statusCode == 200) {
           Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => VerifyPhoneNumberScreen(
@@ -117,11 +116,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
               accessToken: body["accessToken"],
               refreshToken: body["refreshToken"]);
           return;
-        }
-
-        if (res.statusCode == 422) {
-          EasyLoading.showError("Số điện thoại đã được đăng ký",
-              maskType: EasyLoadingMaskType.black, dismissOnTap: true);
+        } else {
+          if (res.statusCode == 422) {
+            EasyLoading.showError("Số điện thoại đã được đăng ký",
+                maskType: EasyLoadingMaskType.black, dismissOnTap: true);
+          } else {
+            EasyLoading.showError(
+                "Có lỗi xảy ra khi đăng ký.\nVui lòng thử lại",
+                maskType: EasyLoadingMaskType.black,
+                dismissOnTap: true);
+          }
         }
       } catch (e) {
         print(e);
