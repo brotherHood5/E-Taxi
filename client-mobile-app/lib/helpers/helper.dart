@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../api/Auth.dart';
 import '../models/Customer.dart';
 
 showLoaderDialog(BuildContext context) {
@@ -71,4 +74,62 @@ Future<void> saveCredential({
 Future<void> clearPreference() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.clear();
+}
+
+Future<Customer?> getMe(String accessToken) async {
+  try {
+    var res = await Auth.resolveToken(accessToken);
+    if (res.statusCode == 200) {
+      await saveCredential(
+        userJsonEncoded: res.body,
+      );
+      var data = await getStoredData();
+      return data['user'] as Customer;
+    }
+  } catch (e) {
+    print(e);
+  }
+
+  return null;
+}
+
+Future<Map<String, dynamic>?> refreshToken(String refreshToken) async {
+  try {
+    var res = await Auth.refreshToken(refreshToken);
+    if (res.statusCode == 200) {
+      var body = jsonDecode(res.body);
+      await saveCredential(
+        accessToken: body["accessToken"],
+        refreshToken: body["refreshToken"],
+      );
+      return {
+        'accessToken': body["accessToken"],
+        'refreshToken': body["refreshToken"],
+      };
+    }
+  } catch (e) {
+    print(e);
+  }
+
+  return null;
+}
+
+Future<Map<String, dynamic>?> getNewCredential() async {
+  var data = await getStoredData();
+  if (data["accessToken"] == null) {
+    return null;
+  }
+
+  Customer? user = await getMe(data["accessToken"]);
+  if (user == null) {
+    var newTokens = await refreshToken(data["refreshToken"]);
+    if (newTokens != null) {
+      await getMe(newTokens["accessToken"]);
+      return await getStoredData();
+    }
+  } else {
+    return await getStoredData();
+  }
+
+  return null;
 }

@@ -5,7 +5,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import 'package:grab_clone/screens/main_layout.dart';
 import 'package:grab_clone/screens/auth/logins.dart';
-import 'package:grab_clone/screens/auth/sign_up.dart';
+import 'package:grab_clone/screens/auth/finish_sign_up.dart';
 import 'package:grab_clone/screens/onboarding/splash_screen.dart';
 import 'package:grab_clone/screens/onboarding/verify_phone_number.dart';
 

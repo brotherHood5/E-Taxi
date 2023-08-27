@@ -4,7 +4,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:grab_clone/screens/onboarding/verify_phone_number.dart';
 
+import '../auth/finish_sign_up.dart';
 import '../main_layout.dart';
 import './sign_up.dart';
 import '../../../api/Auth.dart';
@@ -94,6 +96,21 @@ class _LoginScreenState extends State<LoginScreen> {
               userJsonEncoded: jsonEncode(body["user"]),
               accessToken: body["accessToken"],
               refreshToken: body["refreshToken"]);
+
+          if (body["user"]["fullName"] == null || body["user"]["fullName"]) {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const FinishSignUpScreen()));
+            return;
+          }
+
+          if (body["user"]["phoneNumberVerified"] == false) {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => VerifyPhoneNumberScreen(
+                      phoneNumber: body["user"]["phoneNumber"],
+                    )));
+            return;
+          }
+
           Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const MainScreen()));
           return;

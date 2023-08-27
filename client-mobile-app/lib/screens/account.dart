@@ -85,7 +85,9 @@ class _AccountScreenState extends State<AccountScreen> {
                                 Container(
                                   alignment: Alignment.centerLeft,
                                   child: Text(
-                                    user.fullName!,
+                                    user.fullName == null
+                                        ? "Nguyễn Văn A"
+                                        : user.fullName!,
                                     style: Theme.of(context)
                                         .textTheme
                                         .headlineSmall!

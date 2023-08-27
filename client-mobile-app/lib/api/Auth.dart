@@ -1,5 +1,9 @@
+import 'package:grab_clone/api/ApiClient.dart';
+
 import '../../constants.dart';
 import 'package:http/http.dart' as http;
+
+final ETaxiClient _client = ETaxiClient();
 
 class Auth {
   static Future<http.Response> refreshToken(String token) {
@@ -43,5 +47,16 @@ class Auth {
   static Future<http.Response> verifyOtp(String phoneNumber, String otp) {
     return http.get(Uri.parse(
         "${ApiConstants.customersEndpoint}/verify-otp?phoneNumber=$phoneNumber&otp=$otp"));
+  }
+
+  static Future<http.Response> finishSignUp(String id, String fullName) {
+    return http.put(Uri.parse("${ApiConstants.customersEndpoint}/$id"), body: {
+      'fullName': fullName,
+    });
+  }
+
+  static Future<http.Response> sendOtp(String phoneNumber) {
+    return _client.get(Uri.parse(
+        "${ApiConstants.customersEndpoint}/resend-otp?phoneNumber=$phoneNumber"));
   }
 }

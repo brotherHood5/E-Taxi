@@ -239,7 +239,8 @@ const AuthMixin: AuthMixinSchema = {
 				const { token } = ctx.params;
 				const decoded = await verifyJWT(token, this.settings.accessTokenSecret);
 				const json = _.pick(decoded, ["user"]) as { user: IUserBase };
-				const result = await this.transformDocuments(ctx, {}, json.user);
+				const user = await this.actions.get({ id: json.user._id }, { parentCtx: ctx });
+				const result = await this.transformDocuments(ctx, {}, user);
 				return result;
 			},
 		},
@@ -263,7 +264,7 @@ const AuthMixin: AuthMixinSchema = {
 					]);
 				}
 
-				const result = await this.sendOtp(phoneNumber);
+				const result = await this.actions.sendOtp({ phoneNumber }, { parentCtx: ctx });
 				return result;
 			},
 		},

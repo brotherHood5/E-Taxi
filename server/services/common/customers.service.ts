@@ -107,6 +107,7 @@ const CustomersService: CustomersServiceSchema = {
 		},
 		get: {
 			restricted: ["api"],
+			cache: false,
 			// roles: [UserRole.ADMIN],
 		},
 

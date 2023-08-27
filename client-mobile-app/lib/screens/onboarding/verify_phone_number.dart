@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:grab_clone/screens/auth/finish_sign_up.dart';
 import 'package:otp_text_field/otp_field.dart';
 import 'package:otp_text_field/style.dart';
 
+import '../../api/Auth.dart';
 import '../../constants.dart';
+import '../../helpers/helper.dart';
 
 class VerifyPhoneNumberScreen extends StatefulWidget {
   const VerifyPhoneNumberScreen(
@@ -24,8 +28,9 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
   Timer? _timer;
 
   void onOtpCompleted(String pin) async {
+    bool success = await onVerifyOtp(pin);
     setState(() {
-      isOtpWrong = true;
+      isOtpWrong = !success;
       if (isOtpWrong) {
         Future.delayed(
             const Duration(seconds: 3),
@@ -51,24 +56,14 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
     super.dispose();
   }
 
-  Future<void> onVerifyOtp() async {
-    setState(() {
-      isOtpWrong = false;
-    });
-    // var res = await Auth.verifyOtp(widget.phoneNumber, otp);
-    // if (res.statusCode == 200) {
-    //   var body = jsonDecode(res.body);
-    //   await saveCredential(
-    //     accessToken: body["accessToken"],
-    //     refreshToken: body["refreshToken"],
-    //   );
-    //   Navigator.of(context).pushReplacement(
-    //       MaterialPageRoute(builder: (context) => const MainScreen()));
-    // } else {
-    //   setState(() {
-    //     isOtpWrong = true;
-    //   });
-    // }
+  Future<bool> onVerifyOtp(String otp) async {
+    var res = await Auth.verifyOtp(widget.phoneNumber, otp);
+    if (res.statusCode == 200) {
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const FinishSignUpScreen()));
+      return true;
+    }
+    return false;
   }
 
   void startTimer() {
@@ -95,7 +90,8 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final VoidCallback? onResendOtpBtn = enabled
-        ? () {
+        ? () async {
+            await Auth.sendOtp(widget.phoneNumber);
             setState(() {
               _secondsRemaining = resendOtpTime;
               startTimer();
