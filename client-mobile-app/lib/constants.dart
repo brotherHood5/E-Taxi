@@ -2,9 +2,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class ApiConstants {
+  static bool isDev = false;
+
+  // Local
   static String host = '10.0.2.2';
   static int port = 3001;
-  static String baseUrl = 'http://$host:$port/api/v1';
+
+  // Remote
+  static String remoteHost = "hausuper-s.me";
+  static int remotePort = 4001;
+
+  // Url
+  static String baseUrl = isDev == true ? 'http://$host:$port/api/v1' : prodUrl;
+  static String prodUrl = 'http://$remoteHost:$remotePort/api/v1';
+
+  // Endpoints
   static String customersEndpoint = '$baseUrl/customers';
 }
 
