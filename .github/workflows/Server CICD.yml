@@ -15,8 +15,10 @@ jobs:
     
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
-
+              uses: actions/checkout@v3
+              with:
+                ref: server
+                
             - name: Create env file
               run: |
                 touch .env
@@ -41,6 +43,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3
+              with:
+                ref: server
+
             - name: Copy folder server to remote host via ssh
               uses: appleboy/scp-action@v0.1.4
               with:
@@ -48,7 +53,7 @@ jobs:
                 username: ${{ secrets.SERVER_USER }}
                 key: ${{ secrets.SERVER_PRIVATE_KEY }}
                 overwrite: true
-                source: "./server"
+                source: "."
                 target: ${{ env.REMOTE_PATH }}
             
             # - name: Deploy via ssh
@@ -60,8 +65,6 @@ jobs:
             #     key: ${{ secrets.SERVER_PRIVATE_KEY }}
             #     envs: REMOTE_PATH
             #     script: |
-            #         echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-            #         docker pull ${{ env.DOCKER_ID }}/${{ env.REPONAME }}:latest
             #         cd $REMOTE_PATH/docker/micro
             #         chmod +x docker-compose.yml start.sh
             #         ./start.sh                    
