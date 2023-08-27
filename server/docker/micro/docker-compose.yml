@@ -129,7 +129,7 @@ services:
       - rabbitmq
       - guard
 
-  address_customers:
+  address_customer:
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
