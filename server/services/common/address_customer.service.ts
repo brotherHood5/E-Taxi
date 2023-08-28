@@ -34,6 +34,10 @@ const AddressCustomerService: ServiceSchema = {
 			cache: false,
 		},
 
+		get: {
+			cache: false,
+		},
+
 		getTop5Address: {
 			params: {
 				phoneNumber: "string",

@@ -9,15 +9,14 @@ export enum DriverStatus {
 }
 
 export enum VehicleType {
-	BIKE = "2",
-	CAR = "4",
-	CAR7 = "7",
-	UNKNOWN = "0",
+	TWO_SEATS = "2",
+	FOUR_SEATS = "4",
+	SEVEN_SEATS = "7",
 }
 
 export interface IDriver extends IUserBase {
 	driverStatus: DriverStatus;
-	vehicleType: VehicleType;
+	vehicleType?: VehicleType;
 }
 
 export class DriverEntity implements IDriver {
@@ -36,8 +35,6 @@ export class DriverEntity implements IDriver {
 	active = true;
 
 	driverStatus = DriverStatus.INACTIVE;
-
-	vehicleType = VehicleType.UNKNOWN;
 
 	roles = [UserRole.DRIVER];
 

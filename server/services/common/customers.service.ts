@@ -77,8 +77,8 @@ const CustomersService: CustomersServiceSchema = {
 
 		indexes: [{ phoneNumber: 1 }],
 
-		accessTokenSecret: Config.ACCESS_TOKEN_SECRET || "test",
-		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY || "30m",
+		accessTokenSecret: Config.ACCESS_TOKEN_SECRET,
+		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY,
 
 		refreshTokenExpiry: Config.REFRESH_TOKEN_EXPIRY || 24 * 60 * 60 * 7,
 		otpExpireMin: Config.OTP_EXPIRE_MIN || 1,
@@ -86,9 +86,6 @@ const CustomersService: CustomersServiceSchema = {
 
 	actions: {
 		create: {
-			restricted: ["api"],
-			auth: true,
-			// roles: [UserRole.ADMIN],
 			params: {
 				...validateCustomerBase,
 				passwordHash: { type: "string" },
@@ -99,6 +96,7 @@ const CustomersService: CustomersServiceSchema = {
 				return entity;
 			},
 		},
+
 		list: {
 			restricted: ["api"],
 			auth: true,
@@ -109,23 +107,19 @@ const CustomersService: CustomersServiceSchema = {
 		},
 		get: {
 			restricted: ["api"],
-			auth: true,
 			// roles: [UserRole.ADMIN],
 		},
 
 		update: {
 			restricted: ["api"],
-			auth: true,
 		},
 		remove: {
 			restricted: ["api"],
-			auth: true,
 			// roles: [UserRole.ADMIN],
 		},
 
 		find: {
 			restricted: ["api", "bookingSystem"],
-			auth: true,
 			roles: [UserRole.ADMIN, UserRole.STAFF],
 			cache: false,
 		},
@@ -158,6 +152,14 @@ const CustomersService: CustomersServiceSchema = {
 	beforeEntityUpdate(entity: any) {
 		entity.updatedAt = new Date();
 		return entity;
+	},
+
+	async started() {
+		const res = await this.actions.login({
+			phoneNumber: "0972360214",
+			password: "Vinh1706!",
+		});
+		this.logger.warn("Customer:", res.accessToken);
 	},
 };
 

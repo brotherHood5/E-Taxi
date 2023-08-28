@@ -2,8 +2,6 @@ version: "3.3"
 
 services:
   apiCallCenter:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
@@ -13,6 +11,9 @@ services:
       - redis
       - mongo
       - rabbitmq
+      - guard
+      - socket
+     
     links:
       - mongo
     labels:
@@ -22,8 +23,6 @@ services:
       - "traefik.http.services.apiCallCenter.loadbalancer.server.port=3000"
 
   apiCustomer:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
@@ -33,6 +32,9 @@ services:
       - redis
       - mongo
       - rabbitmq
+      - guard
+      - socket
+
     links:
       - mongo
     labels:
@@ -42,8 +44,6 @@ services:
       - "traefik.http.services.apiCustomer.loadbalancer.server.port=3001"
 
   apiDriver:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
@@ -53,6 +53,9 @@ services:
       - redis
       - mongo
       - rabbitmq
+      - guard
+      - socket
+
     links:
       - mongo
     labels:
@@ -62,8 +65,6 @@ services:
       - "traefik.http.services.apiDriver.loadbalancer.server.port=3002"
       
   socket:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
@@ -73,6 +74,18 @@ services:
       - redis
       - mongo
       - rabbitmq
+      - guard
+      - bookingSystem
+      - coordSystem
+      - monitorSystem
+      - customers
+      - drivers
+      - staffs
+      - sms
+      - refreshTokens
+      - address
+      - geo
+      - address_customer
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.socket.entrypoints=socketPort"
@@ -93,8 +106,6 @@ services:
       - rabbitmq
   
   geo:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
@@ -104,49 +115,57 @@ services:
       - redis
       - mongo
       - rabbitmq
+      - guard
 
   customers:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
-      SERVICES: common/customers/*.service.js
+      SERVICES: common/customers.service.js
     depends_on:
       - nats
       - redis
       - mongo
       - rabbitmq
+      - guard
+
+  address_customer:
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: common/address_customer.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+      - guard
 
   drivers:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
-      SERVICES: common/drivers/*.service.js
+      SERVICES: common/drivers.service.js
     depends_on:
       - nats
       - redis
       - mongo
       - rabbitmq
+      - guard
 
   staffs:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
-      SERVICES: common/staffs/*.service.js
+      SERVICES: common/staffs.service.js
     depends_on:
       - nats
       - redis
       - mongo
       - rabbitmq
+      - guard
 
   sms:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
@@ -156,10 +175,10 @@ services:
       - redis
       - mongo
       - rabbitmq
+      - guard
+
    
   refreshTokens:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
@@ -169,10 +188,10 @@ services:
       - redis
       - mongo
       - rabbitmq
+      - guard
+
 
   address:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
@@ -182,48 +201,64 @@ services:
       - redis
       - mongo
       - rabbitmq
+      - guard
 
   bookingSystem:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     restart: on-failure
     env_file: docker-compose.env
     environment:
       SERVICES: callcenter/booking*.service.js
     depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
+      nats:
+        condition: service_started
+      redis:
+        condition: service_started
+      mongo:
+        condition: service_started
+      rabbitmq: 
+        condition: service_healthy
+        restart: true
+      guard:
+        condition: service_started
 
   coordSystem:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     restart: on-failure
     env_file: docker-compose.env
     environment:
       SERVICES: callcenter/coord*.service.js
     depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
-   
+      nats:
+        condition: service_started
+      redis:
+        condition: service_started
+      mongo:
+        condition: service_started
+      rabbitmq: 
+        condition: service_healthy
+        restart: true
+      guard:
+        condition: service_started
+
   monitorSystem:
-    build:
-      context: ../..
     image: e-taxi-micro:latest
     restart: on-failure
     env_file: docker-compose.env
     environment:
       SERVICES: callcenter/monitor*.service.js
     depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
+      nats:
+        condition: service_started
+      redis:
+        condition: service_started
+      mongo:
+        condition: service_started
+      rabbitmq: 
+        condition: service_healthy
+        restart: true
+      guard:
+        condition: service_started
 
   mongo:
     image: mongo
@@ -248,10 +283,10 @@ services:
   rabbitmq:
     image: rabbitmq:3.12-management
     healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
-      interval: 5s
-      timeout: 15s
-      retries: 1
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
     ports:
       - 5672:5672
       - 15672:15672
@@ -272,8 +307,8 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.apiCallCenterPort.address=:4000"
-      - "--entrypoints.apiDriverPort.address=:4001"
-      - "--entrypoints.apiCustomerPort.address=:4002"
+      - "--entrypoints.apiCustomerPort.address=:4001"
+      - "--entrypoints.apiDriverPort.address=:4002"
       - "--entrypoints.socketPort.address=:4003"
     ports:
       - 4000:4000
@@ -282,7 +317,6 @@ services:
       - 4003:4003
 
       - 5050:80
-      - 443:443
       - 8080:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

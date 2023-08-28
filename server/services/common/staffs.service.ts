@@ -59,8 +59,8 @@ const StaffsService: StaffsServiceSchema = {
 
 		indexes: [{ username: 1 }],
 
-		accessTokenSecret: Config.ACCESS_TOKEN_SECRET || "test",
-		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY || "7d",
+		accessTokenSecret: Config.ACCESS_TOKEN_SECRET,
+		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY,
 
 		refreshTokenExpiry: Config.REFRESH_TOKEN_EXPIRY || 24 * 60 * 60 * 7,
 	},
@@ -112,7 +112,6 @@ const StaffsService: StaffsServiceSchema = {
 		},
 
 		login: {
-			// restricted: ["api"],
 			rest: "POST /login",
 			params: {
 				username: { type: "string" },
@@ -265,12 +264,11 @@ const StaffsService: StaffsServiceSchema = {
 	},
 
 	async started() {
-		this.logger.info("Staffs service started.");
 		const res = await this.actions.login({
 			username: "20127665",
 			password: "Vinh1706!",
 		});
-		this.logger.warn(res);
+		this.logger.warn("Staff:", res.accessToken);
 	},
 };
 

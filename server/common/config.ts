@@ -7,7 +7,7 @@ const processEnv = process.env;
 let configObj = processEnv;
 
 try {
-	const envVars = Object.keys(dotenvFlow.parse([".env"]));
+	const envVars = Object.keys(dotenvFlow.parse([".env", ".env.dev"]));
 	configObj = _.pick(processEnv, envVars);
 } catch (e) {
 	console.log(e);
@@ -53,10 +53,6 @@ export default class ConfigClass {
 	static CACHER = getValue(process.env.CACHER, undefined);
 
 	static MAXCALLLEVEL = +(process.env.MAXCALLLEVEL || 100);
-
-	static JWT_SECRET = process.env.JWT_SECRET || "dummy-secret";
-
-	static JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 
 	static MONGO_URI = process.env.MONGO_URI;
 
