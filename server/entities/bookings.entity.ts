@@ -27,5 +27,7 @@ export interface IBooking {
 	status: BookingStatus;
 	createdAt?: Date;
 	updatedAt?: Date;
+	price?: string;
+	distance?: number;
 	inApp?: boolean;
 }

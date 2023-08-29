@@ -42,6 +42,8 @@ const BookingService: ServiceSchema = {
 			"pickupAddr",
 			"destAddr",
 			"status",
+			"price",
+			"distance",
 			"inApp",
 			"createdAt",
 			"updatedAt",
@@ -106,7 +108,7 @@ const BookingService: ServiceSchema = {
 		},
 
 		"booking.new": {
-			async handler(this: Service, channel: any, msg: any): Promise<void> {
+			handler(this: Service, channel: any, msg: any): void {
 				const req = JSON.parse(msg.content.toString()) as IBooking;
 				req.status = BookingStatus.NEW;
 

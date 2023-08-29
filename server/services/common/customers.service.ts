@@ -135,6 +135,18 @@ const CustomersService: CustomersServiceSchema = {
 				return this.transformDocuments(ctx, {}, entity);
 			},
 		},
+
+		calculatePrice: {
+			rest: "GET /calculate-rice",
+			params: {
+				distance: "number",
+				vehicleType: ["string", "number"],
+			},
+			async handler(ctx) {
+				const result = await ctx.call("price.calculatePrice", ctx.params);
+				return result;
+			},
+		},
 	},
 
 	methods: {
