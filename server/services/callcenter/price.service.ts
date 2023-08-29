@@ -11,7 +11,7 @@ const PriceService: ServiceSchema = {
 	},
 	actions: {
 		calculatePrice: {
-			rest: "GET /calculate-rice",
+			rest: "GET /calculate-price",
 			params: {
 				distance: "number",
 				vehicleType: ["string", "number"],

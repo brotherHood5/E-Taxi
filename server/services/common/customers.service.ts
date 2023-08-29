@@ -137,7 +137,7 @@ const CustomersService: CustomersServiceSchema = {
 		},
 
 		calculatePrice: {
-			rest: "GET /calculate-rice",
+			rest: "GET /calculate-price",
 			params: {
 				distance: "number",
 				vehicleType: ["string", "number"],
