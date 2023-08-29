@@ -107,9 +107,8 @@ const BookingService: ServiceSchema = {
 
 		"booking.new": {
 			async handler(this: Service, channel: any, msg: any): Promise<void> {
-				let req = JSON.parse(msg.content.toString()) as IBooking;
+				const req = JSON.parse(msg.content.toString()) as IBooking;
 				req.status = BookingStatus.NEW;
-				req = await this.createNew(req);
 
 				req.destAddr = req.destAddr as AddressEntity;
 				req.pickupAddr = req.pickupAddr as AddressEntity;
@@ -174,7 +173,6 @@ const BookingService: ServiceSchema = {
 					// destAddr: id2,
 					status: BookingStatus.NEW,
 				};
-
 				const result = await this.createNew(data);
 				this.addAMQPJob("booking.new", result);
 				return result;
@@ -230,10 +228,10 @@ const BookingService: ServiceSchema = {
 				pickupAddr: "object", // Dia chi nay da co lat lon ko can phan giai
 				destAddr: "object", // Dia chi nay da co lat lon ko can phan giai
 			},
-			handler(this: Service, ctx: any) {
-				const data = ctx.params;
-				data.inApp = true;
-				this.addAMQPJob("booking.new", data);
+			async handler(this: Service, ctx: any) {
+				const result = await this.createNew({ ...ctx.params, inApp: true });
+				this.addAMQPJob("booking.new", result);
+				return result;
 			},
 		},
 
@@ -247,8 +245,10 @@ const BookingService: ServiceSchema = {
 				pickupAddr: [{ type: "object" }, { type: "string" }],
 				destAddr: [{ type: "object" }, { type: "string" }],
 			},
-			handler(this: Service, ctx: any) {
-				this.addAMQPJob("booking.new", ctx.params);
+			async handler(this: Service, ctx: any) {
+				const result = await this.createNew(ctx.params);
+				this.addAMQPJob("booking.new", result);
+				return result;
 			},
 		},
 
@@ -348,7 +348,7 @@ const BookingService: ServiceSchema = {
 			async handler(this: Service, ctx: any): Promise<any> {
 				const { phoneNumber } = ctx.params;
 				const data = await this.actions.find({
-					query: { phoneNumber },
+					query: { phoneNumber, inApp: undefined },
 					populate: ["pickupAddr", "destAddr"],
 					sort: "-updatedAt",
 				});
