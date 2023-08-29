@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:grab_clone/screens/home.dart';
-import 'package:grab_clone/screens/account.dart';
+import 'package:grab_clone/screens/pages/home.dart';
+import 'package:grab_clone/screens/pages/account.dart';
 import 'package:hidable/hidable.dart';
 
-import '../constants.dart';
+import '../../constants.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);

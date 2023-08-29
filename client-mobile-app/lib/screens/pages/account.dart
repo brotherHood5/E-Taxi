@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../constants.dart';
-import '../helpers/helper.dart';
+import '../../constants.dart';
+import '../../helpers/helper.dart';
 
-import '../models/Customer.dart';
-import 'onboarding/login.dart';
+import '../../models/Customer.dart';
+import '../auth/login.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -107,7 +107,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       Text("Số điện thoại: ${user.phoneNumber}"),
                       ElevatedButton(
                           onPressed: () async {
-                            await clearPreference();
+                            await clearCredential();
                             await Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(

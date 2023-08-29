@@ -4,11 +4,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:grab_clone/screens/onboarding/login.dart';
-import 'package:grab_clone/screens/onboarding/verify_phone_number.dart';
+import 'package:grab_clone/screens/auth/login.dart';
+import 'package:grab_clone/screens/auth/verify_otp.dart';
 import 'package:intl/intl.dart';
 
-import '../../api/Auth.dart';
+import '../../api/AuthService.dart';
 import '../../constants.dart';
 import '../../helpers/helper.dart';
 
@@ -103,10 +103,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           dismissOnTap: false);
 
       try {
-        final res = await Auth.signUp(phoneNumber, password);
+        final res = await AuthService.signUp(phoneNumber, password);
         if (res.statusCode == 200) {
           Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => VerifyPhoneNumberScreen(
+              builder: (context) => VerifyOtpScreen(
                     phoneNumber: phoneNumber,
                   )));
           var body = jsonDecode(res.body);

@@ -2,14 +2,27 @@ import 'package:http/http.dart' as http;
 
 import '../helpers/helper.dart';
 
-class ETaxiClient extends http.BaseClient {
-  static Future<Map<String, String>> _getHeaders() async {
-    var data = await getStoredData();
+class ApiClient extends http.BaseClient {
+  Future<String?> _getAccessToken() async {
+    var data = await getNewCredential();
+    return data != null ? data["accessToken"] : null;
+  }
+
+  Future<Map<String, String>> _getHeaders() async {
+    String? token = await _getAccessToken();
 
     return {
-      'Authentication': 'Bearer ${data["accessToken"]}',
+      'Authorization': 'Bearer $token',
     };
   }
+
+  static final ApiClient _singleton = ApiClient._internal();
+
+  factory ApiClient() {
+    return _singleton;
+  }
+
+  ApiClient._internal();
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {

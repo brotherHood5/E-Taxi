@@ -15,9 +15,6 @@ class ApiConstants {
   // Url
   static String baseUrl = isDev ? 'http://$host:$port/api/v1' : prodUrl;
   static String prodUrl = 'http://$remoteHost:$remotePort/api/v1';
-
-  // Endpoints
-  static String customersEndpoint = '$baseUrl/customers';
 }
 
 const topMarginInWelcomeScreen = 150.0;
@@ -40,7 +37,7 @@ const passwordTryTimes = 5;
 
 const otpLength = 6;
 const otpFieldWidth = 48.0;
-const resendOtpTime = 10; // seconds
+const resendOtpTime = 60; // seconds
 
 const smallIcon = 16.0;
 const mediumIcon = 24.0;
