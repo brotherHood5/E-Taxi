@@ -71,6 +71,7 @@ jobs:
           overwrite: true
           source: "call-center/Dockerfile,build/*"
           target: ${{ env.REMOTE_PATH }}
+          strip_components: 1
         
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
@@ -82,10 +83,10 @@ jobs:
           envs: CONTAINER_NAME,IMAGE_NAME,REMOTE_PATH
           script: |
             cd /mnt/call-center 
-            # Stop and remove the old container if it exists
-            docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
             # Build docker image 
             docker build -t ${{ env.IMAGE_NAME }}:latest .
+            # Stop and remove the old container if it exists
+            docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
             # Run a new container 
             docker run -d \
             --restart always \
