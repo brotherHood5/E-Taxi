@@ -1,4 +1,4 @@
-import type { ActionParams, Context } from "moleculer";
+import type { ActionParams, Context, Service } from "moleculer";
 import { Config } from "../../common";
 import { createTestCustomers } from "../../helpers/seed";
 import { AuthMixin, DbMixin } from "../../mixins";
@@ -77,8 +77,8 @@ const CustomersService: CustomersServiceSchema = {
 
 		indexes: [{ phoneNumber: 1 }],
 
-		accessTokenSecret: Config.ACCESS_TOKEN_SECRET || "test",
-		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY || "30m",
+		accessTokenSecret: Config.ACCESS_TOKEN_SECRET,
+		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY,
 
 		refreshTokenExpiry: Config.REFRESH_TOKEN_EXPIRY || 24 * 60 * 60 * 7,
 		otpExpireMin: Config.OTP_EXPIRE_MIN || 1,
@@ -86,9 +86,6 @@ const CustomersService: CustomersServiceSchema = {
 
 	actions: {
 		create: {
-			restricted: ["api"],
-			auth: true,
-			// roles: [UserRole.ADMIN],
 			params: {
 				...validateCustomerBase,
 				passwordHash: { type: "string" },
@@ -99,6 +96,7 @@ const CustomersService: CustomersServiceSchema = {
 				return entity;
 			},
 		},
+
 		list: {
 			restricted: ["api"],
 			auth: true,
@@ -108,24 +106,20 @@ const CustomersService: CustomersServiceSchema = {
 			},
 		},
 		get: {
-			restricted: ["api"],
-			auth: true,
+			cache: false,
 			// roles: [UserRole.ADMIN],
 		},
 
 		update: {
 			restricted: ["api"],
-			auth: true,
 		},
 		remove: {
 			restricted: ["api"],
-			auth: true,
 			// roles: [UserRole.ADMIN],
 		},
 
 		find: {
 			restricted: ["api", "bookingSystem"],
-			auth: true,
 			roles: [UserRole.ADMIN, UserRole.STAFF],
 			cache: false,
 		},
@@ -138,6 +132,27 @@ const CustomersService: CustomersServiceSchema = {
 			async handler(this: CustomersThis, ctx: Context<any, UserAuthMeta>) {
 				const entity = await this._get(ctx, { id: ctx.meta.user._id });
 				return this.transformDocuments(ctx, {}, entity);
+			},
+		},
+
+		calculatePrice: {
+			rest: "GET /calculate-price",
+			params: {
+				distance: ["string", "number"],
+				vehicleType: ["string", "number"],
+			},
+			async handler(ctx) {
+				const result = await ctx.call("price.calculatePrice", ctx.params);
+				return result;
+			},
+		},
+
+		book: {
+			rest: "POST /book",
+			async handler(this: CustomersThis, ctx) {
+				this.logger.info(ctx.params);
+				const result = await ctx.call("bookingSystem.bookThroughApp", ctx.params);
+				return result;
 			},
 		},
 	},
@@ -158,6 +173,14 @@ const CustomersService: CustomersServiceSchema = {
 	beforeEntityUpdate(entity: any) {
 		entity.updatedAt = new Date();
 		return entity;
+	},
+
+	async started() {
+		const res = await this.actions.login({
+			phoneNumber: "0972360214",
+			password: "Vinh1706!",
+		});
+		this.logger.warn("Customer:", res.accessToken);
 	},
 };
 

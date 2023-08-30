@@ -71,7 +71,6 @@ const AuthMixin: AuthMixinSchema = {
 
 	actions: {
 		signup: {
-			restricted: ["api"],
 			rest: "POST /signup",
 			auth: false,
 			params: baseAuthParam,
@@ -118,7 +117,6 @@ const AuthMixin: AuthMixinSchema = {
 		},
 
 		login: {
-			restricted: ["api"],
 			rest: "POST /login",
 			auth: false,
 			params: baseAuthParam,
@@ -165,6 +163,7 @@ const AuthMixin: AuthMixinSchema = {
 					...ctx.meta.$responseHeaders,
 					Authorization: `Bearer ${accessToken}`,
 				};
+				await this.broker.emit(`${this.name}.logged`, doc);
 				return { user: doc, accessToken, refreshToken };
 			},
 		},
@@ -188,7 +187,7 @@ const AuthMixin: AuthMixinSchema = {
 					throw new ServiceError(err.message, 422);
 				}
 
-				await this.broker.call("notif.notify", {
+				await this.broker.call("socket.notify", {
 					provider: "sms",
 					data: { to: phoneNumber, message },
 				});
@@ -201,7 +200,6 @@ const AuthMixin: AuthMixinSchema = {
 		},
 
 		refreshToken: {
-			restricted: ["api"],
 			rest: "POST /refresh-token",
 			auth: false,
 			params: {
@@ -240,13 +238,14 @@ const AuthMixin: AuthMixinSchema = {
 			): Promise<IUserBase> {
 				const { token } = ctx.params;
 				const decoded = await verifyJWT(token, this.settings.accessTokenSecret);
-				const result = _.pick(decoded, ["user"]) as { user: IUserBase };
-				return result.user;
+				const json = _.pick(decoded, ["user"]) as { user: IUserBase };
+				const user = await this.actions.get({ id: json.user._id }, { parentCtx: ctx });
+				const result = await this.transformDocuments(ctx, {}, user);
+				return result;
 			},
 		},
 
 		resendOtp: {
-			restricted: ["api"],
 			rest: "GET /resend-otp",
 			auth: true,
 			params: {
@@ -265,13 +264,12 @@ const AuthMixin: AuthMixinSchema = {
 					]);
 				}
 
-				const result = await this.sendOtp(phoneNumber);
+				const result = await this.actions.sendOtp({ phoneNumber }, { parentCtx: ctx });
 				return result;
 			},
 		},
 
 		verifyOtp: {
-			restricted: ["api"],
 			rest: "GET /verify-otp",
 			params: verifyOtpParam,
 			async handler(
@@ -306,7 +304,6 @@ const AuthMixin: AuthMixinSchema = {
 		},
 
 		validateRole: {
-			restricted: ["api"],
 			params: {
 				roles: [
 					{ type: "array", items: "string", enum: Object.values(UserRole) },

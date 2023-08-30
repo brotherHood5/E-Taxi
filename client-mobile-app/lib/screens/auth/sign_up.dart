@@ -1,590 +1,284 @@
+import 'dart:convert';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:grab_clone/constants.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:grab_clone/screens/auth/login.dart';
+import 'package:grab_clone/screens/auth/verify_otp.dart';
+import 'package:intl/intl.dart';
 
-import '../../core/animations/fade.animation.dart';
-import '../../core/colors/hex.color.dart';
-
-enum FormData { Name, Phone, Email, Gender, password, ConfirmPassword }
+import '../../api/AuthService.dart';
+import '../../constants.dart';
+import '../../helpers/helper.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+  const SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  Color enabled = const Color.fromARGB(255, 63, 56, 89);
-  Color enabledtxt = Colors.white;
-  Color deaible = Colors.grey;
-  Color backgroundColor = const Color(0xFF1F1A30);
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
-  FormData? selected;
+  String? _phoneNumberError = null;
+  String? _passwordError = null;
+  String? _confirmPasswordError = null;
 
-  final TextEditingController _nameController = new TextEditingController();
-  final TextEditingController _addressController = new TextEditingController();
+  bool _hiddenPassword = true;
 
-  bool validateForm() {
-    if (_nameController.text.isEmpty || _addressController.text.isEmpty) {
-      return false;
-    }
-    return true;
+  @override
+  void initState() {
+    super.initState();
+    _phoneNumberController.text = "0972360012";
+    _passwordController.text = "Vinh1706!";
+    _confirmPasswordController.text = "Vinh1706!";
+
+    _phoneNumberController.addListener(() {
+      setState(() {
+        if (_phoneNumberController.text.length != 10) {
+          _phoneNumberError = "Số điện thoại không hợp lệ";
+        } else {
+          _phoneNumberError = null;
+        }
+      });
+      if (_phoneNumberController.text.length > 10) {
+        _phoneNumberController.text =
+            _phoneNumberController.text.substring(0, 10);
+        _phoneNumberController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _phoneNumberController.text.length));
+      }
+    });
+
+    _passwordController.addListener(() {
+      String password = _passwordController.text;
+      setState(() {
+        if (password.length < 8) {
+          _passwordError = "Mật khẩu phải có ít nhất 8 ký tự";
+        } else {
+          if (!passwordRegExp.hasMatch(password)) {
+            _passwordError =
+                "Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt";
+            return;
+          }
+          _passwordError = null;
+        }
+      });
+      if (password.length > 32) {
+        _passwordController.text = _passwordController.text.substring(0, 32);
+        _passwordController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _passwordController.text.length));
+      }
+    });
+
+    _confirmPasswordController.addListener(() {
+      String confirmPassword = _confirmPasswordController.text;
+      String password = _passwordController.text;
+      setState(() {
+        if (confirmPassword.isEmpty || confirmPassword == password) {
+          _confirmPasswordError = null;
+          return;
+        }
+        _confirmPasswordError = "Mật khẩu không khớp";
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    _nameController.addListener(() {
-      setState(() {});
-    });
-    _addressController.addListener(() {
-      setState(() {});
-    });
+
+    Future<void> signup([bool mounted = true]) async {
+      String phoneNumber = _phoneNumberController.text;
+      String password = _passwordController.text;
+      FocusManager.instance.primaryFocus?.unfocus();
+
+      EasyLoading.show(
+          status: "Đang đăng ký",
+          maskType: EasyLoadingMaskType.black,
+          dismissOnTap: false);
+
+      try {
+        final res = await AuthService.signUp(phoneNumber, password);
+        if (res.statusCode == 200) {
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => VerifyOtpScreen(
+                    phoneNumber: phoneNumber,
+                  )));
+          var body = jsonDecode(res.body);
+          EasyLoading.dismiss();
+          saveCredential(
+              userJsonEncoded: jsonEncode(body["user"]),
+              accessToken: body["accessToken"],
+              refreshToken: body["refreshToken"]);
+          return;
+        } else {
+          if (res.statusCode == 422) {
+            EasyLoading.showError("Số điện thoại đã được đăng ký",
+                maskType: EasyLoadingMaskType.black, dismissOnTap: true);
+          } else {
+            EasyLoading.showError(
+                "Có lỗi xảy ra khi đăng ký.\nVui lòng thử lại",
+                maskType: EasyLoadingMaskType.black,
+                dismissOnTap: true);
+          }
+        }
+      } catch (e) {
+        print(e);
+        EasyLoading.showError("Có lỗi xảy ra khi đăng ký.\nVui lòng thử lại",
+            maskType: EasyLoadingMaskType.black, dismissOnTap: true);
+      }
+    }
+
+    final VoidCallback? _onSignupPressed =
+        _passwordController.text.isNotEmpty &&
+                _phoneNumberController.text.isNotEmpty &&
+                _confirmPasswordController.text.isNotEmpty &&
+                _phoneNumberError == null &&
+                _passwordError == null &&
+                _confirmPasswordError == null
+            ? signup
+            : null;
+
+    Widget _signupForm = Center(
+      child: SingleChildScrollView(
+          child: Container(
+        margin: const EdgeInsets.only(top: layoutXLarge),
+        padding: const EdgeInsets.symmetric(horizontal: layoutMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("welcome_text".tr(), style: theme.textTheme.titleLarge),
+            const SizedBox(height: layoutSmall),
+            Text("guild_text".tr(), style: theme.textTheme.titleMedium),
+            const SizedBox(height: layoutXLarge),
+            Text("sdt_text".tr(), style: theme.textTheme.titleSmall),
+            const SizedBox(height: layoutSmall),
+            TextField(
+              autofocus: true,
+              controller: _phoneNumberController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                errorText: _phoneNumberController.text.isNotEmpty
+                    ? _phoneNumberError
+                    : null,
+                hintText: "sdt_hint_text".tr(),
+                border: const OutlineInputBorder(
+                  borderRadius:
+                      BorderRadius.all(Radius.circular(borderRadiusSmall)),
+                ),
+                suffixIcon: _phoneNumberController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed: () => _phoneNumberController.clear(),
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: layoutSmall),
+            Text("password_text".tr(), style: theme.textTheme.titleSmall),
+            const SizedBox(height: layoutSmall),
+            TextField(
+              controller: _passwordController,
+              obscureText: _hiddenPassword,
+              keyboardType: TextInputType.text,
+              inputFormatters: [
+                FilteringTextInputFormatter.singleLineFormatter
+              ],
+              decoration: InputDecoration(
+                hintText: "password_hint_text".tr(),
+                errorText: _passwordError,
+                errorMaxLines: 3,
+                border: const OutlineInputBorder(
+                  borderRadius:
+                      BorderRadius.all(Radius.circular(borderRadiusSmall)),
+                ),
+                suffixIcon: _passwordController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                            _hiddenPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey),
+                        onPressed: () => {
+                          setState(() {
+                            _hiddenPassword = !_hiddenPassword;
+                          })
+                        },
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: layoutSmall),
+            Text("confirm_password_text".tr(),
+                style: theme.textTheme.titleSmall),
+            const SizedBox(height: layoutSmall),
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: _hiddenPassword,
+              keyboardType: TextInputType.text,
+              inputFormatters: [
+                FilteringTextInputFormatter.singleLineFormatter
+              ],
+              decoration: InputDecoration(
+                errorText: _confirmPasswordError,
+                hintText: "confirm_password_hint_text".tr(),
+                border: const OutlineInputBorder(
+                  borderRadius:
+                      BorderRadius.all(Radius.circular(borderRadiusSmall)),
+                ),
+                suffixIcon: _passwordController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                            _hiddenPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey),
+                        onPressed: () => {
+                          setState(() {
+                            _hiddenPassword = !_hiddenPassword;
+                          })
+                        },
+                      )
+                    : null,
+              ),
+            ),
+            Container(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                  onPressed: () => {
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (context) => const LoginScreen()))
+                      },
+                  child: Text('login_btn_text'.tr())),
+            ),
+            const SizedBox(height: layoutSmall),
+            ElevatedButton(
+                onPressed: _onSignupPressed,
+                style: ButtonStyle(
+                  minimumSize: MaterialStateProperty.all(
+                      const Size(double.infinity, minTouchSize)),
+                  elevation: MaterialStateProperty.all(0),
+                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(borderRadiusXSmall),
+                    ),
+                  ),
+                ),
+                child:
+                    Text(toBeginningOfSentenceCase("signup_btn_text".tr())!)),
+          ],
+        ),
+      )),
+    );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("finish_signup_title".tr()),
-        shape: Border(bottom: BorderSide(color: Colors.grey[350]!, width: 2)),
-        titleTextStyle: theme.textTheme.titleLarge,
-        backgroundColor: Colors.white,
-        shadowColor: Colors.transparent,
-        elevation: 10,
-        leading: IconButton(
-            color: Colors.black,
-            onPressed: () => Navigator.of(context).pop(false),
-            icon: const Icon(Icons.arrow_back)),
-      ),
-      body: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        color: Colors.grey[300],
-        child: SingleChildScrollView(
-            child: Container(
-          margin: const EdgeInsets.only(top: layoutMedium),
-          padding: const EdgeInsets.symmetric(
-              horizontal: layoutMedium, vertical: layoutXMedium),
-          width: MediaQuery.of(context).size.width,
-          color: Colors.white,
-          child: Column(
-            children: [
-              TextField(
-                controller: _nameController,
-                keyboardType: TextInputType.name,
-                decoration: InputDecoration(
-                  labelText:
-                      "${toBeginningOfSentenceCase("name_label".tr())} *",
-                  hintText: "name_hint".tr(),
-                  labelStyle: theme.textTheme.titleMedium,
-                  floatingLabelStyle: theme.textTheme.titleLarge!
-                      .merge(TextStyle(color: theme.colorScheme.primary)),
-                  errorText: _nameController.text.isEmpty
-                      ? "Vui lòng nhập họ và tên"
-                      : null,
-                  enabledBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.grey[300]!, width: 1.0),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.primary, width: 1.0),
-                  ),
-                  errorBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red, width: 1.0),
-                  ),
-                  focusedErrorBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red, width: 1.0),
-                  ),
-                  suffixIcon: _nameController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
-                          onPressed: () => _nameController.clear(),
-                        )
-                      : null,
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: layoutXMedium, horizontal: layoutMedium),
-                ),
-              ),
-              const SizedBox(height: layoutXMedium),
-              TextField(
-                controller: _addressController,
-                keyboardType: TextInputType.name,
-                decoration: InputDecoration(
-                  labelText:
-                      "${toBeginningOfSentenceCase("address_label".tr())} *",
-                  hintText: "address_hint".tr(),
-                  labelStyle: theme.textTheme.titleMedium,
-                  floatingLabelStyle: theme.textTheme.titleLarge!
-                      .merge(TextStyle(color: theme.colorScheme.primary)),
-                  errorText: _addressController.text.isEmpty
-                      ? "Vui lòng nhập địa chỉ"
-                      : null,
-                  enabledBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.grey[300]!, width: 1.0),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.primary, width: 1.0),
-                  ),
-                  errorBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red, width: 1.0),
-                  ),
-                  focusedErrorBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red, width: 1.0),
-                  ),
-                  suffixIcon: _addressController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
-                          onPressed: () => _addressController.clear(),
-                        )
-                      : null,
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: layoutXMedium, horizontal: layoutMedium),
-                ),
-              ),
-            ],
-          ),
-        )),
-      ),
-      bottomSheet: Container(
-        color: Colors.white,
-        width: MediaQuery.of(context).size.width,
-        height: 80,
-        padding: const EdgeInsets.all(layoutMedium),
-        child: ElevatedButton(
-            onPressed: () {
-              if (validateForm()) {}
-            },
-            style: ButtonStyle(
-                elevation: MaterialStateProperty.all<double>(0),
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(borderRadiusSmall),
-                ))),
-            child: Text(
-              "Xong",
-              style: theme.textTheme.titleMedium!.merge(const TextStyle(
-                  color: Colors.black, fontWeight: FontWeight.bold)),
-            )),
-      ),
+      body: _signupForm,
     );
-    // return Scaffold(
-    //   body: Container(
-    //     decoration: BoxDecoration(
-    //       gradient: LinearGradient(
-    //         begin: Alignment.topLeft,
-    //         end: Alignment.bottomRight,
-    //         stops: const [0.1, 0.4, 0.7, 0.9],
-    //         colors: [
-    //           HexColor("#4b4293").withOpacity(0.8),
-    //           HexColor("#4b4293"),
-    //           HexColor("#08418e"),
-    //           HexColor("#08418e")
-    //         ],
-    //       ),
-    //       image: DecorationImage(
-    //         fit: BoxFit.cover,
-    //         colorFilter: ColorFilter.mode(
-    //             HexColor("#fff").withOpacity(0.2), BlendMode.dstATop),
-    //         image: const NetworkImage(
-    //           'https://mir-s3-cdn-cf.behance.net/project_modules/fs/01b4bd84253993.5d56acc35e143.jpg',
-    //         ),
-    //       ),
-    //     ),
-    //     child: Center(
-    //       child: SingleChildScrollView(
-    //         child: Column(
-    //           mainAxisAlignment: MainAxisAlignment.center,
-    //           children: [
-    //             Card(
-    //               elevation: 5,
-    //               color:
-    //                   const Color.fromARGB(255, 171, 211, 250).withOpacity(0.4),
-    //               child: Container(
-    //                 width: 400,
-    //                 padding: const EdgeInsets.all(40.0),
-    //                 decoration: BoxDecoration(
-    //                   borderRadius: BorderRadius.circular(8),
-    //                 ),
-    //                 child: Column(
-    //                   mainAxisSize: MainAxisSize.min,
-    //                   children: [
-    //                     FadeAnimation(
-    //                       delay: 0.8,
-    //                       child: Image.network(
-    //                         "https://cdni.iconscout.com/illustration/premium/thumb/job-starting-date-2537382-2146478.png",
-    //                         width: 100,
-    //                         height: 100,
-    //                       ),
-    //                     ),
-    //                     const SizedBox(
-    //                       height: 10,
-    //                     ),
-    //                     FadeAnimation(
-    //                       delay: 1,
-    //                       child: Container(
-    //                         child: Text(
-    //                           "Create your account",
-    //                           style: TextStyle(
-    //                               color: Colors.white.withOpacity(0.9),
-    //                               letterSpacing: 0.5),
-    //                         ),
-    //                       ),
-    //                     ),
-    //                     const SizedBox(
-    //                       height: 20,
-    //                     ),
-    //                     FadeAnimation(
-    //                       delay: 1,
-    //                       child: Container(
-    //                         width: 300,
-    //                         height: 40,
-    //                         decoration: BoxDecoration(
-    //                           borderRadius: BorderRadius.circular(12.0),
-    //                           color: selected == FormData.Email
-    //                               ? enabled
-    //                               : backgroundColor,
-    //                         ),
-    //                         padding: const EdgeInsets.all(5.0),
-    //                         child: TextField(
-    //                           controller: nameController,
-    //                           onTap: () {
-    //                             setState(() {
-    //                               selected = FormData.Name;
-    //                             });
-    //                           },
-    //                           decoration: InputDecoration(
-    //                             enabledBorder: InputBorder.none,
-    //                             border: InputBorder.none,
-    //                             prefixIcon: Icon(
-    //                               Icons.title,
-    //                               color: selected == FormData.Name
-    //                                   ? enabledtxt
-    //                                   : deaible,
-    //                               size: 20,
-    //                             ),
-    //                             hintText: 'Full Name',
-    //                             hintStyle: TextStyle(
-    //                                 color: selected == FormData.Name
-    //                                     ? enabledtxt
-    //                                     : deaible,
-    //                                 fontSize: 12),
-    //                           ),
-    //                           textAlignVertical: TextAlignVertical.center,
-    //                           style: TextStyle(
-    //                               color: selected == FormData.Name
-    //                                   ? enabledtxt
-    //                                   : deaible,
-    //                               fontWeight: FontWeight.bold,
-    //                               fontSize: 12),
-    //                         ),
-    //                       ),
-    //                     ),
-    //                     const SizedBox(
-    //                       height: 20,
-    //                     ),
-    //                     FadeAnimation(
-    //                       delay: 1,
-    //                       child: Container(
-    //                         width: 300,
-    //                         height: 40,
-    //                         decoration: BoxDecoration(
-    //                           borderRadius: BorderRadius.circular(12.0),
-    //                           color: selected == FormData.Phone
-    //                               ? enabled
-    //                               : backgroundColor,
-    //                         ),
-    //                         padding: const EdgeInsets.all(5.0),
-    //                         child: TextField(
-    //                           controller: phoneController,
-    //                           onTap: () {
-    //                             setState(() {
-    //                               selected = FormData.Phone;
-    //                             });
-    //                           },
-    //                           decoration: InputDecoration(
-    //                             enabledBorder: InputBorder.none,
-    //                             border: InputBorder.none,
-    //                             prefixIcon: Icon(
-    //                               Icons.phone_android_rounded,
-    //                               color: selected == FormData.Phone
-    //                                   ? enabledtxt
-    //                                   : deaible,
-    //                               size: 20,
-    //                             ),
-    //                             hintText: 'Phone Number',
-    //                             hintStyle: TextStyle(
-    //                                 color: selected == FormData.Phone
-    //                                     ? enabledtxt
-    //                                     : deaible,
-    //                                 fontSize: 12),
-    //                           ),
-    //                           textAlignVertical: TextAlignVertical.center,
-    //                           style: TextStyle(
-    //                               color: selected == FormData.Phone
-    //                                   ? enabledtxt
-    //                                   : deaible,
-    //                               fontWeight: FontWeight.bold,
-    //                               fontSize: 12),
-    //                         ),
-    //                       ),
-    //                     ),
-    //                     const SizedBox(
-    //                       height: 20,
-    //                     ),
-    //                     FadeAnimation(
-    //                       delay: 1,
-    //                       child: Container(
-    //                         width: 300,
-    //                         height: 40,
-    //                         decoration: BoxDecoration(
-    //                           borderRadius: BorderRadius.circular(12.0),
-    //                           color: selected == FormData.Email
-    //                               ? enabled
-    //                               : backgroundColor,
-    //                         ),
-    //                         padding: const EdgeInsets.all(5.0),
-    //                         child: TextField(
-    //                           controller: emailController,
-    //                           onTap: () {
-    //                             setState(() {
-    //                               selected = FormData.Email;
-    //                             });
-    //                           },
-    //                           decoration: InputDecoration(
-    //                             enabledBorder: InputBorder.none,
-    //                             border: InputBorder.none,
-    //                             prefixIcon: Icon(
-    //                               Icons.email_outlined,
-    //                               color: selected == FormData.Email
-    //                                   ? enabledtxt
-    //                                   : deaible,
-    //                               size: 20,
-    //                             ),
-    //                             hintText: 'Email',
-    //                             hintStyle: TextStyle(
-    //                                 color: selected == FormData.Email
-    //                                     ? enabledtxt
-    //                                     : deaible,
-    //                                 fontSize: 12),
-    //                           ),
-    //                           textAlignVertical: TextAlignVertical.center,
-    //                           style: TextStyle(
-    //                               color: selected == FormData.Email
-    //                                   ? enabledtxt
-    //                                   : deaible,
-    //                               fontWeight: FontWeight.bold,
-    //                               fontSize: 12),
-    //                         ),
-    //                       ),
-    //                     ),
-    //                     const SizedBox(
-    //                       height: 20,
-    //                     ),
-    //                     FadeAnimation(
-    //                       delay: 1,
-    //                       child: Container(
-    //                         width: 300,
-    //                         height: 40,
-    //                         decoration: BoxDecoration(
-    //                             borderRadius: BorderRadius.circular(12.0),
-    //                             color: selected == FormData.password
-    //                                 ? enabled
-    //                                 : backgroundColor),
-    //                         padding: const EdgeInsets.all(5.0),
-    //                         child: TextField(
-    //                           controller: passwordController,
-    //                           onTap: () {
-    //                             setState(() {
-    //                               selected = FormData.password;
-    //                             });
-    //                           },
-    //                           decoration: InputDecoration(
-    //                               enabledBorder: InputBorder.none,
-    //                               border: InputBorder.none,
-    //                               prefixIcon: Icon(
-    //                                 Icons.lock_open_outlined,
-    //                                 color: selected == FormData.password
-    //                                     ? enabledtxt
-    //                                     : deaible,
-    //                                 size: 20,
-    //                               ),
-    //                               suffixIcon: IconButton(
-    //                                 icon: ispasswordev
-    //                                     ? Icon(
-    //                                         Icons.visibility_off,
-    //                                         color: selected == FormData.password
-    //                                             ? enabledtxt
-    //                                             : deaible,
-    //                                         size: 20,
-    //                                       )
-    //                                     : Icon(
-    //                                         Icons.visibility,
-    //                                         color: selected == FormData.password
-    //                                             ? enabledtxt
-    //                                             : deaible,
-    //                                         size: 20,
-    //                                       ),
-    //                                 onPressed: () => setState(
-    //                                     () => ispasswordev = !ispasswordev),
-    //                               ),
-    //                               hintText: 'Password',
-    //                               hintStyle: TextStyle(
-    //                                   color: selected == FormData.password
-    //                                       ? enabledtxt
-    //                                       : deaible,
-    //                                   fontSize: 12)),
-    //                           obscureText: ispasswordev,
-    //                           textAlignVertical: TextAlignVertical.center,
-    //                           style: TextStyle(
-    //                               color: selected == FormData.password
-    //                                   ? enabledtxt
-    //                                   : deaible,
-    //                               fontWeight: FontWeight.bold,
-    //                               fontSize: 12),
-    //                         ),
-    //                       ),
-    //                     ),
-    //                     const SizedBox(
-    //                       height: 20,
-    //                     ),
-    //                     FadeAnimation(
-    //                       delay: 1,
-    //                       child: Container(
-    //                         width: 300,
-    //                         height: 40,
-    //                         decoration: BoxDecoration(
-    //                             borderRadius: BorderRadius.circular(12.0),
-    //                             color: selected == FormData.ConfirmPassword
-    //                                 ? enabled
-    //                                 : backgroundColor),
-    //                         padding: const EdgeInsets.all(5.0),
-    //                         child: TextField(
-    //                           controller: confirmPasswordController,
-    //                           onTap: () {
-    //                             setState(() {
-    //                               selected = FormData.ConfirmPassword;
-    //                             });
-    //                           },
-    //                           decoration: InputDecoration(
-    //                               enabledBorder: InputBorder.none,
-    //                               border: InputBorder.none,
-    //                               prefixIcon: Icon(
-    //                                 Icons.lock_open_outlined,
-    //                                 color: selected == FormData.ConfirmPassword
-    //                                     ? enabledtxt
-    //                                     : deaible,
-    //                                 size: 20,
-    //                               ),
-    //                               suffixIcon: IconButton(
-    //                                 icon: ispasswordev
-    //                                     ? Icon(
-    //                                         Icons.visibility_off,
-    //                                         color: selected ==
-    //                                                 FormData.ConfirmPassword
-    //                                             ? enabledtxt
-    //                                             : deaible,
-    //                                         size: 20,
-    //                                       )
-    //                                     : Icon(
-    //                                         Icons.visibility,
-    //                                         color: selected ==
-    //                                                 FormData.ConfirmPassword
-    //                                             ? enabledtxt
-    //                                             : deaible,
-    //                                         size: 20,
-    //                                       ),
-    //                                 onPressed: () => setState(
-    //                                     () => ispasswordev = !ispasswordev),
-    //                               ),
-    //                               hintText: 'Confirm Password',
-    //                               hintStyle: TextStyle(
-    //                                   color:
-    //                                       selected == FormData.ConfirmPassword
-    //                                           ? enabledtxt
-    //                                           : deaible,
-    //                                   fontSize: 12)),
-    //                           obscureText: ispasswordev,
-    //                           textAlignVertical: TextAlignVertical.center,
-    //                           style: TextStyle(
-    //                               color: selected == FormData.ConfirmPassword
-    //                                   ? enabledtxt
-    //                                   : deaible,
-    //                               fontWeight: FontWeight.bold,
-    //                               fontSize: 12),
-    //                         ),
-    //                       ),
-    //                     ),
-    //                     const SizedBox(
-    //                       height: 25,
-    //                     ),
-    //                     FadeAnimation(
-    //                       delay: 1,
-    //                       child: TextButton(
-    //                           onPressed: () {},
-    //                           child: Text(
-    //                             "Sign Up",
-    //                             style: TextStyle(
-    //                               color: Colors.white,
-    //                               letterSpacing: 0.5,
-    //                               fontSize: 16.0,
-    //                               fontWeight: FontWeight.bold,
-    //                             ),
-    //                           ),
-    //                           style: TextButton.styleFrom(
-    //                               backgroundColor: const Color(0xFF2697FF),
-    //                               padding: const EdgeInsets.symmetric(
-    //                                   vertical: 14.0, horizontal: 80),
-    //                               shape: RoundedRectangleBorder(
-    //                                   borderRadius:
-    //                                       BorderRadius.circular(12.0)))),
-    //                     ),
-    //                   ],
-    //                 ),
-    //               ),
-    //             ),
-
-    //             //End of Center Card
-    //             //Start of outer card
-    //             const SizedBox(
-    //               height: 20,
-    //             ),
-
-    //             FadeAnimation(
-    //               delay: 1,
-    //               child: Row(
-    //                 mainAxisAlignment: MainAxisAlignment.center,
-    //                 mainAxisSize: MainAxisSize.min,
-    //                 children: [
-    //                   const Text("If you have an account ",
-    //                       style: TextStyle(
-    //                         color: Colors.grey,
-    //                         letterSpacing: 0.5,
-    //                       )),
-    //                   GestureDetector(
-    //                     onTap: () {
-    //                       Navigator.pop(context);
-    //                       // Navigator.of(context)
-    //                       //     .push(MaterialPageRoute(builder: (context) {
-    //                       //   return LoginScreen();
-    //                       // }));
-    //                     },
-    //                     child: Text("Sing in",
-    //                         style: TextStyle(
-    //                             color: Colors.white.withOpacity(0.9),
-    //                             fontWeight: FontWeight.bold,
-    //                             letterSpacing: 0.5,
-    //                             fontSize: 14)),
-    //                   ),
-    //                 ],
-    //               ),
-    //             ),
-    //           ],
-    //         ),
-    //       ),
-    //     ),
-    //   ),
-    // );
   }
 }

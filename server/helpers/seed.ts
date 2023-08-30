@@ -1,6 +1,7 @@
 import { fakerVI as faker } from "@faker-js/faker";
 import _ from "lodash";
-import type { AddressEntity, CustomerEntity, DriverEntity, StaffEntity } from "../entities";
+import type { AddressEntity, CustomerEntity, IDriver, StaffEntity } from "../entities";
+import { VehicleType } from "../entities";
 import { UserRole } from "../types/common";
 import { hashPassword } from "./password.helper";
 
@@ -36,7 +37,7 @@ export function createTestCustomers(n = 10): CustomerEntity[] {
 	return list;
 }
 
-export function createTestDrivers(n = 10): DriverEntity[] {
+export function createTestDrivers(n = 10): IDriver[] {
 	const list = _.times(n - 1, () => {
 		const currentDate = faker.date.recent({ days: faker.number.int({ min: 1, max: 10 }) });
 		return {
@@ -52,7 +53,8 @@ export function createTestDrivers(n = 10): DriverEntity[] {
 				refDate: currentDate,
 			}),
 			roles: [UserRole.DRIVER],
-		} as DriverEntity;
+			vehicleType: faker.helpers.enumValue(VehicleType),
+		} as IDriver;
 	});
 	list.push({
 		fullName: "Dương Quang Vinh",
@@ -64,7 +66,8 @@ export function createTestDrivers(n = 10): DriverEntity[] {
 		createdAt: new Date(),
 		updatedAt: new Date(),
 		roles: [UserRole.DRIVER],
-	} as DriverEntity);
+		vehicleType: faker.helpers.enumValue(VehicleType),
+	} as IDriver);
 	return list;
 }
 

@@ -1,0 +1,49 @@
+name: Deploy to server
+
+on:
+  push:
+    branches: [server]
+
+env:
+    REMOTE_PATH: /mnt/server
+    DOCKER_ID: dqvinh1706
+    REPONAME: e-taxi-micro
+    
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+              with:
+                ref: server
+
+            - name: Create env file
+              run: |
+                cd ./server
+                touch .env
+                echo "${{ secrets.SERVER_ENV_PROD }}" > .env
+                cat .env
+                ls -a
+
+            - name: Copy folder server to remote host via ssh
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                host: ${{ secrets.SERVER_HOST }}
+                username: ${{ secrets.SERVER_USER }}
+                key: ${{ secrets.SERVER_PRIVATE_KEY }}
+                overwrite: true
+                source: "./server"
+                target: ${{ env.REMOTE_PATH }}
+            
+            - name: Deploy via ssh
+              uses: appleboy/ssh-action@master
+              with:
+                script_stop: true
+                host: ${{ secrets.SERVER_HOST }}
+                username: ${{ secrets.SERVER_USER }}
+                key: ${{ secrets.SERVER_PRIVATE_KEY }}
+                envs: REMOTE_PATH
+                script: |
+                    cd $REMOTE_PATH/server/docker/micro
+                    chmod +x docker-compose.yml start.sh
+                    ./start.sh                    

@@ -25,7 +25,7 @@ const SmsService: SmsServiceSchema = {
 		 * @returns {String}
 		 */
 		send: {
-			restricted: ["notif"],
+			restricted: ["socket"],
 			params: SmsSendParamsValidator,
 			handler(this: SmsThis, ctx: Context<SendSmsParams>): Promise<any> {
 				this.logger.info(

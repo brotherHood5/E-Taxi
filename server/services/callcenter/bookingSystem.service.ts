@@ -1,26 +1,51 @@
-import type { Service, ServiceSchema } from "moleculer";
+import type { Cachers, Service, ServiceSchema } from "moleculer";
 import { Config } from "../../common";
-import type { AddressEntity, IAddress, IBooking } from "../../entities";
-import { BookingStatus } from "../../entities";
+import type { AddressEntity, IAddress, IBooking, IDriver } from "../../entities";
+import { BookingStatus, VehicleType } from "../../entities";
 import { AMQPMixin, DbMixin } from "../../mixins";
 import type { ObjectId } from "../../types";
 import { MongoObjectId } from "../../types";
+import { DriverFinder } from "./core";
 
 const BookingService: ServiceSchema = {
 	name: "bookingSystem",
 	authToken: Config.BOOKING_AUTH_TOKEN,
 	mixins: [DbMixin("bookings"), AMQPMixin],
+
+	events: {
+		"drivers.logged": {
+			handler(this: Service, ctx: any) {
+				this.logger.warn("Driver logged: ", this.loggedDriver);
+				this.loggedDriver.add(ctx.params);
+			},
+		},
+		"drivers.updateLocation": {
+			handler(this: Service, ctx: any) {
+				this.logger.warn("Driver update location: ", ctx.params);
+			},
+		},
+		"drivers.updateStatus": {
+			handler(this: Service, ctx: any) {
+				this.logger.warn("Driver update status: ", ctx.params);
+			},
+		},
+	},
+
 	settings: {
 		rest: "/booking-system",
 		fields: [
 			"_id",
 			"phoneNumber",
+			"customerId",
 			"driverId",
 			"driver",
 			"vehicleType",
 			"pickupAddr",
 			"destAddr",
 			"status",
+			"price",
+			"distance",
+			"inApp",
 			"createdAt",
 			"updatedAt",
 		],
@@ -65,31 +90,17 @@ const BookingService: ServiceSchema = {
 	},
 
 	AMQPQueues: {
-		"bookingSystem.booking_process": {
+		"booking.processing": {
 			async handler(this: Service, channel: any, msg: any): Promise<void> {
 				const req = JSON.parse(msg.content.toString());
+				req.status = BookingStatus.PROCESSING;
 				try {
-					if (req.status === BookingStatus.COORDINATING) {
-						// Cap nhat dia chi da phan giai vo db tuong duong cai dat xe do
-						await this.actions.updateBookingAddress({
-							id: req._id,
-							pickupAddr: req.pickupAddr,
-							destAddr: req.destAddr,
-						});
-					}
-
-					req.status = BookingStatus.PROCESSING;
 					await this.actions.updateBookingStatus({
 						id: req._id,
 						status: req.status,
 					});
 
 					// TODO: Find Driver
-
-					this.addAMQPJob("monitorSystem.listen_event", {
-						id: req._id,
-						status: req.status,
-					});
 					channel.ack(msg);
 				} catch (error) {
 					channel.nack(msg);
@@ -97,14 +108,14 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
-		"bookingSystem.booking_req": {
+		"booking.new": {
 			handler(this: Service, channel: any, msg: any): void {
 				const req = JSON.parse(msg.content.toString()) as IBooking;
-				// Theo doi moi
-				this.addAMQPJob("monitorSystem.booking_monitor", req);
+				req.status = BookingStatus.NEW;
 
-				req.pickupAddr = req.pickupAddr as AddressEntity;
 				req.destAddr = req.destAddr as AddressEntity;
+				req.pickupAddr = req.pickupAddr as AddressEntity;
+
 				if (
 					!req.pickupAddr.lat ||
 					!req.pickupAddr.lon ||
@@ -112,10 +123,10 @@ const BookingService: ServiceSchema = {
 					!req.destAddr.lon
 				) {
 					// Chuyen qua phan giai dia chi
-					this.addAMQPJob("coordSystem.address_resolve", req);
+					this.addAMQPJob("booking.coordinating", req);
 				} else {
 					// Xu li dat xe
-					this.addAMQPJob("bookingSystem.booking_process", req);
+					this.addAMQPJob("booking.processing", req);
 				}
 				channel.ack(msg);
 			},
@@ -146,7 +157,7 @@ const BookingService: ServiceSchema = {
 				const data: IBooking = {
 					// _id: new MongoObjectId("64dcba3c94b438a1b79c4ba0"),
 					phoneNumber: "0972360214",
-					vehicleType: "2-seat",
+					vehicleType: VehicleType.FOUR_SEATS,
 					pickupAddr: {
 						homeNo: "123",
 						street: "Binh Chieu",
@@ -165,9 +176,8 @@ const BookingService: ServiceSchema = {
 					// destAddr: id2,
 					status: BookingStatus.NEW,
 				};
-
 				const result = await this.createNew(data);
-				this.addAMQPJob("bookingSystem.booking_req", result);
+				this.addAMQPJob("booking.new", result);
 				return result;
 
 				// const { a } = ctx.params;
@@ -221,10 +231,10 @@ const BookingService: ServiceSchema = {
 				pickupAddr: "object", // Dia chi nay da co lat lon ko can phan giai
 				destAddr: "object", // Dia chi nay da co lat lon ko can phan giai
 			},
-			handler(this: Service, ctx: any) {
-				const req = ctx.params;
-				this.addAMQPJob("bookingSystem.booking_req", req);
-				return true;
+			async handler(this: Service, ctx: any) {
+				const result = await this.createNew({ ...ctx.params, inApp: true });
+				this.addAMQPJob("booking.new", result);
+				return result;
 			},
 		},
 
@@ -239,17 +249,8 @@ const BookingService: ServiceSchema = {
 				destAddr: [{ type: "object" }, { type: "string" }],
 			},
 			async handler(this: Service, ctx: any) {
-				const { phoneNumber, vehicleType, pickupAddr, destAddr } = ctx.params;
-				const data: IBooking = {
-					phoneNumber,
-					vehicleType,
-					pickupAddr,
-					destAddr,
-					status: BookingStatus.NEW,
-				};
-
-				const result = await this.createNew(data);
-				this.addAMQPJob("bookingSystem.booking_req", result);
+				const result = await this.createNew(ctx.params);
+				this.addAMQPJob("booking.new", result);
 				return result;
 			},
 		},
@@ -303,6 +304,45 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
+		updateDriverLocation: {
+			params: {
+				lon: "number",
+				lat: "number",
+				customerId: "string|optional",
+			},
+			handler(this: Service, ctx: any) {
+				const { lon, lat, customerId } = ctx.params;
+				const { user } = ctx.meta;
+				const driverId = user._id;
+
+				// Gui thong tin vi tri cua driver toi customer
+				if (customerId) {
+					ctx.call("socket.broadcast", {
+						namespace: "/customers",
+						room: [customerId],
+						event: "driver_update_location",
+						args: [
+							{
+								driverId: user._id,
+								lon,
+								lat,
+							},
+						],
+					});
+				}
+
+				// Cap nhat vi tri cua driver vao redis
+				this.geoadd(lon, lat, driverId);
+			},
+		},
+
+		updateDriverStatus: {
+			params: {
+				status: "string",
+			},
+			handler(this: Service, ctx: any) {},
+		},
+
 		getBookingHistory: {
 			rest: "GET /history",
 			params: {
@@ -311,7 +351,7 @@ const BookingService: ServiceSchema = {
 			async handler(this: Service, ctx: any): Promise<any> {
 				const { phoneNumber } = ctx.params;
 				const data = await this.actions.find({
-					query: { phoneNumber },
+					query: { phoneNumber, inApp: undefined },
 					populate: ["pickupAddr", "destAddr"],
 					sort: "-updatedAt",
 				});
@@ -346,6 +386,7 @@ const BookingService: ServiceSchema = {
 		async createNew(this: Service, data: IBooking) {
 			const entity = {
 				...data,
+				status: BookingStatus.NEW,
 			};
 
 			const tasks = [
@@ -380,19 +421,20 @@ const BookingService: ServiceSchema = {
 
 			// Create new address
 			await Promise.allSettled(tasks);
-			await this.broker.call("address_customer.increaseCount", {
-				phoneNumber: entity.phoneNumber,
-				addressId: entity.destAddr,
-				value: 1,
-			});
+			if (!data.inApp) {
+				await this.broker.call("address_customer.increaseCount", {
+					phoneNumber: entity.phoneNumber,
+					addressId: entity.destAddr,
+					value: 1,
+				});
+			}
 
-			const result = await this.actions.create(entity).then((res) => {
-				this.logger.warn(res);
-				return this.actions.get({
+			const result = await this.actions.create(entity).then((res) =>
+				this.actions.get({
 					id: res._id?.toString(),
 					populate: ["pickupAddr", "destAddr"],
-				});
-			});
+				}),
+			);
 			return result;
 		},
 
@@ -400,9 +442,58 @@ const BookingService: ServiceSchema = {
 			const entity = await this.broker.call<IAddress, any>("address.create", address);
 			return entity;
 		},
+
+		async geoadd(this: Service, lon, lat, driverId) {
+			await this.redisClient.geoadd(`${this.prefix}.drivers_location`, lon, lat, driverId);
+		},
+
+		async remove(this: Service, dirverId) {
+			await this.redisClient.zrem(`${this.prefix}.drivers_location`, dirverId);
+		},
+
+		async findNearby(this: Service, lat: number, lon: number, maxRadius = 5, isAsc = true) {
+			const result = await this.redisClient.geosearch(
+				`${this.prefix}.drivers_location`,
+				"FROMLONLAT",
+				lon,
+				lat,
+				"BYRADIUS",
+				maxRadius,
+				"km",
+				isAsc ? "ASC" : "DESC",
+				"WITHDIST",
+				"WITHCOORD",
+			);
+			return result;
+		},
+	},
+
+	created() {},
+
+	started() {
+		this.loggedDriver = new Set<IDriver>();
+		this.activeDriver = [];
+		this.driverFinder = new DriverFinder();
+
+		this.redisClient = (this.broker.cacher as Cachers.Redis).client;
+		this.prefix = `${(this.broker.cacher as Cachers.Redis).prefix}${this.name}`;
+	},
+
+	async stopped() {
+		if (this.redisClient) {
+			await this.redisClient.del(`${this.prefix}.drivers_location`);
+		}
 	},
 
 	beforeEntityCreate(entity: IBooking) {
+		if (entity.customerId) {
+			entity.customerId = new MongoObjectId(entity.customerId as string);
+		}
+
+		if (entity.driverId) {
+			entity.driverId = new MongoObjectId(entity.driverId as string);
+		}
+
 		if (entity.destAddr) {
 			entity.destAddr = new MongoObjectId(entity.destAddr as string);
 		}

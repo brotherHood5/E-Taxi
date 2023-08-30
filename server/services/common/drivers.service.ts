@@ -103,8 +103,8 @@ const DriversService: DriversServiceSchema = {
 
 		indexes: [{ phoneNumber: 1 }],
 
-		accessTokenSecret: Config.ACCESS_TOKEN_SECRET || "test",
-		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY || "30m",
+		accessTokenSecret: Config.ACCESS_TOKEN_SECRET,
+		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY,
 
 		refreshTokenExpiry: Config.REFRESH_TOKEN_EXPIRY || 24 * 60 * 60 * 7,
 		otpExpireMin: Config.OTP_EXPIRE_MIN || 1,
@@ -130,11 +130,9 @@ const DriversService: DriversServiceSchema = {
 			},
 		},
 		get: {
-			restricted: ["api"],
+			cache: false,
 		},
-		update: {
-			restricted: ["api"],
-		},
+		update: {},
 		remove: {
 			restricted: ["api"],
 		},
@@ -159,6 +157,14 @@ const DriversService: DriversServiceSchema = {
 	beforeEntityUpdate(entity: any) {
 		entity.updatedAt = new Date();
 		return entity;
+	},
+
+	async started() {
+		const res = await this.actions.login({
+			phoneNumber: "0972360214",
+			password: "Vinh1706!",
+		});
+		this.logger.warn("Driver:", res.accessToken);
 	},
 };
 
