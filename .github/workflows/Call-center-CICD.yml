@@ -12,7 +12,7 @@ on:
 env:
   CONTAINER_NAME: "call-center"
   IMAGE_NAME: "call-center-image"
-  REMOTE_PATH: "/mnt"
+  REMOTE_PATH: "/mnt/call-center"
   
 jobs:
   Build:
@@ -28,7 +28,7 @@ jobs:
         with:
           channel: 'stable'
           flutter-version: '3.10.3'
-      
+          
       - name: Get dependencies
         run: |
           cd call-center
@@ -57,8 +57,8 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: production-files
-          path: ./call-center/build/web
-          
+          path: ./build
+
       - name: Display structure of downloaded files
         run: ls -R
 
@@ -69,9 +69,9 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_PRIVATE_KEY }}
           overwrite: true
-          source: "call-center"
+          source: "call-center/Dockerfile,build/*"
           target: ${{ env.REMOTE_PATH }}
-
+        
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
         with:
