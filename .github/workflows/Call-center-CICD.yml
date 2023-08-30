@@ -29,7 +29,10 @@ jobs:
           channel: 'stable'
       
       - name: Get dependencies
-        run: cd call-center && flutter pub get
+        run: |
+          cd call-center
+          flutter upgrade
+          flutter pub get
       
       - name: Build release project
         run: cd call-center && flutter build web
