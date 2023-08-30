@@ -42,7 +42,7 @@ jobs:
             # Stop and remove the old container if it exists
             docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
             # Build docker image 
-            docker build -t ${{ env.IMAGE_NAME }}:latest.
+            docker build -t ${{ env.IMAGE_NAME }}:latest .
             # Run a new container 
             docker run -d \
             --restart always \
