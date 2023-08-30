@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - call-center
     paths:
       - ".github/workflows/Call-center-CICD.yml"
       - "call-center/**"
@@ -12,7 +13,7 @@ env:
   CONTAINER_NAME: "call-center"
   IMAGE_NAME: "call-center-image"
   REMOTE_PATH: "/mnt"
-  TAG: ${{ github.sha }}
+  
 jobs:
   Deploy:
     runs-on: ubuntu-latest
@@ -25,7 +26,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_PRIVATE_KEY }}
           overwrite: true
-          source: "call-center/**"
+          source: "call-center"
           target: ${{ env.REMOTE_PATH }}
 
       - name: Deploy to DigitalOcean Droplet
@@ -38,16 +39,16 @@ jobs:
           envs: CONTAINER_NAME,IMAGE_NAME,REMOTE_PATH
           script: |
             cd /mnt/call-center 
-            # Build docker image 
-            docker build -t ${{ env.IMAGE_NAME }}:${{ env.TAG }}  .
             # Stop and remove the old container if it exists
             docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
+            # Build docker image 
+            docker build -t ${{ env.IMAGE_NAME }}:latest.
             # Run a new container 
             docker run -d \
             --restart always \
             --name $(echo $CONTAINER_NAME | tr ':/' '-') \
             -p 3000:5000 \
-             ${{ env.IMAGE_NAME }}:${{ env.TAG }}
+             ${{ env.IMAGE_NAME }}:latest
         
         
 
