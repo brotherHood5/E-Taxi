@@ -23,11 +23,14 @@ jobs:
         with:
           ref: call-center
           path: call-center
-      
+
+      - name: Change directory
+        run: cd call-center && ls -l
+
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: ls
+      
       - name: Enable Flutter Web
         run: flutter config --enable-web
 
