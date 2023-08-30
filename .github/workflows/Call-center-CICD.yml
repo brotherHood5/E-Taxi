@@ -36,7 +36,7 @@ jobs:
           flutter pub get
       
       - name: Build release project
-        run: cd call-center && flutter build web
+        run: cd call-center && flutter build web --release
 
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v3
