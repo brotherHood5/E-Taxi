@@ -69,7 +69,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_PRIVATE_KEY }}
           overwrite: true
-          source: "call-center/Dockerfile,build/*"
+          source: "call-center/Dockerfile,call-center/server/*,build/*"
           target: ${{ env.REMOTE_PATH }}
           strip_components: 1
         
