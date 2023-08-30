@@ -154,7 +154,7 @@ const BookingService: ServiceSchema = {
 
 				const data: IBooking = {
 					// _id: new MongoObjectId("64dcba3c94b438a1b79c4ba0"),
-					phoneNumber: "0972360214",
+					phoneNumber: "0123456789",
 					vehicleType: VehicleType.FOUR_SEATS,
 					pickupAddr: {
 						homeNo: "123",

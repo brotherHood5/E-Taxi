@@ -1,15 +1,21 @@
 import 'dart:convert';
+// import 'dart:ffi';
 
+// import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:web/constant.dart';
 import '../../model/TopAddress.dart';
+import '../../model/TopHistory.dart';
 import 'bookingForm.dart';
 import 'package:http/http.dart' as http;
 
 class Dashboard extends StatefulWidget {
   static const String route = '/dashboard';
+  // final Function saveChildCallback;
 
-  const Dashboard({Key? key}) : super(key: key);
+  const Dashboard({
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<Dashboard> createState() => _DashboardState();
@@ -19,7 +25,6 @@ class _DashboardState extends State<Dashboard> {
   @override
   bool isExpanded = false;
   String? phoneNumber;
-
   @override
   void initState() {
     super.initState();
@@ -30,10 +35,28 @@ class _DashboardState extends State<Dashboard> {
       Uri.parse(TOP5_ADDRESS_URL)
           .replace(queryParameters: {"phoneNumber": "$phoneNumber"}),
     );
+    // print(res);
+    if (res.statusCode == 200) {
+      List jsonRes = json.decode(res.body);
+      // print(jsonRes);
+      var data = jsonRes.map((data) => TopAddress.fromMap(data)).toList();
+      return data;
+    } else {
+      throw Exception("Error");
+    }
+  }
+
+  Future<List<TopHistory>> _getTopHistory() async {
+    final res = await http.get(
+      Uri.parse(BOOKING_HISTORY_URL)
+          .replace(queryParameters: {"phoneNumber": "$phoneNumber"}),
+    );
+    // print(res);
 
     if (res.statusCode == 200) {
       List jsonRes = json.decode(res.body);
-      var data = jsonRes.map((data) => TopAddress.fromMap(data)).toList();
+      var data = jsonRes.map((data) => TopHistory.fromMap(data)).toList();
+
       return data;
     } else {
       throw Exception("Error");
@@ -44,7 +67,6 @@ class _DashboardState extends State<Dashboard> {
     setState(() {
       phoneNumber = text;
     });
-    print(text);
   }
 
   @override
@@ -66,6 +88,7 @@ class _DashboardState extends State<Dashboard> {
                         Expanded(
                           child: BookingForm(
                             onPhoneNumberChanged: onPhoneNumberChanged,
+                            // saveChildCallback: submitForm(),
                           ),
                         ),
                         SizedBox(
@@ -89,8 +112,6 @@ class _DashboardState extends State<Dashboard> {
                                       rows: List.generate(snapshot.data!.length,
                                           (index) {
                                         var data = snapshot.data![index];
-                                        print("Data");
-                                        print(data);
 
                                         var addr = data.address;
                                         var list = [
@@ -122,55 +143,49 @@ class _DashboardState extends State<Dashboard> {
                       height: 30.0,
                     ),
 
-                    //let's set the filter section
-
-                    //Now let's add the Table
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        DataTable(
-                            headingRowColor: MaterialStateProperty.resolveWith(
-                                (states) => Colors.grey.shade200),
-                            columns: [
-                              DataColumn(label: Text("No")),
-                              DataColumn(label: Text("home No")),
-                              DataColumn(label: Text("Street")),
-                              DataColumn(label: Text("Ward")),
-                              DataColumn(label: Text("District")),
-                              DataColumn(label: Text("City")),
-                            ],
-                            rows: [
-                              DataRow(cells: [
-                                DataCell(Text("0")),
-                                DataCell(
-                                    Text("How to build a Flutter Web App")),
-                                DataCell(Text("${DateTime.now()}")),
-                                DataCell(Text("2.3K Views")),
-                                DataCell(Text("102Comments")),
-                                DataCell(Text("102Comments")),
-                              ]),
-                              DataRow(cells: [
-                                DataCell(Text("1")),
-                                DataCell(
-                                    Text("How to build a Flutter Mobile App")),
-                                DataCell(Text("${DateTime.now()}")),
-                                DataCell(Text("21.3K Views")),
-                                DataCell(Text("1020Comments")),
-                                DataCell(Text("1020Comments")),
-                              ]),
-                              DataRow(cells: [
-                                DataCell(Text("2")),
-                                DataCell(
-                                    Text("Flutter for your first project")),
-                                DataCell(Text("${DateTime.now()}")),
-                                DataCell(Text("2.3M Views")),
-                                DataCell(Text("10K Comments")),
-                                DataCell(Text("1020Comments")),
-                              ]),
-                            ]),
-                        //Now let's set the pagination
-                        SizedBox(
-                          height: 40.0,
+                        Expanded(
+                          // To make sure DataTable takes up the available space
+                          child: FutureBuilder<List<TopHistory>>(
+                              future: _getTopHistory(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return DataTable(
+                                      headingRowColor:
+                                          MaterialStateProperty.resolveWith(
+                                              (states) => Colors.grey.shade200),
+                                      columns: [
+                                        DataColumn(label: Text("No")),
+                                        DataColumn(label: Text("home No")),
+                                        DataColumn(label: Text("Street")),
+                                        DataColumn(label: Text("Ward")),
+                                        DataColumn(label: Text("District")),
+                                        DataColumn(label: Text("City")),
+                                      ],
+                                      rows: List.generate(snapshot.data!.length,
+                                          (index) {
+                                        var data = snapshot.data![index];
+
+                                        var addr = data.pickupAddr;
+
+                                        return DataRow(cells: [
+                                          DataCell(Text("${index + 1}")),
+                                          DataCell(Text(addr.homeNo)),
+                                          DataCell(Text(addr.street)),
+                                          DataCell(Text(addr.ward)),
+                                          DataCell(Text(addr.district)),
+                                          DataCell(Text(addr.city)),
+                                        ]);
+                                      }));
+                                }
+
+                                return Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }),
                         ),
                       ],
                     ),
@@ -185,7 +200,11 @@ class _DashboardState extends State<Dashboard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                ElevatedButton(onPressed: () {}, child: const Text("Booking")),
+                ElevatedButton(
+                    onPressed: () {
+                      // widget.saveChildCallback();
+                    },
+                    child: const Text("Booking")),
                 const SizedBox(
                   width: 16.0,
                 ),
