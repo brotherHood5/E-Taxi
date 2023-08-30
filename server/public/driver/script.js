@@ -69,9 +69,9 @@ function convertCoord(coordinate) {
 // 	updateLocation(convertCoord(markerFeature.getGeometry().getCoordinates()));
 // }, 500);
 
-const customerId = "64d8abbacd43b24158a8c2f3";
+const customerId = "64de13237ee4b5326542e99e";
 function updateLocation(coordinate) {
-	socket.emit("call", "storeSystem.updateDriverLocation", { ...coordinate, customerId });
+	socket.emit("call", "bookingSystem.updateDriverLocation", { ...coordinate, customerId });
 }
 
 function showDriverMarker(coord) {
@@ -96,7 +96,7 @@ map.on("click", function (event) {
 // Test
 var booking;
 let authToken =
-	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY0ZGUxMzIzN2VlNGI1MzI2NTQyZTk5ZSIsImZ1bGxOYW1lIjoiRMawxqFuZyBRdWFuZyBWaW5oIiwicGhvbmVOdW1iZXIiOiIwOTcyMzYwMjE0IiwicGFzc3dvcmRIYXNoIjoiJDJhJDEwJGdETU1oUlg3aXNrNlptRW1FMnZYaXVWWUZIeEh6ODJCcXppRVhjMGRSbHRpQWMyeGtBbkU2IiwicGhvbmVOdW1iZXJWZXJpZmllZCI6dHJ1ZSwiZW5hYmxlIjp0cnVlLCJhY3RpdmUiOnRydWUsImNyZWF0ZWRBdCI6IjIwMjMtMDgtMTdUMTI6MzE6MzEuOTYxWiIsInVwZGF0ZWRBdCI6IjIwMjMtMDgtMTdUMTI6MzE6MzEuOTYxWiIsInJvbGVzIjpbIkRSSVZFUiJdLCJ2ZWhpY2xlVHlwZSI6IjQifSwiaWF0IjoxNjkyMzMyMjQxLCJleHAiOjE2OTI5MzcwNDF9.pbF413MWlq2A225TyIOxpi1fDgx6Js7qXPGvojD1LV8";
+	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY0ZGUxMzIzN2VlNGI1MzI2NTQyZTk5ZSIsImZ1bGxOYW1lIjoiRMawxqFuZyBRdWFuZyBWaW5oIiwicGhvbmVOdW1iZXIiOiIwOTcyMzYwMjE0IiwicGFzc3dvcmRIYXNoIjoiJDJhJDEwJGdETU1oUlg3aXNrNlptRW1FMnZYaXVWWUZIeEh6ODJCcXppRVhjMGRSbHRpQWMyeGtBbkU2IiwicGhvbmVOdW1iZXJWZXJpZmllZCI6dHJ1ZSwiZW5hYmxlIjp0cnVlLCJhY3RpdmUiOnRydWUsImNyZWF0ZWRBdCI6IjIwMjMtMDgtMTdUMTI6MzE6MzEuOTYxWiIsInVwZGF0ZWRBdCI6IjIwMjMtMDgtMTdUMTI6MzE6MzEuOTYxWiIsInJvbGVzIjpbIkRSSVZFUiJdLCJ2ZWhpY2xlVHlwZSI6IjQifSwiaWF0IjoxNjkzMzIyNTczLCJleHAiOjE2OTM5MjczNzN9.U62G7psfN2EKjJ78QauqcMpFvNI_zP5t2R2CJ9dCtKU";
 const eventDiv = document.getElementById("events");
 const resultDiv = document.getElementById("res");
 var socket = io("ws://localhost:3003/drivers", {

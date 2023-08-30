@@ -130,11 +130,9 @@ const DriversService: DriversServiceSchema = {
 			},
 		},
 		get: {
-			restricted: ["api"],
+			cache: false,
 		},
-		update: {
-			restricted: ["api"],
-		},
+		update: {},
 		remove: {
 			restricted: ["api"],
 		},

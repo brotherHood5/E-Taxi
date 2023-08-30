@@ -36,6 +36,7 @@ const BookingService: ServiceSchema = {
 		fields: [
 			"_id",
 			"phoneNumber",
+			"customerId",
 			"driverId",
 			"driver",
 			"vehicleType",
@@ -385,6 +386,7 @@ const BookingService: ServiceSchema = {
 		async createNew(this: Service, data: IBooking) {
 			const entity = {
 				...data,
+				status: BookingStatus.NEW,
 			};
 
 			const tasks = [
@@ -484,6 +486,14 @@ const BookingService: ServiceSchema = {
 	},
 
 	beforeEntityCreate(entity: IBooking) {
+		if (entity.customerId) {
+			entity.customerId = new MongoObjectId(entity.customerId as string);
+		}
+
+		if (entity.driverId) {
+			entity.driverId = new MongoObjectId(entity.driverId as string);
+		}
+
 		if (entity.destAddr) {
 			entity.destAddr = new MongoObjectId(entity.destAddr as string);
 		}

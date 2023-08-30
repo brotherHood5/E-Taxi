@@ -13,7 +13,7 @@ const PriceService: ServiceSchema = {
 		calculatePrice: {
 			rest: "GET /calculate-price",
 			params: {
-				distance: "number",
+				distance: ["string", "number"],
 				vehicleType: ["string", "number"],
 			},
 			async handler(ctx) {

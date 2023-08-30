@@ -20,6 +20,7 @@ export enum BookingStatus {
 export interface IBooking {
 	_id?: ObjectIdNull;
 	phoneNumber: string;
+	customerId?: ObjectIdNull;
 	driverId?: ObjectIdNull;
 	vehicleType: VehicleType;
 	pickupAddr: IAddress | ObjectId;
