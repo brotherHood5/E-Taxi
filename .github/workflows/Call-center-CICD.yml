@@ -32,6 +32,7 @@ jobs:
       - name: Get dependencies
         run: |
           cd call-center
+          flutter config --enable-web
           flutter upgrade
           flutter pub get
       

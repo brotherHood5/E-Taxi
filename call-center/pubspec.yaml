@@ -31,9 +31,9 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_osm_plugin: ^0.60.1
-  lorem_ipsum: any
+  lorem_ipsum:
   rounded_loading_button: ^2.0.8
-  http: any
+  http:
   shared_preferences: ^2.2.0
   flutter_easyloading: ^3.0.5
   flutter_client_sse: ^1.0.0
