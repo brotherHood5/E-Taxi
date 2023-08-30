@@ -43,6 +43,7 @@ class MyApp extends StatelessWidget {
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
         primarySwatch: Colors.orange,
+        // useMaterial3: true,
       ),
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,

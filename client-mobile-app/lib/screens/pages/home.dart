@@ -1,13 +1,11 @@
-import 'dart:convert';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
-import 'package:grab_clone/api/GeoService.dart';
 import 'package:grab_clone/constants.dart';
+import 'package:grab_clone/models/Booking.dart';
+import 'package:grab_clone/screens/book/driver_tracking.dart';
 import 'package:grab_clone/widgets/location_list_item.dart';
 import 'package:grab_clone/widgets/vehicle_chosen_button.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../helpers/helper.dart';
@@ -65,6 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
         isLoading = false;
       });
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -200,6 +203,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     }));
                 if (p != null) {
                   await savePickupGeoPoint(p);
+                  if (!mounted) return;
+                  setState(() {});
                 }
               },
               child: Container(
@@ -249,7 +254,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   )),
             ),
-          )
+          ),
+          FutureBuilder<BookingModel?>(
+              future: getCurrentBooking(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Positioned(
+                      left: layoutMedium,
+                      right: layoutMedium,
+                      bottom: layoutMedium,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) =>
+                                  const DriverTrackingScreen()));
+                        },
+                        style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(borderRadiusSmall),
+                                side: BorderSide(
+                                    color: Colors.grey.withOpacity(.4)))),
+                        child: Text("Theo dõi vị trí tài xế",
+                            style: Theme.of(context).textTheme.titleLarge!),
+                      ));
+                }
+                return const SizedBox();
+              })
         ],
       ),
     );

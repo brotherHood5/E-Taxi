@@ -8,10 +8,10 @@ class GeoService {
   static final ApiClient _client = ApiClient();
 
   static Future<http.Response> geocode(String query) {
-    return http.get(Uri.parse("$_endpoint/geocode?q=$query"));
+    return _client.get(Uri.parse("$_endpoint/geocode?q=$query"));
   }
 
   static Future<http.Response> reverseGeocode(double lat, double lon) {
-    return http.get(Uri.parse("$_endpoint/reverse?lat=$lat&lon=$lon"));
+    return _client.get(Uri.parse("$_endpoint/reverse?lat=$lat&lon=$lon"));
   }
 }

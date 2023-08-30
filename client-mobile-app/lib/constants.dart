@@ -15,6 +15,10 @@ class ApiConstants {
   // Url
   static String baseUrl = isDev ? 'http://$host:$port/api/v1' : prodUrl;
   static String prodUrl = 'http://$remoteHost:$remotePort/api/v1';
+
+  static String socketUrl = isDev
+      ? 'http://$host:3003/customers'
+      : "http://$remoteHost:4003/customers";
 }
 
 const topMarginInWelcomeScreen = 150.0;

@@ -1,7 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'dart:async';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:grab_clone/api/CustomerService.dart';
+import 'package:grab_clone/helpers/helper.dart';
+import 'package:grab_clone/screens/book/driver_tracking.dart';
+
+import '../../api/SocketApi.dart';
 import '../../constants.dart';
+import '../../models/Booking.dart';
+import '../../models/Address.dart';
 
 class BookRideScreen extends StatefulWidget {
   final GeoPoint pickUpGeoPoint;
@@ -29,13 +39,49 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
       fit: BoxFit.contain,
     ),
   );
-
   late MarkerIcon destinationMarker;
+
+  final ValueNotifier<int> _price = ValueNotifier<int>(0);
+
   late String _vehicleName;
+  late BookingModel _booking;
+  late NavigatorState _navigator;
+  bool _isBooking = false;
+  final SocketApi _socket = SocketApi();
+
+  Timer? cancelTimer;
+
+  void startCancelTimer() {
+    cancelTimer = Timer(const Duration(minutes: 1), () {
+      setState(() {
+        _isBooking = false;
+      });
+      EasyLoading.removeAllCallbacks();
+      EasyLoading.dismiss();
+      EasyLoading.showError("Không tìm được tài xế. Thử lại sau");
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    _navigator = Navigator.of(context);
+    _socket.ins.on("booking_accepted", (data) {
+      if (_isBooking) {
+        onSuccess();
+        _isBooking = false;
+      }
+    });
+    _booking = BookingModel(
+      vehicleType: widget.vehicleType,
+      pickupAddr: AddressModel(
+        lat: widget.pickUpGeoPoint.latitude,
+        lon: widget.pickUpGeoPoint.longitude,
+      ),
+      destAddr: AddressModel(
+          lat: widget.destGeoPoint.latitude,
+          lon: widget.destGeoPoint.longitude),
+    );
     _controller = MapController.withPosition(
       initPosition: widget.pickUpGeoPoint,
     );
@@ -60,7 +106,7 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
         case "2":
           return "Xe máy";
         case "4":
-          return "Xe taxi";
+          return "Xe 4 chỗ";
         case "7":
           return "Xe 7 chỗ";
         default:
@@ -72,6 +118,10 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
   @override
   void dispose() {
     _controller.dispose();
+    _price.dispose();
+    EasyLoading.removeAllCallbacks();
+    cancelTimer?.cancel();
+    cancelTimer = null;
     super.dispose();
   }
 
@@ -109,7 +159,7 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
               Navigator.of(context).pop();
             },
             backgroundColor: Colors.white,
-            child: Icon(Icons.arrow_back, color: Colors.black),
+            child: const Icon(Icons.arrow_back, color: Colors.black),
           ),
         ),
       ]),
@@ -120,27 +170,96 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: layoutSmall),
-              color: Colors.green[50],
-              child: ListTile(
-                leading: Image.asset("assets/images/motorbike.png",
-                    fit: BoxFit.scaleDown),
-                title: Text(_vehicleName),
-                titleTextStyle: theme.textTheme.titleMedium!.merge(
-                    const TextStyle(
-                        color: Colors.black, fontWeight: FontWeight.bold)),
-                trailing: Text("20.000đ"),
-                leadingAndTrailingTextStyle: theme.textTheme.titleMedium!.merge(
-                    const TextStyle(
-                        color: Colors.black, fontWeight: FontWeight.bold)),
-              ),
+            ValueListenableBuilder<int>(
+              valueListenable: _price,
+              builder: (BuildContext context, dynamic value, Widget? child) {
+                if (value == 0) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: layoutSmall),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: layoutSmall),
+                  color: Colors.green[100],
+                  child: ListTile(
+                    leading: Image.asset(
+                        widget.vehicleType == "2"
+                            ? "assets/images/motorbike.png"
+                            : widget.vehicleType == "4"
+                                ? "assets/images/taxi.png"
+                                : "assets/images/van.png",
+                        fit: BoxFit.scaleDown),
+                    title: Text(_vehicleName),
+                    titleTextStyle: theme.textTheme.titleMedium!.merge(
+                        const TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold)),
+                    trailing: Text("${value}đ"),
+                    leadingAndTrailingTextStyle: theme.textTheme.titleMedium!
+                        .merge(const TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold)),
+                  ),
+                );
+              },
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: layoutMedium, vertical: layoutSmall),
               child: ElevatedButton(
-                  onPressed: () async {},
+                  onPressed: () async {
+                    try {
+                      if (!mounted) return;
+                      setState(() {
+                        _isBooking = true;
+                      });
+
+                      final res = await CustomerService.bookRide(_booking);
+                      if (res.statusCode == 200) {
+                        await saveCurrentBooking(
+                            BookingModel.fromJson(res.body));
+                        startCancelTimer();
+                        EasyLoading.addStatusCallback((status) async {
+                          if (status == EasyLoadingStatus.dismiss) {
+                            cancelTimer!.cancel();
+                            setState(() {
+                              _isBooking = false;
+                            });
+                            EasyLoading.showError("Hủy đặt xe thành công");
+                            // await clearCurrentBooking();
+                            try {
+                              onSuccess();
+                            } catch (error) {
+                              print(error);
+                            }
+                            Future.delayed(const Duration(milliseconds: 10),
+                                () {
+                              EasyLoading.removeAllCallbacks();
+                            });
+                          }
+                        });
+                        EasyLoading.show(
+                            status: "Đang đặt xe...",
+                            maskType: EasyLoadingMaskType.clear,
+                            dismissOnTap: true);
+                        return;
+                      } else {
+                        setState(() {
+                          _isBooking = false;
+                        });
+                        EasyLoading.showError("Đặt xe thất bại");
+                        await clearCurrentBooking();
+                      }
+                    } catch (e) {
+                      setState(() {
+                        _isBooking = false;
+                      });
+                      await clearCurrentBooking();
+                      EasyLoading.showError("Đặt xe thất bại");
+                    }
+                    _navigator.pop();
+                  },
                   style: ButtonStyle(
                       maximumSize: MaterialStateProperty.all<Size>(
                           const Size(double.infinity, 50)),
@@ -163,6 +282,14 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
     );
   }
 
+  void onSuccess() {
+    cancelTimer!.cancel();
+    EasyLoading.removeAllCallbacks();
+    EasyLoading.dismiss();
+    _navigator.pushReplacement(
+        MaterialPageRoute(builder: (context) => const DriverTrackingScreen()));
+  }
+
   @override
   Future<void> mapIsReady(bool isReady) async {
     if (isReady) {
@@ -174,6 +301,22 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
       print("${roadInfo.distance}km");
       print("${roadInfo.duration}sec");
       print("${roadInfo.instructions}");
+      try {
+        final res = await CustomerService.calculatePrice(
+            widget.vehicleType, roadInfo.distance!);
+        int? data = jsonDecode(res.body);
+        if (data != null) {
+          var storedData = await getStoredData();
+          _booking.phoneNumber = storedData["user"].phoneNumber;
+          _booking.customerId = storedData["user"].id;
+          _booking.price = data.toString();
+          _booking.distance = roadInfo.distance!.toString();
+          _price.value = data;
+        }
+      } catch (e) {
+        EasyLoading.showError("Lỗi tính giá");
+        _navigator.pop(context);
+      }
     }
   }
 }

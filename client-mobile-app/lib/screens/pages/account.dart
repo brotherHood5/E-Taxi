@@ -13,7 +13,7 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  late Customer user;
+  late CustomerModel user;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class _AccountScreenState extends State<AccountScreen> {
         future: getStoredData(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            user = snapshot.data?["user"] as Customer;
+            user = snapshot.data?["user"] as CustomerModel;
             return Container(
                 margin:
                     EdgeInsets.only(top: MediaQuery.of(context).padding.top),

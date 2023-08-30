@@ -10,44 +10,40 @@ class AuthService {
   static Future<http.Response> refreshToken(String token) {
     return http.post(Uri.parse("$_endpoint/refresh-token"), body: {
       'refreshToken': token,
-    });
+    }).timeout(const Duration(seconds: 2));
   }
 
   static Future<http.Response> resolveToken(String token) {
     return http.post(Uri.parse("$_endpoint/resolve-token"), body: {
       'token': token,
-    });
+    }).timeout(const Duration(seconds: 2));
   }
 
-  static Future<http.Response> login(
-      String phoneNumber, String password) async {
-    final res = await http.post(Uri.parse("$_endpoint/login"), body: {
+  static Future<http.Response> login(String phoneNumber, String password) {
+    return http.post(Uri.parse("$_endpoint/login"), body: {
       'phoneNumber': phoneNumber,
       'password': password,
-    });
-
-    return res;
+    }).timeout(const Duration(seconds: 2));
   }
 
-  static Future<http.Response> signUp(
-      String phoneNumber, String password) async {
-    final res = await http.post(Uri.parse("$_endpoint/signup"), body: {
+  static Future<http.Response> signUp(String phoneNumber, String password) {
+    return http.post(Uri.parse("$_endpoint/signup"), body: {
       'phoneNumber': phoneNumber,
       'password': password,
-    });
-
-    return res;
+    }).timeout(const Duration(seconds: 2));
   }
 
   static Future<http.Response> verifyOtp(String phoneNumber, String otp) {
-    return http.get(
-        Uri.parse("$_endpoint/verify-otp?phoneNumber=$phoneNumber&otp=$otp"));
+    return http
+        .get(Uri.parse(
+            "$_endpoint/verify-otp?phoneNumber=$phoneNumber&otp=$otp"))
+        .timeout(const Duration(seconds: 2));
   }
 
   static Future<http.Response> finishSignUp(String id, String fullName) {
     return http.put(Uri.parse("$_endpoint/$id"), body: {
       'fullName': fullName,
-    });
+    }).timeout(const Duration(seconds: 2));
   }
 
   static Future<http.Response> reSendOtp(String phoneNumber) {

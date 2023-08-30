@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:grab_clone/helpers/helper.dart';
 import 'package:grab_clone/screens/pages/home.dart';
 import 'package:grab_clone/screens/pages/account.dart';
 import 'package:hidable/hidable.dart';
 
+import '../../api/SocketApi.dart';
 import '../../constants.dart';
 
 class MainScreen extends StatefulWidget {
@@ -22,6 +24,15 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+
+    getStoredData().then((value) => {
+          SocketApi.setAuthToken(value?["accessToken"]),
+          SocketApi.init(),
+          SocketApi().ins.on("booking_updated", (data) {
+            print("booking_updated: $data");
+          })
+        });
+
     _tabs = [
       HomeScreen(
         scrollController: scrollController,

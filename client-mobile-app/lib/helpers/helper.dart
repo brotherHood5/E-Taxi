@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/AuthService.dart';
 import '../api/GeoService.dart';
+import '../models/Booking.dart';
 import '../models/Customer.dart';
 
 showLoaderDialog(BuildContext context) {
@@ -40,9 +41,9 @@ showLoaderDialog(BuildContext context) {
 Future<Map<String, dynamic>> getStoredData() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  Customer? customer;
+  CustomerModel? customer;
   if (prefs.getString('user') != null) {
-    customer = Customer.fromJson(prefs.getString('user')!);
+    customer = CustomerModel.fromJson(prefs.getString('user')!);
   } else {
     customer = null;
   }
@@ -82,7 +83,7 @@ Future<void> clearCredential() async {
   ]);
 }
 
-Future<Customer?> getMe(String accessToken) async {
+Future<CustomerModel?> getMe(String accessToken) async {
   try {
     var res = await AuthService.resolveToken(accessToken);
     if (res.statusCode == 200) {
@@ -90,7 +91,7 @@ Future<Customer?> getMe(String accessToken) async {
         userJsonEncoded: res.body,
       );
       var data = await getStoredData();
-      return data['user'] as Customer;
+      return data['user'] as CustomerModel;
     }
   } catch (e) {
     print(e);
@@ -126,7 +127,7 @@ Future<Map<String, dynamic>?> getNewCredential() async {
     return null;
   }
 
-  Customer? user = await getMe(data["accessToken"]);
+  CustomerModel? user = await getMe(data["accessToken"]);
   if (user == null) {
     var newTokens = await refreshToken(data["refreshToken"]);
     if (newTokens != null) {
@@ -162,4 +163,21 @@ Future<void> savePickupGeoPoint(GeoPoint point) async {
   await prefs.setString("pickupAddress",
       data[0]["formattedAddress"] ?? "${point.latitude}, ${point.longitude}");
   await prefs.setString("pickupGeoPoint", jsonEncode(point.toMap()));
+}
+
+Future<void> saveCurrentBooking(BookingModel booking) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString("currentBooking", booking.toJson());
+}
+
+Future<BookingModel?> getCurrentBooking() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? json = prefs.getString("currentBooking");
+  if (json == null) return null;
+  return BookingModel.fromJson(json);
+}
+
+Future<void> clearCurrentBooking() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.remove("currentBooking");
 }

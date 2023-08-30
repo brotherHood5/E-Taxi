@@ -94,7 +94,6 @@ class _LoginScreenState extends State<LoginScreen> {
         dismissOnTap: false);
     try {
       final res = await AuthService.login(phoneNumber, password);
-      print(res.body);
       if (res.statusCode == 200) {
         var body = jsonDecode(res.body);
         EasyLoading.dismiss();
@@ -114,7 +113,6 @@ class _LoginScreenState extends State<LoginScreen> {
             userJsonEncoded: jsonEncode(body["user"]),
             accessToken: body["accessToken"],
             refreshToken: body["refreshToken"]);
-
         navigator.pushReplacement(
             MaterialPageRoute(builder: (context) => const MainScreen()));
         return;
@@ -134,9 +132,10 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
-      await clearCredential();
+      print(e);
       EasyLoading.showError("Có lỗi xảy ra khi đăng nhập.\nVui lòng thử lại",
           maskType: EasyLoadingMaskType.black, dismissOnTap: true);
+      await clearCredential();
     }
   }
 
