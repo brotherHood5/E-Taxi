@@ -27,18 +27,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-
-      - name: Change directory
-        run: cd call-center && ls -l
       
       - name: Enable Flutter Web
-        run: flutter config --enable-web
+        run: cd call-center && flutter config --enable-web
 
       - name: Get dependencies
-        run: ls -l && flutter pub get
+        run: cd call-center && flutter pub get
       
       - name: Build release project
-        run: flutter build web
+        run: cd call-center && flutter build web
       
   # Deploy:
   #   runs-on: ubuntu-latest
