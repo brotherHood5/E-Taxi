@@ -23,7 +23,6 @@ jobs:
         with:
           ref: call-center
           sparse-checkout: call-center
-      - run: ls -l
 
       - name: Change directory
         run: cd call-center && ls -l
@@ -36,12 +35,10 @@ jobs:
         run: flutter config --enable-web
 
       - name: Get dependencies
-        run: flutter pub get
+        run: ls -l && flutter pub get
       
       - name: Build release project
         run: flutter build web
-
-      - run: ls -l call-center/build/web
       
   # Deploy:
   #   runs-on: ubuntu-latest
