@@ -24,12 +24,12 @@ jobs:
           ref: call-center
           sparse-checkout: call-center
 
-      - name: Change directory
-        run: cd call-center && ls -l
-
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+
+      - name: Change directory
+        run: cd call-center && ls -l
       
       - name: Enable Flutter Web
         run: flutter config --enable-web
