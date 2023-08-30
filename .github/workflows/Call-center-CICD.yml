@@ -37,41 +37,58 @@ jobs:
       
       - name: Build release project
         run: cd call-center && flutter build web
-      
-  # Deploy:
-  #   runs-on: ubuntu-latest
-    # steps:
-      # - uses: actions/checkout@v3
-      # - name: Copy folder cell-center to remote host via ssh
-      #   uses: appleboy/scp-action@v0.1.4
-      #   with:
-      #     host: ${{ secrets.SERVER_HOST }}
-      #     username: ${{ secrets.SERVER_USER }}
-      #     key: ${{ secrets.SERVER_PRIVATE_KEY }}
-      #     overwrite: true
-      #     source: "call-center"
-      #     target: ${{ env.REMOTE_PATH }}
 
-      # - name: Deploy to DigitalOcean Droplet
-      #   uses: appleboy/ssh-action@master
-      #   with:
-      #     script_stop: true
-      #     host: ${{ secrets.SERVER_HOST }}
-      #     username: ${{ secrets.SERVER_USER }}
-      #     key: ${{ secrets.SERVER_PRIVATE_KEY }}
-      #     envs: CONTAINER_NAME,IMAGE_NAME,REMOTE_PATH
-      #     script: |
-      #       cd /mnt/call-center 
-      #       # Stop and remove the old container if it exists
-      #       docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
-      #       # Build docker image 
-      #       docker build -t ${{ env.IMAGE_NAME }}:latest .
-      #       # Run a new container 
-      #       docker run -d \
-      #       --restart always \
-      #       --name $(echo $CONTAINER_NAME | tr ':/' '-') \
-      #       -p 3000:5000 \
-      #        ${{ env.IMAGE_NAME }}:latest
+      - name: Upload production-ready build files
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-files
+          path: ./call-center/build/web
+        
+  Deploy:
+    needs: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: call-center
+          sparse-checkout: call-center
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: production-files
+          path: ./call-center/build/web
+
+      - name: Copy folder cell-center to remote host via ssh
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_PRIVATE_KEY }}
+          overwrite: true
+          source: "call-center"
+          target: ${{ env.REMOTE_PATH }}
+
+      - name: Deploy to DigitalOcean Droplet
+        uses: appleboy/ssh-action@master
+        with:
+          script_stop: true
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_PRIVATE_KEY }}
+          envs: CONTAINER_NAME,IMAGE_NAME,REMOTE_PATH
+          script: |
+            cd /mnt/call-center 
+            # Stop and remove the old container if it exists
+            docker stop $(echo $CONTAINER_NAME | tr ':/' '-') || true && docker rm -f $(echo $CONTAINER_NAME | tr ':/' '-') || true
+            # Build docker image 
+            docker build -t ${{ env.IMAGE_NAME }}:latest .
+            # Run a new container 
+            docker run -d \
+            --restart always \
+            --name $(echo $CONTAINER_NAME | tr ':/' '-') \
+            -p 3000:5000 \
+             ${{ env.IMAGE_NAME }}:latest
         
         
 
