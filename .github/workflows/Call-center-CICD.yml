@@ -28,9 +28,6 @@ jobs:
         with:
           channel: 'stable'
       
-      - name: Enable Flutter Web
-        run: cd call-center && flutter config --enable-web
-
       - name: Get dependencies
         run: cd call-center && flutter pub get
       
