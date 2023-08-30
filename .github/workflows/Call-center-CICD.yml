@@ -33,7 +33,6 @@ jobs:
         run: |
           cd call-center
           flutter config --enable-web
-          flutter upgrade
           flutter pub get
       
       - name: Build release project
