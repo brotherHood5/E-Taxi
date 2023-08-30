@@ -54,10 +54,13 @@ jobs:
           sparse-checkout: call-center
 
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: production-files
           path: ./call-center/build/web
+          
+      - name: Display structure of downloaded files
+        run: ls -R
 
       - name: Copy folder cell-center to remote host via ssh
         uses: appleboy/scp-action@v0.1.4
