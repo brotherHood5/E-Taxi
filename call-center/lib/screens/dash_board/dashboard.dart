@@ -25,6 +25,8 @@ class _DashboardState extends State<Dashboard> {
   @override
   bool isExpanded = false;
 
+  BookingFormController _bookingFormController = BookingFormController();
+
   String? phoneNumber;
 
   @override
@@ -95,6 +97,7 @@ class _DashboardState extends State<Dashboard> {
                       children: [
                         Expanded(
                           child: BookingForm(
+                            controller: _bookingFormController,
                             onPhoneNumberChanged: onPhoneNumberChanged,
                             // saveChildCallback: submitForm(),
                           ),
@@ -253,14 +256,16 @@ class _DashboardState extends State<Dashboard> {
               children: [
                 ElevatedButton(
                     onPressed: () {
-                      // widget.saveChildCallback();
+                      print(_bookingFormController.bookingReq);
                     },
                     child: const Text("Booking")),
                 const SizedBox(
                   width: 16.0,
                 ),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    _bookingFormController.clear();
+                  },
                   child: const Text("Clear"),
                 ),
               ],

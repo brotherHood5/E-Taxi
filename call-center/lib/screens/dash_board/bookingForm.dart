@@ -2,14 +2,31 @@ import 'package:easy_debounce/easy_debounce.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 
+import '../../model/BookingReq.dart';
+import '../../model/Location.dart';
+
+class BookingFormController {
+  VoidCallback clear = () {};
+  BookingReq bookingReq = BookingReq(
+      destAddr: Location(),
+      phoneNumber: '',
+      pickupAddr: Location(),
+      status: '',
+      vehicleType: '');
+
+  void dispose() {}
+}
+
 class BookingForm extends StatefulWidget {
   final Function onPhoneNumberChanged;
   // final Function() saveChildCallback;
 
+  final BookingFormController controller;
+
   const BookingForm({
     Key? key,
     required this.onPhoneNumberChanged,
-    // required this.saveChildCallback,
+    required this.controller,
   }) : super(key: key);
   @override
   State<BookingForm> createState() => _BookingFormState();
@@ -39,6 +56,8 @@ class _BookingFormState extends State<BookingForm> {
   void initState() {
     super.initState();
     phoneController.text = "0972360214";
+    BookingFormController controller = widget.controller;
+    controller.clear = () => setState(() => phoneController.text = "");
   }
 
   @override

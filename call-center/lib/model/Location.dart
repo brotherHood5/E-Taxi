@@ -13,11 +13,11 @@ class Location {
 
   Location({
     this.id,
-    required this.homeNo,
-    required this.street,
-    required this.ward,
-    required this.district,
-    required this.city,
+    this.homeNo,
+    this.street,
+    this.ward,
+    this.district,
+    this.city,
     this.lat,
     this.lon,
   });
