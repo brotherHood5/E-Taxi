@@ -38,11 +38,24 @@ class _BookingFormState extends State<BookingForm> {
   @override
   void initState() {
     super.initState();
+    phoneController.text = "0972360214";
   }
 
   @override
   void dispose() {
     EasyDebounce.cancel("phoneController");
+    phoneController.dispose();
+    pickupNoText.dispose();
+    pickupStreetText.dispose();
+    pickupWardText.dispose();
+    pickupDistrictText.dispose();
+    pickupCityText.dispose();
+    destNoText.dispose();
+    destStreetText.dispose();
+    destWardText.dispose();
+    destDistrictText.dispose();
+    destCityText.dispose();
+
     super.dispose();
   }
 

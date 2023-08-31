@@ -5,10 +5,10 @@ import 'package:web/model/Location.dart';
 
 class TopAddress {
   String? id;
-  String phoneNumber;
-  String addressId;
-  Location address;
-  int count;
+  String? phoneNumber;
+  String? addressId;
+  Location? address;
+  int? count;
   TopAddress({
     this.id,
     required this.phoneNumber,
@@ -38,7 +38,7 @@ class TopAddress {
       'id': id,
       'phoneNumber': phoneNumber,
       'addressId': addressId,
-      'address': address.toMap(),
+      'address': address?.toMap(),
       'count': count,
     };
   }
@@ -46,10 +46,13 @@ class TopAddress {
   factory TopAddress.fromMap(Map<String, dynamic> map) {
     return TopAddress(
       id: map['_id'] != null ? map['_id'] as String : null,
-      phoneNumber: map['phoneNumber'] as String,
-      addressId: map['addressId'] as String,
-      address: Location.fromMap(map['address'] as Map<String, dynamic>),
-      count: map['count'] as int,
+      phoneNumber:
+          map['phoneNumber'] != null ? map['phoneNumber'] as String : null,
+      addressId: map['addressId'] != null ? map['addressId'] as String : null,
+      address: map['address'] != null
+          ? Location.fromMap(map['address'] as Map<String, dynamic>)
+          : null,
+      count: map['count'] != null ? map['count'] as int : null,
     );
   }
 

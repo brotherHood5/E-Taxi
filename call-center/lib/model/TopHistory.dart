@@ -6,30 +6,31 @@ import 'package:web/model/Location.dart';
 
 class TopHistory {
   String? id;
-  String phoneNumber;
-  Location pickupAddr;
-  Location destAddr;
-  String status;
-  String createdAt;
-  String updatedAt;
+  String? phoneNumber;
+  Location? pickupAddr;
+  Location? destAddr;
+  String? status;
+  DateTime? createdAt;
+  DateTime? updatedAt;
 
   TopHistory({
-    required this.id,
-    required this.phoneNumber,
-    required this.pickupAddr,
-    required this.destAddr,
-    required this.status,
-    required this.createdAt,
-    required this.updatedAt,
+    this.id,
+    this.phoneNumber,
+    this.pickupAddr,
+    this.destAddr,
+    this.status,
+    this.createdAt,
+    this.updatedAt,
   });
+
   TopHistory copyWith({
     String? id,
     String? phoneNumber,
     Location? pickupAddr,
     Location? destAddr,
     String? status,
-    String? createdAt,
-    String? updatedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return TopHistory(
       id: id ?? this.id,
@@ -46,39 +47,35 @@ class TopHistory {
     return <String, dynamic>{
       'id': id,
       'phoneNumber': phoneNumber,
-      'pickupAddr': pickupAddr.toMap(),
-      'destAddr': destAddr.toMap(),
+      'pickupAddr': pickupAddr?.toMap(),
+      'destAddr': destAddr?.toMap(),
       'status': status,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
+      'createdAt': createdAt?.toString(),
+      'updatedAt': updatedAt?.toString(),
     };
   }
-
-  // factory TopHistory.fromJson(Map<String, dynamic> json) {
-  //   return TopHistory(
-  //     id: json['_id'],
-  //     phoneNumber: json['phoneNumber'],
-  //     pickupAddr: Location.fromJson(json['pickupAddr']),
-  //     destAddr: Location.fromJson(json['destAddr']),
-  //     status: json['status'],
-  //     createdAt: json['createdAt'],
-  //     updatedAt: json['updatedAt'],
-  //   );
-  // }
 
   factory TopHistory.fromMap(Map<String, dynamic> map) {
     return TopHistory(
       id: map['_id'] != null ? map['_id'] as String : null,
-      phoneNumber: map['phoneNumber'] as String,
-      pickupAddr: Location.fromMap(map['pickupAddr'] as Map<String, dynamic>),
-      destAddr: Location.fromMap(map['destAddr'] as Map<String, dynamic>),
-      status: map['status'] as String,
-      createdAt: map['createdAt'] as String,
-      updatedAt: map['updatedAt'] as String,
+      phoneNumber:
+          map['phoneNumber'] != null ? map['phoneNumber'] as String : null,
+      pickupAddr: map['pickupAddr'] != null
+          ? Location.fromMap(map['pickupAddr'] as Map<String, dynamic>)
+          : null,
+      destAddr: map['destAddr'] != null
+          ? Location.fromMap(map['destAddr'] as Map<String, dynamic>)
+          : null,
+      status: map['status'] != null ? map['status'] as String : null,
+      createdAt:
+          map['createdAt'] != null ? DateTime.parse(map['createdAt']) : null,
+      updatedAt:
+          map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
     );
   }
 
   String toJson() => json.encode(toMap());
+
   factory TopHistory.fromJson(String source) =>
       TopHistory.fromMap(json.decode(source) as Map<String, dynamic>);
 
@@ -87,31 +84,11 @@ class TopHistory {
     return 'TopHistory(id: $id, phoneNumber: $phoneNumber, pickupAddr: $pickupAddr, destAddr: $destAddr, status: $status, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
-  // @override
-  // bool operator ==(covariant TopAddress other) {
-  //   if (identical(this, other)) return true;
-
-  //   return other.id == id &&
-  //       other.phoneNumber == phoneNumber &&
-  //       other.addressId == addressId &&
-  //       other.address == address &&
-  //       other.count == count;
-  // }
-
-  // @override
-  // int get hashCode {
-  //   return id.hashCode ^
-  //       phoneNumber.hashCode ^
-  //       addressId.hashCode ^
-  //       address.hashCode ^
-  //       count.hashCode;
-  // }
   @override
-  bool operator ==(Object other) {
+  bool operator ==(covariant TopHistory other) {
     if (identical(this, other)) return true;
 
-    return other is TopHistory &&
-        other.id == id &&
+    return other.id == id &&
         other.phoneNumber == phoneNumber &&
         other.pickupAddr == pickupAddr &&
         other.destAddr == destAddr &&
@@ -119,8 +96,18 @@ class TopHistory {
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        phoneNumber.hashCode ^
+        pickupAddr.hashCode ^
+        destAddr.hashCode ^
+        status.hashCode ^
+        createdAt.hashCode ^
+        updatedAt.hashCode;
+  }
 }
-// class TopHistory{
 //   String? id;
 //   String phoneNumber;
 //   String addressId;

@@ -24,10 +24,13 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   @override
   bool isExpanded = false;
+
   String? phoneNumber;
+
   @override
   void initState() {
     super.initState();
+    phoneNumber = "0972360214";
   }
 
   Future<List<TopAddress>> _getTop5Address() async {
@@ -35,12 +38,15 @@ class _DashboardState extends State<Dashboard> {
       Uri.parse(TOP5_ADDRESS_URL)
           .replace(queryParameters: {"phoneNumber": "$phoneNumber"}),
     );
-    // print(res);
+
     if (res.statusCode == 200) {
-      List jsonRes = json.decode(res.body);
-      // print(jsonRes);
-      var data = jsonRes.map((data) => TopAddress.fromMap(data)).toList();
-      return data;
+      try {
+        List jsonRes = json.decode(res.body);
+        var data = jsonRes.map((data) => TopAddress.fromMap(data)).toList();
+        return data;
+      } catch (e) {
+        return [];
+      }
     } else {
       throw Exception("Error");
     }
@@ -49,15 +55,16 @@ class _DashboardState extends State<Dashboard> {
   Future<List<TopHistory>> _getTopHistory() async {
     final res = await http.get(
       Uri.parse(BOOKING_HISTORY_URL)
-          .replace(queryParameters: {"phoneNumber": "$phoneNumber"}),
+          .replace(queryParameters: {"phoneNumber": phoneNumber}),
     );
-    // print(res);
-
     if (res.statusCode == 200) {
       List jsonRes = json.decode(res.body);
-      var data = jsonRes.map((data) => TopHistory.fromMap(data)).toList();
-
-      return data;
+      try {
+        var data = jsonRes.map((data) => TopHistory.fromMap(data)).toList();
+        return data;
+      } catch (e) {
+        return [];
+      }
     } else {
       throw Exception("Error");
     }
@@ -77,7 +84,8 @@ class _DashboardState extends State<Dashboard> {
           //Let's start by adding the Navigation Rail
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(top: 30.0, left: 30.0, right: 30.0),
+              padding:
+                  const EdgeInsets.only(top: 30.0, left: 30.0, right: 30.0),
               child: SingleChildScrollView(
                 child: Column(
                   children: [
@@ -91,7 +99,7 @@ class _DashboardState extends State<Dashboard> {
                             // saveChildCallback: submitForm(),
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 40.0,
                         ),
                         Expanded(
@@ -104,7 +112,7 @@ class _DashboardState extends State<Dashboard> {
                                       headingRowColor:
                                           MaterialStateProperty.resolveWith(
                                               (states) => Colors.grey.shade200),
-                                      columns: [
+                                      columns: const [
                                         DataColumn(label: Text("No")),
                                         DataColumn(label: Text("Top address")),
                                         DataColumn(label: Text("Counts")),
@@ -115,11 +123,11 @@ class _DashboardState extends State<Dashboard> {
 
                                         var addr = data.address;
                                         var list = [
-                                          addr.homeNo,
-                                          addr.street,
-                                          addr.ward,
-                                          addr.district,
-                                          addr.city,
+                                          addr?.homeNo,
+                                          addr?.street,
+                                          addr?.ward,
+                                          addr?.district,
+                                          addr?.city,
                                         ];
                                         var formattedAddr = list.join(", ");
                                         return DataRow(cells: [
@@ -129,8 +137,21 @@ class _DashboardState extends State<Dashboard> {
                                         ]);
                                       }));
                                 }
+                                if (snapshot.hasError) {
+                                  return DataTable(
+                                    headingRowColor:
+                                        MaterialStateProperty.resolveWith(
+                                            (states) => Colors.grey.shade200),
+                                    columns: const [
+                                      DataColumn(label: Text("No")),
+                                      DataColumn(label: Text("Top address")),
+                                      DataColumn(label: Text("Counts")),
+                                    ],
+                                    rows: [],
+                                  );
+                                }
 
-                                return Center(
+                                return const Center(
                                   child: CircularProgressIndicator(),
                                 );
                               }),
@@ -139,10 +160,9 @@ class _DashboardState extends State<Dashboard> {
                     ),
 
                     //Now let's set the article section
-                    SizedBox(
+                    const SizedBox(
                       height: 30.0,
                     ),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,32 +177,63 @@ class _DashboardState extends State<Dashboard> {
                                       headingRowColor:
                                           MaterialStateProperty.resolveWith(
                                               (states) => Colors.grey.shade200),
-                                      columns: [
+                                      columns: const [
                                         DataColumn(label: Text("No")),
-                                        DataColumn(label: Text("home No")),
-                                        DataColumn(label: Text("Street")),
-                                        DataColumn(label: Text("Ward")),
-                                        DataColumn(label: Text("District")),
-                                        DataColumn(label: Text("City")),
+                                        DataColumn(label: Text("Pickup Addr")),
+                                        DataColumn(label: Text("Dest Addr")),
+                                        DataColumn(label: Text("Booking Time")),
                                       ],
                                       rows: List.generate(snapshot.data!.length,
                                           (index) {
                                         var data = snapshot.data![index];
 
-                                        var addr = data.pickupAddr;
+                                        var pickupAddr = data.pickupAddr;
+                                        var pickupAddrList = [
+                                          pickupAddr?.homeNo,
+                                          pickupAddr?.street,
+                                          pickupAddr?.ward,
+                                          pickupAddr?.district,
+                                          pickupAddr?.city,
+                                        ];
+                                        var destAddr = data.destAddr;
+                                        var destAddrList = [
+                                          destAddr?.homeNo,
+                                          destAddr?.street,
+                                          destAddr?.ward,
+                                          destAddr?.district,
+                                          destAddr?.city,
+                                        ];
 
                                         return DataRow(cells: [
                                           DataCell(Text("${index + 1}")),
-                                          DataCell(Text(addr.homeNo)),
-                                          DataCell(Text(addr.street)),
-                                          DataCell(Text(addr.ward)),
-                                          DataCell(Text(addr.district)),
-                                          DataCell(Text(addr.city)),
+                                          DataCell(
+                                              Text(pickupAddrList.join(", "))),
+                                          DataCell(
+                                              Text(destAddrList.join(", "))),
+                                          DataCell(Text(data.createdAt == null
+                                              ? ""
+                                              : data.createdAt.toString()))
                                         ]);
                                       }));
                                 }
+                                if (snapshot.hasError) {
+                                  return DataTable(
+                                    headingRowColor:
+                                        MaterialStateProperty.resolveWith(
+                                            (states) => Colors.grey.shade200),
+                                    columns: const [
+                                      DataColumn(label: Text("No")),
+                                      DataColumn(label: Text("home No")),
+                                      DataColumn(label: Text("Street")),
+                                      DataColumn(label: Text("Ward")),
+                                      DataColumn(label: Text("District")),
+                                      DataColumn(label: Text("City")),
+                                    ],
+                                    rows: [],
+                                  );
+                                }
 
-                                return Center(
+                                return const Center(
                                   child: CircularProgressIndicator(),
                                 );
                               }),
@@ -218,8 +269,6 @@ class _DashboardState extends State<Dashboard> {
         ],
       ),
       // ElevatedButton(onPressed: () {}, child: const Text("Booking")),
-
-      //let's add the floating action button
     );
   }
 
