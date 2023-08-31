@@ -113,6 +113,21 @@ window.socket = socket;
 
 socket.on("connect", function () {
 	console.log("Websocket connection established!");
+	if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition((pos) => {
+			socket.emit(
+				"call",
+				"bookingSystem.driverConnected",
+				{
+					lat: pos.coords.latitude,
+					lon: pos.coords.longitude,
+				},
+				(err, res) => {
+					console.log(res);
+				},
+			);
+		});
+	}
 });
 
 socket.on("disconnect", function () {

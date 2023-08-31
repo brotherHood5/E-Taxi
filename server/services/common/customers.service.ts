@@ -1,4 +1,4 @@
-import type { ActionParams, Context, Service } from "moleculer";
+import type { ActionParams, Context } from "moleculer";
 import { Config } from "../../common";
 import { createTestCustomers } from "../../helpers/seed";
 import { AuthMixin, DbMixin } from "../../mixins";
