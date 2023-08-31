@@ -55,7 +55,6 @@ const SocketService: SocketServiceSchema = {
 							try {
 								// eslint-disable-next-line @typescript-eslint/no-this-alias
 								const socket = this;
-								console.log(socket.client.user);
 								await socket.$service.broker.call(
 									"coordSystem.disconnect",
 									(socket.client.user as IUserBase)._id,
@@ -95,8 +94,8 @@ const SocketService: SocketServiceSchema = {
 							try {
 								// eslint-disable-next-line @typescript-eslint/no-this-alias
 								const socket = this;
-								await socket.$service.broker.emit(
-									"drivers.disconnect",
+								await socket.$service.broker.call(
+									"bookingSystem.driverDisconnected",
 									(socket.client.user as IUserBase)._id,
 								);
 							} catch (error) {

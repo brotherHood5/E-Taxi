@@ -124,7 +124,7 @@ const DriversService: DriversServiceSchema = {
 			},
 		},
 		list: {
-			restricted: ["api"],
+			restricted: ["api", "bookingSystem"],
 			cache: {
 				ttl: 60 * 2, // 2min
 			},
@@ -137,7 +137,8 @@ const DriversService: DriversServiceSchema = {
 			restricted: ["api"],
 		},
 		find: {
-			restricted: ["api"],
+			restricted: ["api", "bookingSystem"],
+			// cache: false,
 		},
 	},
 

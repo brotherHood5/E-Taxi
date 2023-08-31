@@ -13,12 +13,6 @@ const BookingService: ServiceSchema = {
 	mixins: [DbMixin("bookings"), AMQPMixin],
 
 	events: {
-		"drivers.logged": {
-			handler(this: Service, ctx: any) {
-				this.logger.warn("Driver logged: ", this.loggedDriver);
-				this.loggedDriver.add(ctx.params);
-			},
-		},
 		"drivers.updateLocation": {
 			handler(this: Service, ctx: any) {
 				this.logger.warn("Driver update location: ", ctx.params);
@@ -224,6 +218,55 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
+		testLocation: {
+			async handler(this, ctx) {
+				const result: any = await ctx.call("drivers.list");
+				const driverList = result.rows
+					.filter((item: IDriver) => item._id !== "64de13237ee4b5326542e99e")
+					.map((item: IDriver) => item._id);
+				return driverList;
+			},
+		},
+
+		driverConnected: {
+			params: {
+				lat: ["number", "string"],
+				lon: ["number", "string"],
+			},
+			async handler(this: Service, ctx: any) {
+				let { lat, lon } = ctx.params;
+
+				try {
+					lat = Number(lat);
+					lon = Number(lon);
+					const result = await this.actions.testLocation();
+					result.forEach((item: string) => {
+						const tempLon = (lon as number) + Math.random() / 10;
+						const tempLat = (lat as number) + Math.random() / 10;
+						this.geoadd(tempLon, tempLat, item);
+					});
+					await ctx.call("bookingSystem.updateDriverLocation", {
+						lat,
+						lon,
+					});
+					const near = await this.findNearbyDriver(ctx, lat, lon);
+					this.logger.error("Nearby drivers: ", near);
+				} catch (error) {
+					return false;
+				}
+				return true;
+			},
+		},
+
+		driverDisconnected: {
+			handler(this: Service, ctx: any) {
+				this.logger.info("Driver disconnected: ", ctx.params);
+				this.removeFromGeo(ctx.params);
+			},
+		},
+
+		// Done
+		// -----------------------------
 		bookThroughApp: {
 			params: {
 				phoneNumber: "string",
@@ -238,8 +281,6 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
-		// Done
-		// -----------------------------
 		bookThroughCallCenter: {
 			rest: "POST /book",
 			params: {
@@ -296,12 +337,30 @@ const BookingService: ServiceSchema = {
 			},
 			async handler(this: Service, ctx: any) {
 				const { id, status } = ctx.params;
-				const result = await this.actions.update({
+				const result: IBooking = await this.actions.update({
 					id,
 					status,
 				});
+
+				// Gui thong tin booking toi khanh hang
+				if (result.customerId && result.inApp) {
+					ctx.call("socket.broadcast", {
+						namespace: "/customers",
+						room: [result.customerId],
+						event: "booking_updated",
+						args: [result],
+					});
+				}
+
 				return result;
 			},
+		},
+
+		updateDriverStatus: {
+			params: {
+				status: "string",
+			},
+			handler(this: Service, ctx: any) {},
 		},
 
 		updateDriverLocation: {
@@ -329,18 +388,11 @@ const BookingService: ServiceSchema = {
 							},
 						],
 					});
+				} else {
+					// Cap nhat vi tri cua driver vao redis
+					this.geoadd(lon, lat, driverId);
 				}
-
-				// Cap nhat vi tri cua driver vao redis
-				this.geoadd(lon, lat, driverId);
 			},
-		},
-
-		updateDriverStatus: {
-			params: {
-				status: "string",
-			},
-			handler(this: Service, ctx: any) {},
 		},
 
 		getBookingHistory: {
@@ -443,12 +495,12 @@ const BookingService: ServiceSchema = {
 			return entity;
 		},
 
-		async geoadd(this: Service, lon, lat, driverId) {
+		async geoadd(this: Service, lon: number, lat: number, driverId: string) {
 			await this.redisClient.geoadd(`${this.prefix}.drivers_location`, lon, lat, driverId);
 		},
 
-		async remove(this: Service, dirverId) {
-			await this.redisClient.zrem(`${this.prefix}.drivers_location`, dirverId);
+		async removeFromGeo(this: Service, driverId: string) {
+			await this.redisClient.zrem(`${this.prefix}.drivers_location`, driverId);
 		},
 
 		async findNearby(this: Service, lat: number, lon: number, maxRadius = 5, isAsc = true) {
@@ -466,13 +518,40 @@ const BookingService: ServiceSchema = {
 			);
 			return result;
 		},
+
+		async findNearbyDriver(this: Service, ctx, lat: number, lon: number, maxRadius = 5) {
+			let result = await this.findNearby(lat, lon, maxRadius);
+			result = result
+				.map((item: any) => ({
+					driverId: item[0],
+					distance: item[1],
+					lon: item[2][0],
+					lat: item[2][1],
+				}))
+				.filter((item: any) => item.driverId !== ctx.meta.user._id);
+
+			this.logger.info("Nearby drivers: ", JSON.stringify(result, null, 2));
+			const list = result.map((item: any) => new MongoObjectId(item.driverId));
+			this.logger.info("Nearby drivers: ", JSON.stringify(list, null, 2));
+
+			const drivers = await this.broker.call(
+				"drivers.find",
+				{
+					query: {
+						_id: {
+							$in: list,
+						},
+					},
+				},
+				{ parentCtx: ctx },
+			);
+			return drivers;
+		},
 	},
 
 	created() {},
 
 	started() {
-		this.loggedDriver = new Set<IDriver>();
-		this.activeDriver = [];
 		this.driverFinder = new DriverFinder();
 
 		this.redisClient = (this.broker.cacher as Cachers.Redis).client;
@@ -480,6 +559,7 @@ const BookingService: ServiceSchema = {
 	},
 
 	async stopped() {
+		// Xoa tat ca driver dang online
 		if (this.redisClient) {
 			await this.redisClient.del(`${this.prefix}.drivers_location`);
 		}
@@ -489,18 +569,15 @@ const BookingService: ServiceSchema = {
 		if (entity.customerId) {
 			entity.customerId = new MongoObjectId(entity.customerId as string);
 		}
-
 		if (entity.driverId) {
 			entity.driverId = new MongoObjectId(entity.driverId as string);
 		}
-
 		if (entity.destAddr) {
 			entity.destAddr = new MongoObjectId(entity.destAddr as string);
 		}
 		if (entity.pickupAddr) {
 			entity.pickupAddr = new MongoObjectId(entity.pickupAddr as string);
 		}
-
 		entity.createdAt = new Date();
 		entity.updatedAt = new Date();
 		return entity;
