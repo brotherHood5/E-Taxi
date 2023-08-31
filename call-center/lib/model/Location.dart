@@ -109,4 +109,13 @@ class Location {
         lat.hashCode ^
         lon.hashCode;
   }
+
+  bool isValidAddrReq() {
+    return city != null &&
+        city!.isNotEmpty &&
+        street != null &&
+        street!.isNotEmpty &&
+        homeNo != null &&
+        homeNo!.isNotEmpty;
+  }
 }

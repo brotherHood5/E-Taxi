@@ -109,4 +109,11 @@ class BookingReq {
         createdAt.hashCode ^
         updatedAt.hashCode;
   }
+
+  bool isValidBookingReq() {
+    return vehicleType.isNotEmpty &&
+        phoneNumber.isNotEmpty &&
+        pickupAddr.isValidAddrReq() &&
+        destAddr.isValidAddrReq();
+  }
 }

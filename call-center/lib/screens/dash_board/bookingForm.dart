@@ -1,12 +1,14 @@
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
+import 'package:web/model/TopHistory.dart';
 
 import '../../model/BookingReq.dart';
 import '../../model/Location.dart';
 
 class BookingFormController {
   VoidCallback clear = () {};
+  void Function(TopHistory req) insertBookReq = (TopHistory req) {};
   BookingReq bookingReq = BookingReq(
       destAddr: Location(),
       phoneNumber: '',
@@ -19,7 +21,6 @@ class BookingFormController {
 
 class BookingForm extends StatefulWidget {
   final Function onPhoneNumberChanged;
-  // final Function() saveChildCallback;
 
   final BookingFormController controller;
 
@@ -37,7 +38,7 @@ class _BookingFormState extends State<BookingForm> {
     print("submit");
   }
 
-  String vehicleType = 'Bike';
+  String vehicleType = '2';
   TextEditingController phoneController = TextEditingController();
 
   TextEditingController pickupNoText = TextEditingController();
@@ -55,9 +56,75 @@ class _BookingFormState extends State<BookingForm> {
   @override
   void initState() {
     super.initState();
-    phoneController.text = "0972360214";
     BookingFormController controller = widget.controller;
-    controller.clear = () => setState(() => phoneController.text = "");
+    controller.clear = () => setState(() => {
+          pickupNoText.text = "",
+          pickupStreetText.text = "",
+          pickupWardText.text = "",
+          pickupDistrictText.text = "",
+          pickupCityText.text = "",
+          destNoText.text = "",
+          destStreetText.text = "",
+          destWardText.text = "",
+          destDistrictText.text = "",
+          destCityText.text = "",
+          vehicleType = "2",
+        });
+    controller.insertBookReq = (TopHistory req) => {
+          phoneController.text = req.phoneNumber ?? "",
+          pickupNoText.text = req.pickupAddr?.homeNo ?? "",
+          pickupStreetText.text = req.pickupAddr?.street ?? "",
+          pickupWardText.text = req.pickupAddr?.ward ?? "",
+          pickupDistrictText.text = req.pickupAddr?.district ?? "",
+          pickupCityText.text = req.pickupAddr?.city ?? "",
+          destNoText.text = req.destAddr?.homeNo ?? "",
+          destStreetText.text = req.destAddr?.street ?? "",
+          destWardText.text = req.destAddr?.ward ?? "",
+          destDistrictText.text = req.destAddr?.district ?? "",
+          destCityText.text = req.destAddr?.city ?? "",
+          controller.bookingReq.pickupAddr = req.pickupAddr!,
+          controller.bookingReq.destAddr = req.destAddr!,
+          controller.bookingReq.phoneNumber = req.phoneNumber!,
+          setState(() => {
+                vehicleType = req.vehicleType!,
+                controller.bookingReq.vehicleType = vehicleType,
+              })
+        };
+
+    phoneController.addListener(() {
+      controller.bookingReq.phoneNumber = phoneController.text;
+    });
+    pickupNoText.addListener(() {
+      controller.bookingReq.pickupAddr.homeNo = pickupNoText.text;
+    });
+    pickupStreetText.addListener(() {
+      controller.bookingReq.pickupAddr.street = pickupStreetText.text;
+    });
+    pickupWardText.addListener(() {
+      controller.bookingReq.pickupAddr.ward = pickupWardText.text;
+    });
+    pickupDistrictText.addListener(() {
+      controller.bookingReq.pickupAddr.district = pickupWardText.text;
+    });
+    pickupCityText.addListener(() {
+      controller.bookingReq.pickupAddr.city = pickupCityText.text;
+    });
+    destNoText.addListener(() {
+      controller.bookingReq.destAddr.homeNo = destNoText.text;
+    });
+    destStreetText.addListener(() {
+      controller.bookingReq.destAddr.street = destStreetText.text;
+    });
+    destWardText.addListener(() {
+      controller.bookingReq.destAddr.ward = destWardText.text;
+    });
+    destDistrictText.addListener(() {
+      controller.bookingReq.destAddr.district = destDistrictText.text;
+    });
+    destCityText.addListener(() {
+      controller.bookingReq.destAddr.city = destCityText.text;
+    });
+    phoneController.text = "0972360214";
   }
 
   @override
@@ -81,7 +148,7 @@ class _BookingFormState extends State<BookingForm> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16.0), // Customize the padding value
+      padding: const EdgeInsets.all(16.0), // Customize the padding value
       decoration: BoxDecoration(
         color: Colors.grey.shade200, // Customize background color
         borderRadius: BorderRadius.circular(10.0), // Customize border radius
@@ -104,7 +171,7 @@ class _BookingFormState extends State<BookingForm> {
                               text) // <-- The target method
                           );
                     },
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Phone',
                       hintText: 'Enter phone number',
                     ),
@@ -112,53 +179,50 @@ class _BookingFormState extends State<BookingForm> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             // Vehicle type radio buttons
             Row(
               children: [
                 Expanded(
                   child: RadioListTile(
-                    title: Text('Bike'),
+                    title: const Text('Bike'),
                     value: '2 ',
                     groupValue:
                         vehicleType, // Use the variable that holds the selected value
                     onChanged: (value) {
                       setState(() {
-                        print(value);
                         vehicleType = value as String;
-                        print(vehicleType); // Update the selected value
+                        widget.controller.bookingReq.vehicleType = vehicleType;
                       });
                     },
                   ),
                 ),
                 Expanded(
                   child: RadioListTile(
-                    title: Text('4-Car'),
+                    title: const Text('4-Car'),
                     value: '4',
                     groupValue:
                         vehicleType, // Use the variable that holds the selected value
                     onChanged: (value) {
                       setState(() {
-                        print(value);
                         vehicleType =
                             value as String; // Update the selected value
-                        print(vehicleType); // Update the selected value
+                        widget.controller.bookingReq.vehicleType = vehicleType;
                       });
                     },
                   ),
                 ),
                 Expanded(
                   child: RadioListTile(
-                    title: Text('7-Car'),
+                    title: const Text('7-Car'),
                     value: '7',
                     groupValue:
                         vehicleType, // Use the variable that holds the selected value
                     onChanged: (value) {
                       setState(() {
-                        print(value);
                         vehicleType =
                             value as String; // Update the selected value
-                        print(vehicleType); // Update the selected value
+                        widget.controller.bookingReq.vehicleType = vehicleType;
                       });
                     },
                   ),
@@ -172,19 +236,19 @@ class _BookingFormState extends State<BookingForm> {
                 Expanded(
                   child: TextFormField(
                     controller: pickupNoText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Pick up Home No.',
                       hintText: 'Pick up Home No.',
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20.0,
                 ),
                 Expanded(
                   child: TextFormField(
                     controller: destNoText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Destination Home No.',
                       hintText: 'Destination Home No.',
                     ),
@@ -296,38 +360,6 @@ class _BookingFormState extends State<BookingForm> {
                 ),
               ],
             ),
-
-            // Row(
-            //   children: [
-            //     Expanded(
-            //       child: ElevatedButton(
-            //         onPressed: () {
-            //           // Handle the Cancel button action
-            //           Navigator.of(context).pop(); // Close the dialog
-            //         },
-            //         child: Text('Cancel'),
-            //       ),
-            //     ),
-            //     SizedBox(width: 10), // Add some space between buttons
-            //     Expanded(
-            //       child: ElevatedButton(
-            //         onPressed: () {
-            //           String name = nameController.text;
-            //           String phone = phoneController.text;
-            //           String from = fromController.text;
-            //           String to = toController.text;
-
-            //           print('Name: $name');
-            //           print('Phone: $phone');
-            //           print('From: $from');
-            //           print('To: $to');
-            //           print('Vehicle Type: $vehicleType');
-            //         },
-            //         child: Text('Submit'),
-            //       ),
-            //     ),
-            //   ],
-            // ),
           ],
         ),
       ),

@@ -25,7 +25,8 @@ class _DashboardState extends State<Dashboard> {
   @override
   bool isExpanded = false;
 
-  BookingFormController _bookingFormController = BookingFormController();
+  final BookingFormController _bookingFormController = BookingFormController();
+  final ValueNotifier<int> _selectedIndex = ValueNotifier<int>(-1);
 
   String? phoneNumber;
 
@@ -176,48 +177,81 @@ class _DashboardState extends State<Dashboard> {
                               future: _getTopHistory(),
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
-                                  return DataTable(
-                                      headingRowColor:
-                                          MaterialStateProperty.resolveWith(
-                                              (states) => Colors.grey.shade200),
-                                      columns: const [
-                                        DataColumn(label: Text("No")),
-                                        DataColumn(label: Text("Pickup Addr")),
-                                        DataColumn(label: Text("Dest Addr")),
-                                        DataColumn(label: Text("Booking Time")),
-                                      ],
-                                      rows: List.generate(snapshot.data!.length,
-                                          (index) {
-                                        var data = snapshot.data![index];
+                                  return ValueListenableBuilder(
+                                    valueListenable: _selectedIndex,
+                                    builder: (BuildContext context,
+                                        dynamic value, Widget? child) {
+                                      return DataTable(
+                                          showCheckboxColumn: false,
+                                          headingRowColor:
+                                              MaterialStateProperty.resolveWith(
+                                                  (states) =>
+                                                      Colors.grey.shade200),
+                                          columns: const [
+                                            DataColumn(label: Text("No")),
+                                            DataColumn(
+                                                label: Text("Pickup Addr")),
+                                            DataColumn(
+                                                label: Text("Dest Addr")),
+                                            DataColumn(
+                                                label: Text("Booking Time")),
+                                          ],
+                                          rows: List.generate(
+                                              snapshot.data!.length, (index) {
+                                            print(index);
+                                            var data = snapshot.data![index];
 
-                                        var pickupAddr = data.pickupAddr;
-                                        var pickupAddrList = [
-                                          pickupAddr?.homeNo,
-                                          pickupAddr?.street,
-                                          pickupAddr?.ward,
-                                          pickupAddr?.district,
-                                          pickupAddr?.city,
-                                        ];
-                                        var destAddr = data.destAddr;
-                                        var destAddrList = [
-                                          destAddr?.homeNo,
-                                          destAddr?.street,
-                                          destAddr?.ward,
-                                          destAddr?.district,
-                                          destAddr?.city,
-                                        ];
+                                            var pickupAddr = data.pickupAddr;
+                                            var pickupAddrList = [
+                                              pickupAddr?.homeNo,
+                                              pickupAddr?.street,
+                                              pickupAddr?.ward,
+                                              pickupAddr?.district,
+                                              pickupAddr?.city,
+                                            ];
+                                            var destAddr = data.destAddr;
+                                            var destAddrList = [
+                                              destAddr?.homeNo,
+                                              destAddr?.street,
+                                              destAddr?.ward,
+                                              destAddr?.district,
+                                              destAddr?.city,
+                                            ];
 
-                                        return DataRow(cells: [
-                                          DataCell(Text("${index + 1}")),
-                                          DataCell(
-                                              Text(pickupAddrList.join(", "))),
-                                          DataCell(
-                                              Text(destAddrList.join(", "))),
-                                          DataCell(Text(data.createdAt == null
-                                              ? ""
-                                              : data.createdAt.toString()))
-                                        ]);
-                                      }));
+                                            return DataRow(
+                                                color: MaterialStateColor
+                                                    .resolveWith((states) =>
+                                                        value == index
+                                                            ? Colors
+                                                                .orange.shade200
+                                                            : Colors.white),
+                                                onSelectChanged: (selected) {
+                                                  if (selected != null &&
+                                                      selected) {
+                                                    _selectedIndex.value =
+                                                        index;
+                                                    _bookingFormController
+                                                        .insertBookReq(snapshot
+                                                            .data![index]
+                                                            .deepCopyWith());
+                                                  }
+                                                },
+                                                cells: [
+                                                  DataCell(
+                                                      Text("${index + 1}")),
+                                                  DataCell(Text(pickupAddrList
+                                                      .join(", "))),
+                                                  DataCell(Text(
+                                                      destAddrList.join(", "))),
+                                                  DataCell(Text(
+                                                      data.createdAt == null
+                                                          ? ""
+                                                          : data.createdAt
+                                                              .toString()))
+                                                ]);
+                                          }));
+                                    },
+                                  );
                                 }
                                 if (snapshot.hasError) {
                                   return DataTable(
@@ -255,8 +289,17 @@ class _DashboardState extends State<Dashboard> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 ElevatedButton(
-                    onPressed: () {
-                      print(_bookingFormController.bookingReq);
+                    onPressed: () async {
+                      var req = _bookingFormController.bookingReq;
+                      if (req.isValidBookingReq()) {
+                      } else {
+                        await showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                                  title: Text('Error'),
+                                  content: Text('Please provide all fields'),
+                                ));
+                      }
                     },
                     child: const Text("Booking")),
                 const SizedBox(
@@ -265,6 +308,8 @@ class _DashboardState extends State<Dashboard> {
                 ElevatedButton(
                   onPressed: () {
                     _bookingFormController.clear();
+                    _selectedIndex.value = -1;
+                    print(_bookingFormController.bookingReq);
                   },
                   child: const Text("Clear"),
                 ),

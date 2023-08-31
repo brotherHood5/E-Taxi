@@ -7,6 +7,7 @@ import 'package:web/model/Location.dart';
 class TopHistory {
   String? id;
   String? phoneNumber;
+  String? vehicleType;
   Location? pickupAddr;
   Location? destAddr;
   String? status;
@@ -16,6 +17,7 @@ class TopHistory {
   TopHistory({
     this.id,
     this.phoneNumber,
+    this.vehicleType,
     this.pickupAddr,
     this.destAddr,
     this.status,
@@ -26,6 +28,7 @@ class TopHistory {
   TopHistory copyWith({
     String? id,
     String? phoneNumber,
+    String? vehicleType,
     Location? pickupAddr,
     Location? destAddr,
     String? status,
@@ -35,8 +38,31 @@ class TopHistory {
     return TopHistory(
       id: id ?? this.id,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      vehicleType: vehicleType ?? this.vehicleType,
       pickupAddr: pickupAddr ?? this.pickupAddr,
       destAddr: destAddr ?? this.destAddr,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  TopHistory deepCopyWith({
+    String? id,
+    String? phoneNumber,
+    String? vehicleType,
+    Location? pickupAddr,
+    Location? destAddr,
+    String? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return TopHistory(
+      id: id ?? this.id,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      vehicleType: vehicleType ?? this.vehicleType,
+      pickupAddr: pickupAddr ?? this.pickupAddr!.copyWith(),
+      destAddr: destAddr ?? this.destAddr!.copyWith(),
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -47,11 +73,12 @@ class TopHistory {
     return <String, dynamic>{
       'id': id,
       'phoneNumber': phoneNumber,
+      'vehicleType': vehicleType,
       'pickupAddr': pickupAddr?.toMap(),
       'destAddr': destAddr?.toMap(),
       'status': status,
       'createdAt': createdAt?.toString(),
-      'updatedAt': updatedAt?.toString(),
+      'updatedAt': updatedAt?.toString,
     };
   }
 
@@ -60,6 +87,8 @@ class TopHistory {
       id: map['_id'] != null ? map['_id'] as String : null,
       phoneNumber:
           map['phoneNumber'] != null ? map['phoneNumber'] as String : null,
+      vehicleType:
+          map['vehicleType'] != null ? map['vehicleType'] as String : null,
       pickupAddr: map['pickupAddr'] != null
           ? Location.fromMap(map['pickupAddr'] as Map<String, dynamic>)
           : null,
@@ -81,7 +110,7 @@ class TopHistory {
 
   @override
   String toString() {
-    return 'TopHistory(id: $id, phoneNumber: $phoneNumber, pickupAddr: $pickupAddr, destAddr: $destAddr, status: $status, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'TopHistory(id: $id, phoneNumber: $phoneNumber, vehicleType: $vehicleType, pickupAddr: $pickupAddr, destAddr: $destAddr, status: $status, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -90,6 +119,7 @@ class TopHistory {
 
     return other.id == id &&
         other.phoneNumber == phoneNumber &&
+        other.vehicleType == vehicleType &&
         other.pickupAddr == pickupAddr &&
         other.destAddr == destAddr &&
         other.status == status &&
@@ -101,6 +131,7 @@ class TopHistory {
   int get hashCode {
     return id.hashCode ^
         phoneNumber.hashCode ^
+        vehicleType.hashCode ^
         pickupAddr.hashCode ^
         destAddr.hashCode ^
         status.hashCode ^
@@ -108,7 +139,6 @@ class TopHistory {
         updatedAt.hashCode;
   }
 }
-//   String? id;
 //   String phoneNumber;
 //   String addressId;
 //   Location address;
