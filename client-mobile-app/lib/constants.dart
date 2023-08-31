@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class ApiConstants {
-  static bool isDev = true;
+  static bool isDev = false;
 
   // Local
   static String host = '10.0.2.2';

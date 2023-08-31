@@ -72,8 +72,8 @@ const GeoService: GeoServiceSchema = {
 			restricted: ["api"],
 			rest: "GET /reverse",
 			params: {
-				lat: [{ type: "number" }, { type: "string" }],
-				lon: [{ type: "number" }, { type: "string" }],
+				lat: ["number", "string"],
+				lon: ["number", "string"],
 			},
 			cache: {
 				keys: ["lat", "lon"],
