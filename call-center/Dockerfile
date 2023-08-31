@@ -9,10 +9,10 @@ RUN apt-get install -y curl git wget unzip libgconf-2-4 gdb libstdc++6 libglu1-m
 RUN apt-get clean
 
 RUN mkdir /app/
+RUN mkdir /app/packages/
+COPY . /app/
+COPY ./assets/packages/ /app/packages/
 WORKDIR /app/
-COPY . .
-RUN mkdir /packages/
-COPY ./assets/packages/. /packages/
 
 # Record the exposed port
 EXPOSE 5000
