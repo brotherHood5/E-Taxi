@@ -4,6 +4,7 @@ import 'dart:convert';
 // import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:web/constant.dart';
+import 'package:web/model/BookingReq.dart';
 import '../../model/TopAddress.dart';
 import '../../model/TopHistory.dart';
 import 'bookingForm.dart';
@@ -34,6 +35,18 @@ class _DashboardState extends State<Dashboard> {
   void initState() {
     super.initState();
     phoneNumber = "0972360214";
+  }
+
+  Future<void> _bookRide(BookingReq req) async {
+    final res = await http.post(Uri.parse(BOOKCAR_URL),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: req.toJson());
+    if (res.statusCode == 200) {
+    } else {
+      throw Exception("Error");
+    }
   }
 
   Future<List<TopAddress>> _getTop5Address() async {
@@ -198,7 +211,6 @@ class _DashboardState extends State<Dashboard> {
                                           ],
                                           rows: List.generate(
                                               snapshot.data!.length, (index) {
-                                            print(index);
                                             var data = snapshot.data![index];
 
                                             var pickupAddr = data.pickupAddr;
@@ -292,6 +304,15 @@ class _DashboardState extends State<Dashboard> {
                     onPressed: () async {
                       var req = _bookingFormController.bookingReq;
                       if (req.isValidBookingReq()) {
+                        await _bookRide(req);
+                        await showDialog(
+                            barrierDismissible: true,
+                            context: context,
+                            builder: (_) => AlertDialog(
+                                  title: Text('Success'),
+                                  content: Text('Request has been sent'),
+                                ));
+                        _bookingFormController.clear();
                       } else {
                         await showDialog(
                             context: context,
@@ -309,7 +330,6 @@ class _DashboardState extends State<Dashboard> {
                   onPressed: () {
                     _bookingFormController.clear();
                     _selectedIndex.value = -1;
-                    print(_bookingFormController.bookingReq);
                   },
                   child: const Text("Clear"),
                 ),
@@ -318,18 +338,6 @@ class _DashboardState extends State<Dashboard> {
           ),
         ],
       ),
-      // ElevatedButton(onPressed: () {}, child: const Text("Booking")),
     );
   }
-
-  // void openModal(BuildContext context) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: Text('Book a taxi'),
-  //         content: BookingForm(),
-  //       );
-  //     },
-  //   );
 }

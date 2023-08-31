@@ -47,11 +47,15 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
     currentRequest.addListener(() async {
       debugPrint("Current request: ${currentRequest.value}");
       if (currentRequest.value == null && currResolveLocation.value != null) {
-        await mapController.removeMarker(GeoPoint(
-            latitude: currResolveLocation.value!.lat!,
-            longitude: currResolveLocation.value!.lon!));
         currResolveLocation.value = null;
         _clearInput();
+        try {
+          await mapController.removeMarker(GeoPoint(
+              latitude: currResolveLocation.value!.lat!,
+              longitude: currResolveLocation.value!.lon!));
+        } catch (e, s) {
+          print(s);
+        }
       }
     });
 

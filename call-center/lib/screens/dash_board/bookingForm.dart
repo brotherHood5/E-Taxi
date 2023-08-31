@@ -57,7 +57,10 @@ class _BookingFormState extends State<BookingForm> {
   void initState() {
     super.initState();
     BookingFormController controller = widget.controller;
+    controller.bookingReq.vehicleType = vehicleType;
+
     controller.clear = () => setState(() => {
+          phoneController.text = "",
           pickupNoText.text = "",
           pickupStreetText.text = "",
           pickupWardText.text = "",
@@ -68,7 +71,12 @@ class _BookingFormState extends State<BookingForm> {
           destWardText.text = "",
           destDistrictText.text = "",
           destCityText.text = "",
-          vehicleType = "2",
+          setState(() => {
+                controller.bookingReq.pickupAddr = Location(),
+                controller.bookingReq.destAddr = Location(),
+                vehicleType = "2",
+                controller.bookingReq.vehicleType = vehicleType,
+              })
         });
     controller.insertBookReq = (TopHistory req) => {
           phoneController.text = req.phoneNumber ?? "",
@@ -82,15 +90,17 @@ class _BookingFormState extends State<BookingForm> {
           destWardText.text = req.destAddr?.ward ?? "",
           destDistrictText.text = req.destAddr?.district ?? "",
           destCityText.text = req.destAddr?.city ?? "",
-          controller.bookingReq.pickupAddr = req.pickupAddr!,
-          controller.bookingReq.destAddr = req.destAddr!,
-          controller.bookingReq.phoneNumber = req.phoneNumber!,
+          // Change the value of the bookingReq
           setState(() => {
+                controller.bookingReq.phoneNumber = req.phoneNumber!,
+                controller.bookingReq.pickupAddr = req.pickupAddr!,
+                controller.bookingReq.destAddr = req.destAddr!,
+                controller.bookingReq.pickupAddr.id = null,
+                controller.bookingReq.destAddr.id = null,
                 vehicleType = req.vehicleType!,
                 controller.bookingReq.vehicleType = vehicleType,
               })
         };
-
     phoneController.addListener(() {
       controller.bookingReq.phoneNumber = phoneController.text;
     });
@@ -141,7 +151,6 @@ class _BookingFormState extends State<BookingForm> {
     destWardText.dispose();
     destDistrictText.dispose();
     destCityText.dispose();
-
     super.dispose();
   }
 
@@ -186,7 +195,7 @@ class _BookingFormState extends State<BookingForm> {
                 Expanded(
                   child: RadioListTile(
                     title: const Text('Bike'),
-                    value: '2 ',
+                    value: '2',
                     groupValue:
                         vehicleType, // Use the variable that holds the selected value
                     onChanged: (value) {
