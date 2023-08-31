@@ -6,6 +6,10 @@
     "signup_btn_text" : "Đăng ký",
     "sdt_text" : "Số Di động",
     "sdt_hint_text" : "Nhập số điện thoại của bạn",
+    "password_text" : "Mật khẩu",
+    "password_hint_text" : "Nhập mật khẩu của bạn",
+    "confirm_password_text" : "Xác nhận mật khẩu",
+    "confirm_password_hint_text" : "Nhập lại mật khẩu của bạn",
     "continue_text" : "tiếp tục",
     "password_screen_title": "Nhập mật khẩu",
     "password_screen_hint": "Bạn đang đăng nhập với số điện thoại",
@@ -25,5 +29,5 @@
     "navigation_account_label" : "Tài khoản",
     "home_top_text_1" : "Cùng đi nào!",
     "home_top_text_2" : "Chúng tối sẽ đưa bạn đến bất cứ đâu!",
-    "home_search_bar_hint" : "Đến đâu?"
+    "home_search_bar_hint" : "Chọn điểm đón"
 }

@@ -215,7 +215,6 @@ const SocketService: SocketServiceSchema = {
 		async socketAuthorize(socket: any) {
 			const accessToken = socket.handshake.auth.token;
 			const { service } = socket.handshake.query;
-
 			if (!service) {
 				return Promise.reject(
 					new ApiGatewayErrors.UnAuthorizedError("NO_PROVIDER_SERVICE", null),
@@ -230,6 +229,7 @@ const SocketService: SocketServiceSchema = {
 					>(`${service}.resolveToken`, { token: accessToken });
 					if (user) {
 						await this.socketJoinRooms(socket, user._id);
+						this.logger.info("Socket connected: ", Array.from(socket.rooms.keys()));
 						return await Promise.resolve(user);
 					}
 				} catch (error) {

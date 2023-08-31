@@ -86,6 +86,7 @@ services:
       - address
       - geo
       - address_customer
+      - price
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.socket.entrypoints=socketPort"
@@ -196,6 +197,18 @@ services:
     env_file: docker-compose.env
     environment:
       SERVICES: common/address.service.js
+    depends_on:
+      - nats
+      - redis
+      - mongo
+      - rabbitmq
+      - guard
+
+  price:
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: callcenter/price.service.js
     depends_on:
       - nats
       - redis

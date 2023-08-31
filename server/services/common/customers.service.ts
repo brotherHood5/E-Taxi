@@ -1,4 +1,4 @@
-import type { ActionParams, Context } from "moleculer";
+import type { ActionParams, Context, Service } from "moleculer";
 import { Config } from "../../common";
 import { createTestCustomers } from "../../helpers/seed";
 import { AuthMixin, DbMixin } from "../../mixins";
@@ -106,7 +106,7 @@ const CustomersService: CustomersServiceSchema = {
 			},
 		},
 		get: {
-			restricted: ["api"],
+			cache: false,
 			// roles: [UserRole.ADMIN],
 		},
 
@@ -132,6 +132,27 @@ const CustomersService: CustomersServiceSchema = {
 			async handler(this: CustomersThis, ctx: Context<any, UserAuthMeta>) {
 				const entity = await this._get(ctx, { id: ctx.meta.user._id });
 				return this.transformDocuments(ctx, {}, entity);
+			},
+		},
+
+		calculatePrice: {
+			rest: "GET /calculate-price",
+			params: {
+				distance: ["string", "number"],
+				vehicleType: ["string", "number"],
+			},
+			async handler(ctx) {
+				const result = await ctx.call("price.calculatePrice", ctx.params);
+				return result;
+			},
+		},
+
+		book: {
+			rest: "POST /book",
+			async handler(this: CustomersThis, ctx) {
+				this.logger.info(ctx.params);
+				const result = await ctx.call("bookingSystem.bookThroughApp", ctx.params);
+				return result;
 			},
 		},
 	},
