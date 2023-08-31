@@ -12,7 +12,7 @@ RUN mkdir /app/
 WORKDIR /app/
 COPY . .
 RUN mkdir /packages/
-COPY assets/packages/ /packages/
+COPY ./assets/packages/ /packages/
 
 # Record the exposed port
 EXPOSE 5000
