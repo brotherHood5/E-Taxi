@@ -258,8 +258,8 @@ const BookingService: ServiceSchema = {
 		updateBookingAddress: {
 			params: {
 				id: "string",
-				pickupAddr: "object",
-				destAddr: "object",
+				pickupAddr: "object|optional",
+				destAddr: "object|optional",
 			},
 			async handler(this: Service, ctx: any) {
 				const { id, pickupAddr, destAddr } = ctx.params;
