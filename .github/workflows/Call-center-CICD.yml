@@ -83,6 +83,8 @@ jobs:
           envs: CONTAINER_NAME,IMAGE_NAME,REMOTE_PATH
           script: |
             cd /mnt/call-center 
+            cp -r /assets/packages/* /packages
+            
             # Build docker image 
             docker build -t ${{ env.IMAGE_NAME }}:latest .
             # Stop and remove the old container if it exists
