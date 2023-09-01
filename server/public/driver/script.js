@@ -128,6 +128,13 @@ function main() {
 
 	window.socket = socket;
 
+	socket.on("booking_found", (data) => {
+		console.log("Data: ", data);
+		socket.emit("call", "bookingSystem.driverAccept", data, (err, res) => {
+			console.log("Accepted: ", res);
+		});
+	});
+
 	socket.on("connect", function () {
 		console.log("Websocket connection established!");
 		if (navigator.geolocation) {
