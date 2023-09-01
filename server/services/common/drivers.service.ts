@@ -138,7 +138,7 @@ const DriversService: DriversServiceSchema = {
 		},
 		find: {
 			restricted: ["api", "bookingSystem"],
-			// cache: false,
+			cache: false,
 		},
 	},
 

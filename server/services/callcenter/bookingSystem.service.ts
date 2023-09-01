@@ -23,6 +23,74 @@ const BookingService: ServiceSchema = {
 				this.logger.warn("Driver update status: ", ctx.params);
 			},
 		},
+
+		"booking.update": {
+			async handler(this: Service, ctx: any) {
+				const { _id, ...data } = ctx.params;
+
+				const result = await this.actions.update({
+					id: _id,
+					...data,
+				});
+				this.logger.info("Booking updated status: ", result);
+				// Gui thong tin booking toi khanh hang
+				if (result.customerId && result.inApp) {
+					ctx.call("socket.broadcast", {
+						namespace: "/customers",
+						room: [result.customerId],
+						event: "booking_updated",
+						args: [result],
+					});
+				}
+				return result;
+			},
+		},
+
+		"booking.driversFound": {
+			handler(this: Service, ctx: any) {
+				const { bookingReq, drivers } = ctx.params;
+				this.logger.info("Drivers found: ", drivers);
+
+				// Gui thong bao den tai xe
+				ctx.call("socket.notify", {
+					provider: "app",
+					data: {
+						namespace: "/drivers",
+						room: drivers.map((item: IDriver) => item._id),
+						event: "booking_found",
+						args: [bookingReq],
+					},
+				});
+
+				return drivers;
+			},
+		},
+
+		"booking.noDriversFound": {
+			async handler(this: Service, ctx: any) {
+				const { bookingReq } = ctx.params;
+
+				// Gui thong bao den khach hang
+				// await ctx.call("socket.notify", {
+				// 	provider: bookingReq.inApp ? "app" : "sms",
+				// 	data: bookingReq.inApp
+				// 		? {
+				// 				namespace: "/customers",
+				// 				room: [bookingReq.customerId],
+				// 				event: "no_drivers_found",
+				// 				args: [bookingReq],
+				// 		  }
+				// 		: {
+				// 				to: bookingReq.phoneNumber,
+				// 				message: `Xin loi, hien tai chung toi khong co tai xe phu hop voi yeu cau cua ban. Xin vui long thu lai sau.`,
+				// 		  },
+				// });
+				await ctx.emit("booking.update", {
+					_id: bookingReq._id,
+					status: BookingStatus.FAILED,
+				});
+			},
+		},
 	},
 
 	settings: {
@@ -89,16 +157,42 @@ const BookingService: ServiceSchema = {
 				const req = JSON.parse(msg.content.toString());
 				req.status = BookingStatus.PROCESSING;
 				try {
-					await this.actions.updateBookingStatus({
-						id: req._id,
-						status: req.status,
+					const result = (await this.broker.emit(
+						"booking.update",
+						req,
+					)) as unknown as IBooking[];
+					const updatedRequest = result[0];
+					const drivers: IDriver[] = await this.broker.call("bookingSystem.findDrivers", {
+						lat: (updatedRequest.pickupAddr as IAddress).lat,
+						lon: (updatedRequest.pickupAddr as IAddress).lon,
+						vehicleType: updatedRequest.vehicleType,
 					});
+					if (drivers.length !== 0) {
+						await this.broker.emit("booking.driversFound", {
+							bookingReq: updatedRequest,
+							drivers,
+						});
+					} else {
+						await this.broker.emit("booking.noDriversFound", {
+							bookingReq: updatedRequest,
+							drivers,
+						});
+					}
 
-					// TODO: Find Driver
 					channel.ack(msg);
 				} catch (error) {
+					this.logger.error(error);
 					channel.nack(msg);
 				}
+			},
+			channel: {
+				assert: {
+					durable: true,
+				},
+				prefetch: 1,
+			},
+			consume: {
+				noAck: false,
 			},
 		},
 
@@ -228,6 +322,14 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
+		findDrivers: {
+			async handler(this: Service, ctx: any) {
+				const { lat, lon, vehicleType } = ctx.params;
+				const drivers = await this.findNearbyDriver(ctx, lat, lon, vehicleType);
+				return drivers;
+			},
+		},
+
 		driverConnected: {
 			params: {
 				lat: ["number", "string"],
@@ -239,18 +341,11 @@ const BookingService: ServiceSchema = {
 				try {
 					lat = Number(lat);
 					lon = Number(lon);
-					const result = await this.actions.testLocation();
-					result.forEach((item: string) => {
-						const tempLon = (lon as number) + Math.random() / 10;
-						const tempLat = (lat as number) + Math.random() / 10;
-						this.geoadd(tempLon, tempLat, item);
-					});
+
 					await ctx.call("bookingSystem.updateDriverLocation", {
 						lat,
 						lon,
 					});
-					const near = await this.findNearbyDriver(ctx, lat, lon);
-					this.logger.error("Nearby drivers: ", near);
 				} catch (error) {
 					return false;
 				}
@@ -262,6 +357,57 @@ const BookingService: ServiceSchema = {
 			handler(this: Service, ctx: any) {
 				this.logger.info("Driver disconnected: ", ctx.params);
 				this.removeFromGeo(ctx.params);
+			},
+		},
+
+		driverAccept: {
+			rest: "POST /driver-accept",
+			async handler(this: Service, ctx: any): Promise<any> {
+				const { user } = ctx.meta;
+				const driverId = user._id;
+				const data = ctx.params as IBooking;
+
+				const cachedDriverId = await this.broker.cacher!.get(`${data._id}:driverId`);
+				if (cachedDriverId) {
+					throw new Error("Booking has been accepted by another driver");
+				}
+
+				await this.broker.cacher!.set(`${data._id}:driverId`, driverId, 120);
+				const result: any = await this.broker.emit("booking.update", {
+					_id: data._id,
+					driverId,
+					status: BookingStatus.ASSIGNED,
+				});
+
+				const driverGeo = await this.geopos(driverId);
+				if (driverGeo) {
+					// Remove driver from redis
+				}
+				await ctx.call("socket.broardcast", {
+					namespace: "/customers",
+					event: "driver_accepted",
+					args: [
+						{
+							booking: result[0],
+							driver: {
+								driverId: user._id,
+								lat: driverGeo[0][1],
+								lon: driverGeo[0][0],
+							},
+						},
+					],
+				});
+				return result[0];
+			},
+		},
+
+		customerCancel: {
+			async handler(this: Service, ctx: any) {
+				const result = await this.broker.emit("booking.update", {
+					_id: ctx.params,
+					status: BookingStatus.CUSTOMER_CANCELLED,
+				});
+				return result;
 			},
 		},
 
@@ -337,21 +483,14 @@ const BookingService: ServiceSchema = {
 			},
 			async handler(this: Service, ctx: any) {
 				const { id, status } = ctx.params;
-				const result: IBooking = await this.actions.update({
+				await this.actions.update({
 					id,
 					status,
 				});
-
-				// Gui thong tin booking toi khanh hang
-				if (result.customerId && result.inApp) {
-					ctx.call("socket.broadcast", {
-						namespace: "/customers",
-						room: [result.customerId],
-						event: "booking_updated",
-						args: [result],
-					});
-				}
-
+				const result: IBooking = await this.actions.get({
+					id,
+					populate: ["pickupAddr", "destAddr", "driver"],
+				});
 				return result;
 			},
 		},
@@ -369,11 +508,27 @@ const BookingService: ServiceSchema = {
 				lat: "number",
 				customerId: "string|optional",
 			},
-			handler(this: Service, ctx: any) {
+			async handler(this: Service, ctx: any) {
 				const { lon, lat, customerId } = ctx.params;
 				const { user } = ctx.meta;
 				const driverId = user._id;
 
+				const result = await this.actions.testLocation();
+				result.forEach((item: string) => {
+					const tempLon = (lon as number) + Math.random() / 50;
+					const tempLat = (lat as number) + Math.random() / 50;
+					this.geoadd(tempLon, tempLat, item);
+				});
+
+				// const driversList = await this.broker.call(
+				// 	"bookingSystem.findDrivers",
+				// 	{
+				// 		lat,
+				// 		lon,
+				// 		vehicleType: "2",
+				// 	},
+				// 	{ parentCtx: ctx },
+				// );
 				// Gui thong tin vi tri cua driver toi customer
 				if (customerId) {
 					ctx.call("socket.broadcast", {
@@ -499,6 +654,10 @@ const BookingService: ServiceSchema = {
 			await this.redisClient.geoadd(`${this.prefix}.drivers_location`, lon, lat, driverId);
 		},
 
+		geopos(this: Service, driverId: string) {
+			return this.redisClient.geopos(`${this.prefix}.drivers_location`, driverId);
+		},
+
 		async removeFromGeo(this: Service, driverId: string) {
 			await this.redisClient.zrem(`${this.prefix}.drivers_location`, driverId);
 		},
@@ -519,32 +678,37 @@ const BookingService: ServiceSchema = {
 			return result;
 		},
 
-		async findNearbyDriver(this: Service, ctx, lat: number, lon: number, maxRadius = 5) {
+		async findNearbyDriver(
+			this: Service,
+			ctx,
+			lat: number,
+			lon: number,
+			vehicleType = "2",
+			maxRadius = 5,
+		) {
 			let result = await this.findNearby(lat, lon, maxRadius);
-			result = result
-				.map((item: any) => ({
-					driverId: item[0],
-					distance: item[1],
-					lon: item[2][0],
-					lat: item[2][1],
-				}))
-				.filter((item: any) => item.driverId !== ctx.meta.user._id);
+			result = result.map((item: any) => ({
+				driverId: item[0],
+				distance: item[1],
+				lon: item[2][0],
+				lat: item[2][1],
+			}));
 
 			this.logger.info("Nearby drivers: ", JSON.stringify(result, null, 2));
-			const list = result.map((item: any) => new MongoObjectId(item.driverId));
-			this.logger.info("Nearby drivers: ", JSON.stringify(list, null, 2));
 
 			const drivers = await this.broker.call(
 				"drivers.find",
 				{
 					query: {
 						_id: {
-							$in: list,
+							$in: result.map((item: any) => new MongoObjectId(item.driverId)),
 						},
+						vehicleType,
 					},
 				},
 				{ parentCtx: ctx },
 			);
+
 			return drivers;
 		},
 	},
@@ -561,7 +725,7 @@ const BookingService: ServiceSchema = {
 	async stopped() {
 		// Xoa tat ca driver dang online
 		if (this.redisClient) {
-			await this.redisClient.del(`${this.prefix}.drivers_location`);
+			// await this.redisClient.del(`${this.prefix}.drivers_location`);
 		}
 	},
 

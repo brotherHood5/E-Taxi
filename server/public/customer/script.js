@@ -40,15 +40,13 @@ var onDriverIconStyle = new ol.style.Style({
 });
 
 // //Adding a marker on the map
-const src = [106.752583612375, 10.918649726255254];
-var marker = new ol.Feature({
-	geometry: new ol.geom.Point(ol.proj.fromLonLat(src)),
-});
-marker.setStyle(customerIconStyle);
+// const src = [106.752583612375, 10.918649726255254];
+// var marker = new ol.Feature({
+// 	geometry: new ol.geom.Point(ol.proj.fromLonLat(src)),
+// });
+// marker.setStyle(customerIconStyle);
 
-var vectorSource = new ol.source.Vector({
-	features: [marker],
-});
+var vectorSource = new ol.source.Vector({});
 
 var markerVectorLayer = new ol.layer.Vector({
 	source: vectorSource,
@@ -57,22 +55,28 @@ var markerVectorLayer = new ol.layer.Vector({
 // add style to Vector layer style map
 map.addLayer(markerVectorLayer);
 
-let markerFeature = null;
 var booking = {
 	phoneNumber: "0972360214",
 	vehicleType: "2",
-	pickupAddr: {
-		lat: src[1],
-		lon: src[0],
-	},
+	pickupAddr: {},
 	destAddr: {},
 };
 
 const logPos = document.getElementById("logPos");
 function book() {
+	if (
+		!booking.pickupAddr.lat ||
+		!booking.pickupAddr.lon ||
+		!booking.destAddr.lat ||
+		!booking.destAddr.lon
+	) {
+		return;
+	}
 	var el = document.createElement("div");
 	el.innerHTML = "Booking: <br>" + "<pre>" + JSON.stringify(booking, null, 2) + "</pre>";
 	logPos.appendChild(el);
+
+	console.log(booking);
 	socket.emit("call", "bookingSystem.bookThroughApp", booking);
 }
 
@@ -96,6 +100,20 @@ function updateLocation(coordinate) {
 	socket.emit("call", "storeSystem.updateDriverLocation", coordinate);
 }
 
+let myMarkerFeature = null;
+function showMyMarker(coord) {
+	if (myMarkerFeature) {
+		vectorSource.removeFeature(myMarkerFeature);
+	}
+	myMarkerFeature = new ol.Feature({
+		geometry: new ol.geom.Point(ol.proj.fromLonLat([coord.lon, coord.lat])),
+	});
+
+	myMarkerFeature.setStyle(customerIconStyle);
+	vectorSource.addFeature(myMarkerFeature);
+}
+
+let markerFeature = null;
 function showDriverMarker(coord) {
 	if (markerFeature) {
 		vectorSource.removeFeature(markerFeature);
@@ -146,6 +164,23 @@ var socket = io("ws://localhost:3003/customers", {
 
 socket.on("connect", function () {
 	console.log("Websocket connection established!");
+	if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition((pos) => {
+			const coord = {
+				lat: pos.coords.latitude,
+				lon: pos.coords.longitude,
+			};
+			logCoord(coord);
+			showMyMarker(coord);
+			booking.pickupAddr.lat = coord.lat;
+			booking.pickupAddr.lon = coord.lon;
+			try {
+				map.getView().setCenter(ol.proj.fromLonLat([coord.lon, coord.lat]));
+			} catch (e) {
+				console.log(e);
+			}
+		});
+	}
 });
 
 socket.on("driver_update_location", function (data) {
