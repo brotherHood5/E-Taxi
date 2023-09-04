@@ -62,6 +62,7 @@ const GeoService: GeoServiceSchema = {
 			},
 			cache: {
 				keys: ["q"],
+				ttl: 60,
 			},
 			async handler(this: GeoThis, ctx: Context<GeoCodeParams>) {
 				const result = await this.geocode(ctx.params.q);
@@ -72,14 +73,20 @@ const GeoService: GeoServiceSchema = {
 			restricted: ["api"],
 			rest: "GET /reverse",
 			params: {
-				lat: { type: "number" },
-				lon: { type: "number" },
+				lat: ["number", "string"],
+				lon: ["number", "string"],
 			},
 			cache: {
 				keys: ["lat", "lon"],
+				ttl: 60,
 			},
 			async handler(this: GeoThis, ctx: Context<GeoCodeReverseParams>) {
-				const result = await this.reverse(ctx.params);
+				const { lat, lon } = ctx.params;
+
+				const result = await this.reverse({
+					lat: Number(lat),
+					lon: Number(lon),
+				});
 				return result;
 			},
 		},

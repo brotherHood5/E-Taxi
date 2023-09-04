@@ -75,7 +75,7 @@ const CustomersService: CustomersServiceSchema = {
 			},
 		},
 
-		indexes: [{ phoneNumber: 1 }],
+		indexes: [{ phoneNumber: 1, unique: 1 }],
 
 		accessTokenSecret: Config.ACCESS_TOKEN_SECRET,
 		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY,
@@ -96,43 +96,45 @@ const CustomersService: CustomersServiceSchema = {
 				return entity;
 			},
 		},
-
 		list: {
-			restricted: ["api"],
 			auth: true,
-			// roles: [UserRole.ADMIN],
 			cache: {
-				ttl: 60 * 2, // 2min
+				ttl: 60, // 2min
 			},
 		},
 		get: {
-			restricted: ["api"],
-			cache: false,
-			// roles: [UserRole.ADMIN],
+			cache: {
+				keys: ["id"],
+				ttl: 60,
+			},
 		},
-
-		update: {
-			restricted: ["api"],
-		},
+		update: {},
 		remove: {
-			restricted: ["api"],
-			// roles: [UserRole.ADMIN],
+			roles: [UserRole.ADMIN],
 		},
 
 		find: {
-			restricted: ["api", "bookingSystem"],
 			roles: [UserRole.ADMIN, UserRole.STAFF],
 			cache: false,
 		},
 
-		me: {
-			restricted: ["api"],
-			rest: "GET /me",
-			auth: true,
-			roles: [UserRole.CUSTOMER],
-			async handler(this: CustomersThis, ctx: Context<any, UserAuthMeta>) {
-				const entity = await this._get(ctx, { id: ctx.meta.user._id });
-				return this.transformDocuments(ctx, {}, entity);
+		calculatePrice: {
+			rest: "GET /calculate-price",
+			params: {
+				distance: ["string", "number"],
+				vehicleType: ["string", "number"],
+			},
+			async handler(ctx) {
+				const result = await ctx.call("price.calculatePrice", ctx.params);
+				return result;
+			},
+		},
+
+		book: {
+			rest: "POST /book",
+			async handler(this: CustomersThis, ctx) {
+				const result = await ctx.call("bookingSystem.bookThroughApp", ctx.params);
+				return result;
 			},
 		},
 	},
@@ -156,11 +158,15 @@ const CustomersService: CustomersServiceSchema = {
 	},
 
 	async started() {
-		const res = await this.actions.login({
-			phoneNumber: "0972360214",
-			password: "Vinh1706!",
-		});
-		this.logger.warn("Customer:", res.accessToken);
+		try {
+			const res = await this.actions.login({
+				phoneNumber: "0972360214",
+				password: "Vinh1706!",
+			});
+			this.logger.warn("Customer:", res.accessToken);
+		} catch (e) {
+			/* empty */
+		}
 	},
 };
 

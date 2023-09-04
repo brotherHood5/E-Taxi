@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:grab_clone/api/Auth.dart';
+import 'package:grab_clone/api/AuthService.dart';
 import 'package:grab_clone/constants.dart';
 import 'package:grab_clone/helpers/helper.dart';
 
-import '../main_layout.dart';
+import '../pages/main_layout.dart';
 
 class FinishSignUpScreen extends StatefulWidget {
   const FinishSignUpScreen({Key? key}) : super(key: key);
@@ -113,7 +113,7 @@ class _FinishSignUpScreenState extends State<FinishSignUpScreen> {
                     dismissOnTap: false);
                 try {
                   var data = await getStoredData();
-                  await Auth.finishSignUp(
+                  await AuthService.finishSignUp(
                       data["user"].id!, _nameController.text.trim());
                   await getNewCredential();
 

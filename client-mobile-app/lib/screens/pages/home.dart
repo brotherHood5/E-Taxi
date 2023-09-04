@@ -2,12 +2,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:grab_clone/constants.dart';
-import 'package:grab_clone/screens/search_location.dart';
+import 'package:grab_clone/models/Booking.dart';
+import 'package:grab_clone/screens/book/driver_tracking.dart';
 import 'package:grab_clone/widgets/location_list_item.dart';
+import 'package:grab_clone/widgets/vehicle_chosen_button.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../widgets/skeletons/skeleton_location_list_item.dart';
-import 'onboarding/place_picker.dart';
+import '../../helpers/helper.dart';
+import '../../widgets/skeletons/skeleton_location_list_item.dart';
+import '../place_picker.dart';
 
 class Location {
   final String name;
@@ -54,10 +57,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulating a delay to fetch the data
     Future.delayed(const Duration(seconds: 1), () {
       setState(() {
-        // Populate the items list with the fetched data
         items = locations;
         isLoading = false;
       });
@@ -65,8 +66,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final navigator = Navigator.of(context);
 
     return Scaffold(
       body: Stack(
@@ -96,95 +103,26 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Container(
                 padding: const EdgeInsets.only(
-                    top: layoutXXLarge,
+                    top: layoutXXLarge + layoutMedium,
                     left: layoutMedium,
                     right: layoutMedium),
-                child: Row(
+                child: const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      Column(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                      pageBuilder: (context, animation,
-                                              secondaryAnimation) =>
-                                          const PlacePicker(),
-                                      transitionDuration: shortDuration,
-                                      transitionsBuilder: (context, animation,
-                                          secondaryAnimation, child) {
-                                        return SlideTransition(
-                                          position: Tween<Offset>(
-                                            begin: const Offset(0, 1),
-                                            end: Offset.zero,
-                                          ).animate(animation),
-                                          child: child,
-                                        );
-                                      }));
-                            },
-                            style: ElevatedButton.styleFrom(
-                              elevation: 0,
-                              shape: CircleBorder(),
-                              padding: EdgeInsets.all(8),
-                              backgroundColor:
-                                  theme.primaryColor.withOpacity(0.7),
-                              foregroundColor: Colors.red,
-                            ),
-                            child: Image.asset(
-                              "assets/images/motorbike.png",
-                              width: 48,
-                              height: 48,
-                            ),
-                          ),
-                          const SizedBox(height: layoutSmall),
-                          Text("Xe máy", style: theme.textTheme.bodyMedium)
-                        ],
+                      VehicleChosenButton(
+                        image: "assets/images/motorbike.png",
+                        title: "Xe máy",
+                        vehicleType: "2",
                       ),
-                      Column(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              elevation: 0,
-                              shape: const CircleBorder(),
-                              padding: EdgeInsets.all(8),
-                              backgroundColor:
-                                  theme.primaryColor.withOpacity(0.7),
-                              foregroundColor: Colors.red,
-                            ),
-                            child: Image.asset(
-                              "assets/images/car.png",
-                              width: 48,
-                              height: 48,
-                            ),
-                          ),
-                          const SizedBox(height: layoutSmall),
-                          Text("4 chỗ", style: theme.textTheme.bodyMedium)
-                        ],
+                      VehicleChosenButton(
+                        image: "assets/images/car.png",
+                        title: "4 chỗ",
+                        vehicleType: "4",
                       ),
-                      Column(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              elevation: 0,
-                              shape: CircleBorder(),
-                              padding: EdgeInsets.all(8),
-                              backgroundColor:
-                                  theme.primaryColor.withOpacity(0.7),
-                              foregroundColor: Colors.red,
-                            ),
-                            child: Image.asset(
-                              "assets/images/van.png",
-                              width: 48,
-                              height: 48,
-                            ),
-                          ),
-                          const SizedBox(height: layoutSmall),
-                          Text("7 chỗ", style: theme.textTheme.bodyMedium)
-                        ],
+                      VehicleChosenButton(
+                        image: "assets/images/van.png",
+                        title: "7 chỗ",
+                        vehicleType: "7",
                       ),
                     ]),
               ),
@@ -238,47 +176,39 @@ class _HomeScreenState extends State<HomeScreen> {
               ))
             ],
           ),
-          Container(),
           Positioned(
-            top: MediaQuery.of(context).size.height * 0.22 - kToolbarHeight / 2,
+            top: MediaQuery.of(context).size.height * 0.22 -
+                (kToolbarHeight + layoutMedium) / 2,
             left: layoutMedium,
             right: layoutMedium,
             child: GestureDetector(
               onTap: () async {
-                // Navigator.push(
-                //     context,
-                //     PageRouteBuilder(
-                //         pageBuilder: (context, animation, secondaryAnimation) =>
-                //             const SearchLocationScreen(),
-                //         transitionDuration: shortDuration,
-                //         transitionsBuilder:
-                //             (context, animation, secondaryAnimation, child) {
-                //           return SlideTransition(
-                //             position: Tween<Offset>(
-                //               begin: const Offset(0, 1),
-                //               end: Offset.zero,
-                //             ).animate(animation),
-                //             child: child,
-                //           );
-                //         }));
-                GeoPoint? p = await showSimplePickerLocation(
-                  context: context,
-                  isDismissible: true,
-                  title: "Title dialog",
-                  textConfirmPicker: "pick",
-                  zoomOption: const ZoomOption(
-                    initZoom: 15,
-                    stepZoom: 2,
-                    minZoomLevel: 12,
-                    maxZoomLevel: 19,
-                  ),
-                  initCurrentUserPosition: UserTrackingOption(
-                    enableTracking: false,
-                  ),
-                );
+                GeoPoint? pickupGeo = await getPickupGeoPoint();
+                var p = await navigator.push(PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        PlacePicker(
+                          isPickUpAddr: true,
+                          initPosition: pickupGeo ?? pickupGeo,
+                        ),
+                    transitionDuration: shortDuration,
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 1),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      );
+                    }));
+                if (p != null) {
+                  await savePickupGeoPoint(p);
+                  if (!mounted) return;
+                  setState(() {});
+                }
               },
               child: Container(
-                  height: kToolbarHeight,
+                  height: kToolbarHeight + layoutMedium,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: const [
@@ -300,13 +230,58 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: theme.primaryColor,
                         ),
                       ),
-                      Text("home_search_bar_hint".tr(),
-                          style: theme.textTheme.titleLarge!
-                              .copyWith(color: Colors.grey[500])),
+                      Expanded(
+                        child: FutureBuilder(
+                            future: getPickupAddress(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return Container(
+                                  padding: const EdgeInsets.only(
+                                      right: layoutMedium),
+                                  child: Text(snapshot.data.toString(),
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: true,
+                                      maxLines: 2,
+                                      style: theme.textTheme.titleLarge!
+                                          .copyWith(color: Colors.black)),
+                                );
+                              }
+                              return Text("home_search_bar_hint".tr(),
+                                  style: theme.textTheme.titleLarge!
+                                      .copyWith(color: Colors.grey[500]));
+                            }),
+                      ),
                     ],
                   )),
             ),
-          )
+          ),
+          FutureBuilder<BookingModel?>(
+              future: getCurrentBooking(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Positioned(
+                      left: layoutMedium,
+                      right: layoutMedium,
+                      bottom: layoutMedium,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) =>
+                                  const DriverTrackingScreen()));
+                        },
+                        style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(borderRadiusSmall),
+                                side: BorderSide(
+                                    color: Colors.grey.withOpacity(.4)))),
+                        child: Text("Theo dõi vị trí tài xế",
+                            style: Theme.of(context).textTheme.titleLarge!),
+                      ));
+                }
+                return const SizedBox();
+              })
         ],
       ),
     );

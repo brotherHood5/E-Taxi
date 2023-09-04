@@ -57,7 +57,7 @@ const StaffsService: StaffsServiceSchema = {
 			updatedAt: { type: "date", optional: true },
 		},
 
-		indexes: [{ username: 1 }],
+		indexes: [{ username: 1, unique: 1 }],
 
 		accessTokenSecret: Config.ACCESS_TOKEN_SECRET,
 		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY,
@@ -67,7 +67,6 @@ const StaffsService: StaffsServiceSchema = {
 
 	actions: {
 		create: {
-			restricted: ["api"],
 			auth: true,
 			roles: [UserRole.ADMIN],
 			params: {
@@ -81,7 +80,6 @@ const StaffsService: StaffsServiceSchema = {
 			},
 		},
 		list: {
-			restricted: ["api"],
 			auth: true,
 			// roles: [UserRole.ADMIN, UserRole.STAFF],
 			cache: {
@@ -90,23 +88,19 @@ const StaffsService: StaffsServiceSchema = {
 		},
 
 		get: {
-			restricted: ["api"],
 			auth: true,
 			roles: [UserRole.ADMIN, UserRole.STAFF],
 		},
 
 		update: {
-			restricted: ["api"],
 			auth: true,
 			roles: [UserRole.ADMIN],
 		},
 		remove: {
-			restricted: ["api"],
 			auth: true,
 			roles: [UserRole.ADMIN],
 		},
 		find: {
-			restricted: ["api"],
 			auth: true,
 			roles: [UserRole.ADMIN, UserRole.STAFF],
 		},
@@ -177,7 +171,9 @@ const StaffsService: StaffsServiceSchema = {
 			): Promise<StaffEntity> {
 				const { token } = ctx.params;
 				const decoded = await verifyJWT(token, this.settings.accessTokenSecret!);
-				const result = pick(decoded, ["user"]) as { user: StaffEntity };
+				const json = pick(decoded, ["user"]) as { user: StaffEntity };
+				const user = await this.actions.get({ id: json.user._id }, { parentCtx: ctx });
+				const result = await this.transformDocuments(ctx, {}, user);
 				return result.user;
 			},
 		},
@@ -190,8 +186,6 @@ const StaffsService: StaffsServiceSchema = {
 				refreshToken: { type: "string" },
 			},
 			async handler(this: StaffsThis, ctx: Context<AuthRefreshTokenParams>): Promise<any> {
-				this.logger.info("Resolve token:", ctx.params);
-
 				const refreshToken: RefreshToken = await ctx.call(
 					"refreshTokens.verifyToken",
 					ctx.params,
@@ -264,11 +258,15 @@ const StaffsService: StaffsServiceSchema = {
 	},
 
 	async started() {
-		const res = await this.actions.login({
-			username: "20127665",
-			password: "Vinh1706!",
-		});
-		this.logger.warn("Staff:", res.accessToken);
+		try {
+			const res = await this.actions.login({
+				username: "20127665",
+				password: "Vinh1706!",
+			});
+			this.logger.warn("Staff:", res.accessToken);
+		} catch (e) {
+			/* empty */
+		}
 	},
 };
 

@@ -4,12 +4,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:grab_clone/screens/onboarding/verify_phone_number.dart';
+import 'package:grab_clone/screens/auth/verify_otp.dart';
 
-import '../auth/finish_sign_up.dart';
-import '../main_layout.dart';
-import './sign_up.dart';
-import '../../../api/Auth.dart';
+import 'finish_sign_up.dart';
+import '../pages/main_layout.dart';
+import 'sign_up.dart';
+import '../../api/AuthService.dart';
 import '../../../constants.dart';
 
 import '../../helpers/helper.dart';
@@ -28,6 +28,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _hiddenPassword = true;
   String? _phoneNumberError = null;
   String? _passwordError = null;
+
+  late VoidCallback? _onLoginPressed;
+  late final navigator = Navigator.of(context);
 
   @override
   void initState() {
@@ -71,68 +74,74 @@ class _LoginScreenState extends State<LoginScreen> {
             TextPosition(offset: _passwordController.text.length));
       }
     });
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    Future<void> login([bool mounted = true]) async {
-      String phoneNumber = _phoneNumberController.text;
-      String password = _passwordController.text;
-      FocusManager.instance.primaryFocus?.unfocus();
-
-      EasyLoading.show(
-          status: "Đang đăng nhập",
-          maskType: EasyLoadingMaskType.black,
-          dismissOnTap: false);
-      try {
-        final res = await Auth.login(phoneNumber, password);
-        await Future.delayed(const Duration(seconds: 3));
-        if (res.statusCode == 200) {
-          var body = jsonDecode(res.body);
-          EasyLoading.dismiss();
-          saveCredential(
-              userJsonEncoded: jsonEncode(body["user"]),
-              accessToken: body["accessToken"],
-              refreshToken: body["refreshToken"]);
-
-          if (body["user"]["fullName"] == null || body["user"]["fullName"]) {
-            Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const FinishSignUpScreen()));
-            return;
-          }
-
-          if (body["user"]["phoneNumberVerified"] == false) {
-            Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => VerifyPhoneNumberScreen(
-                      phoneNumber: body["user"]["phoneNumber"],
-                    )));
-            return;
-          }
-
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MainScreen()));
-          return;
-        }
-
-        if (res.statusCode == 422) {
-          EasyLoading.showError("Số điện thoại hoặc mật khẩu không đúng",
-              maskType: EasyLoadingMaskType.black, dismissOnTap: true);
-        }
-      } catch (e) {
-        print(e);
-        EasyLoading.showError("Có lỗi xảy ra khi đăng nhập.\nVui lòng thử lại",
-            maskType: EasyLoadingMaskType.black, dismissOnTap: true);
-      }
-    }
-
-    final VoidCallback? _onLoginPressed = _passwordController.text.isNotEmpty &&
+    _onLoginPressed = _passwordController.text.isNotEmpty &&
             _phoneNumberController.text.isNotEmpty &&
             _phoneNumberError == null &&
             _passwordError == null
         ? login
         : null;
+  }
+
+  Future<void> login([bool mounted = true]) async {
+    String phoneNumber = _phoneNumberController.text;
+    String password = _passwordController.text;
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    EasyLoading.show(
+        status: "Đang đăng nhập",
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false);
+    try {
+      final res = await AuthService.login(phoneNumber, password);
+      if (res.statusCode == 200) {
+        var body = jsonDecode(res.body);
+        EasyLoading.dismiss();
+
+        if (body["user"]["phoneNumberVerified"] == "false") {
+          return;
+        }
+
+        if (body["user"]["fullName"] == null ||
+            body["user"]["fullName"] == "") {
+          navigator.push(MaterialPageRoute(
+              builder: (context) => const FinishSignUpScreen()));
+          return;
+        }
+
+        saveCredential(
+            userJsonEncoded: jsonEncode(body["user"]),
+            accessToken: body["accessToken"],
+            refreshToken: body["refreshToken"]);
+        navigator.pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainScreen()));
+        return;
+      }
+
+      if (res.statusCode == 422) {
+        EasyLoading.dismiss();
+        var error = jsonDecode(res.body);
+        if (error["message"] == "Your phone number is not verified!") {
+          navigator.push(MaterialPageRoute(
+              builder: (context) => VerifyOtpScreen(
+                    phoneNumber: phoneNumber,
+                  )));
+        } else {
+          EasyLoading.showError("Số điện thoại hoặc mật khẩu không đúng",
+              maskType: EasyLoadingMaskType.black, dismissOnTap: true);
+        }
+      }
+    } catch (e) {
+      print(e);
+      EasyLoading.showError("Có lỗi xảy ra khi đăng nhập.\nVui lòng thử lại",
+          maskType: EasyLoadingMaskType.black, dismissOnTap: true);
+      await clearCredential();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
 
     Widget _loginForm = Center(
       child: SingleChildScrollView(
@@ -205,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
               alignment: Alignment.centerRight,
               child: TextButton(
                   onPressed: () => {
-                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        navigator.pushReplacement(MaterialPageRoute(
                             builder: (context) => const SignUpScreen()))
                       },
                   child: Text('signup_btn_text'.tr())),

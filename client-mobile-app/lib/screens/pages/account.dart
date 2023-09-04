@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../constants.dart';
-import '../helpers/helper.dart';
+import '../../constants.dart';
+import '../../helpers/helper.dart';
 
-import '../models/Customer.dart';
-import 'onboarding/login.dart';
+import '../../models/Customer.dart';
+import '../auth/login.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -13,7 +13,7 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  late Customer user;
+  late CustomerModel user;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class _AccountScreenState extends State<AccountScreen> {
         future: getStoredData(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            user = snapshot.data?["user"] as Customer;
+            user = snapshot.data?["user"] as CustomerModel;
             return Container(
                 margin:
                     EdgeInsets.only(top: MediaQuery.of(context).padding.top),
@@ -107,7 +107,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       Text("Số điện thoại: ${user.phoneNumber}"),
                       ElevatedButton(
                           onPressed: () async {
-                            await clearPreference();
+                            await clearCredential();
                             await Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(

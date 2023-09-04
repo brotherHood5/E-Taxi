@@ -1,20 +1,35 @@
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
 
 import '../helpers/helper.dart';
 
-class ETaxiClient extends http.BaseClient {
-  static Future<Map<String, String>> _getHeaders() async {
+class ApiClient extends http.BaseClient {
+  Future<String?> _getAccessToken() async {
     var data = await getStoredData();
+    return data["accessToken"];
+  }
+
+  Future<Map<String, String>> _getHeaders() async {
+    String? token = await _getAccessToken();
 
     return {
-      'Authentication': 'Bearer ${data["accessToken"]}',
+      'Authorization': 'Bearer $token',
     };
   }
+
+  static final ApiClient _singleton = ApiClient._internal();
+
+  factory ApiClient() {
+    return _singleton;
+  }
+
+  ApiClient._internal();
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     request.headers.addAll(await _getHeaders());
-    print(request.headers);
-    return request.send();
+    print(request.url);
+    return request.send().timeout(const Duration(seconds: 2));
   }
 }

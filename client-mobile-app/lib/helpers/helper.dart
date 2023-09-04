@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../api/Auth.dart';
+import '../api/AuthService.dart';
+import '../api/GeoService.dart';
+import '../models/Booking.dart';
 import '../models/Customer.dart';
 
 showLoaderDialog(BuildContext context) {
@@ -38,9 +41,9 @@ showLoaderDialog(BuildContext context) {
 Future<Map<String, dynamic>> getStoredData() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  Customer? customer;
+  CustomerModel? customer;
   if (prefs.getString('user') != null) {
-    customer = Customer.fromJson(prefs.getString('user')!);
+    customer = CustomerModel.fromJson(prefs.getString('user')!);
   } else {
     customer = null;
   }
@@ -71,20 +74,24 @@ Future<void> saveCredential({
   ]);
 }
 
-Future<void> clearPreference() async {
+Future<void> clearCredential() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.clear();
+  await Future.wait([
+    prefs.remove('user'),
+    prefs.remove('accessToken'),
+    prefs.remove('refreshToken'),
+  ]);
 }
 
-Future<Customer?> getMe(String accessToken) async {
+Future<CustomerModel?> getMe(String accessToken) async {
   try {
-    var res = await Auth.resolveToken(accessToken);
+    var res = await AuthService.resolveToken(accessToken);
     if (res.statusCode == 200) {
       await saveCredential(
         userJsonEncoded: res.body,
       );
       var data = await getStoredData();
-      return data['user'] as Customer;
+      return data['user'] as CustomerModel;
     }
   } catch (e) {
     print(e);
@@ -95,7 +102,7 @@ Future<Customer?> getMe(String accessToken) async {
 
 Future<Map<String, dynamic>?> refreshToken(String refreshToken) async {
   try {
-    var res = await Auth.refreshToken(refreshToken);
+    var res = await AuthService.refreshToken(refreshToken);
     if (res.statusCode == 200) {
       var body = jsonDecode(res.body);
       await saveCredential(
@@ -120,7 +127,7 @@ Future<Map<String, dynamic>?> getNewCredential() async {
     return null;
   }
 
-  Customer? user = await getMe(data["accessToken"]);
+  CustomerModel? user = await getMe(data["accessToken"]);
   if (user == null) {
     var newTokens = await refreshToken(data["refreshToken"]);
     if (newTokens != null) {
@@ -132,4 +139,45 @@ Future<Map<String, dynamic>?> getNewCredential() async {
   }
 
   return null;
+}
+
+Future<GeoPoint?> getPickupGeoPoint() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? encoded = await prefs.getString("pickupGeoPoint");
+  if (encoded == null) {
+    return null;
+  }
+  GeoPoint p = GeoPoint.fromMap(jsonDecode(encoded));
+  return p;
+}
+
+Future<String?> getPickupAddress() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getString("pickupAddress");
+}
+
+Future<void> savePickupGeoPoint(GeoPoint point) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final res = await GeoService.reverseGeocode(point.latitude, point.longitude);
+  var data = jsonDecode(res.body);
+  await prefs.setString("pickupAddress",
+      data[0]["formattedAddress"] ?? "${point.latitude}, ${point.longitude}");
+  await prefs.setString("pickupGeoPoint", jsonEncode(point.toMap()));
+}
+
+Future<void> saveCurrentBooking(BookingModel booking) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString("currentBooking", booking.toJson());
+}
+
+Future<BookingModel?> getCurrentBooking() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? json = prefs.getString("currentBooking");
+  if (json == null) return null;
+  return BookingModel.fromJson(json);
+}
+
+Future<void> clearCurrentBooking() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.remove("currentBooking");
 }

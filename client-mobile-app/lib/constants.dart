@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class ApiConstants {
-  static bool isDev = true;
+  static bool isDev = false;
 
   // Local
   static String host = '10.0.2.2';
@@ -16,8 +16,9 @@ class ApiConstants {
   static String baseUrl = isDev ? 'http://$host:$port/api/v1' : prodUrl;
   static String prodUrl = 'http://$remoteHost:$remotePort/api/v1';
 
-  // Endpoints
-  static String customersEndpoint = '$baseUrl/customers';
+  static String socketUrl = isDev
+      ? 'http://$host:3003/customers'
+      : "http://$remoteHost:4003/customers";
 }
 
 const topMarginInWelcomeScreen = 150.0;
@@ -40,7 +41,7 @@ const passwordTryTimes = 5;
 
 const otpLength = 6;
 const otpFieldWidth = 48.0;
-const resendOtpTime = 10; // seconds
+const resendOtpTime = 60; // seconds
 
 const smallIcon = 16.0;
 const mediumIcon = 24.0;

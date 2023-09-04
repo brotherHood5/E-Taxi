@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -7,21 +6,20 @@ import 'package:grab_clone/screens/auth/finish_sign_up.dart';
 import 'package:otp_text_field/otp_field.dart';
 import 'package:otp_text_field/style.dart';
 
-import '../../api/Auth.dart';
+import '../../api/AuthService.dart';
 import '../../constants.dart';
-import '../../helpers/helper.dart';
 
-class VerifyPhoneNumberScreen extends StatefulWidget {
-  const VerifyPhoneNumberScreen(
+class VerifyOtpScreen extends StatefulWidget {
+  const VerifyOtpScreen(
       {super.key, required this.phoneNumber, this.phonePrefix = "+84"});
   final String phoneNumber;
   final String phonePrefix;
 
   @override
-  State<VerifyPhoneNumberScreen> createState() => VerifyPhoneNumberState();
+  State<VerifyOtpScreen> createState() => VerifyPhoneNumberState();
 }
 
-class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
+class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
   bool isOtpWrong = false;
   bool enabled = false;
   int _secondsRemaining = resendOtpTime;
@@ -47,6 +45,7 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
   @override
   void initState() {
     super.initState();
+    AuthService.reSendOtp(widget.phoneNumber);
     startTimer();
   }
 
@@ -57,7 +56,7 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
   }
 
   Future<bool> onVerifyOtp(String otp) async {
-    var res = await Auth.verifyOtp(widget.phoneNumber, otp);
+    var res = await AuthService.verifyOtp(widget.phoneNumber, otp);
     if (res.statusCode == 200) {
       Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const FinishSignUpScreen()));
@@ -91,7 +90,7 @@ class VerifyPhoneNumberState extends State<VerifyPhoneNumberScreen> {
     final theme = Theme.of(context);
     final VoidCallback? onResendOtpBtn = enabled
         ? () async {
-            await Auth.sendOtp(widget.phoneNumber);
+            await AuthService.reSendOtp(widget.phoneNumber);
             setState(() {
               _secondsRemaining = resendOtpTime;
               startTimer();

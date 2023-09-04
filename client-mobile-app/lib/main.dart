@@ -3,15 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
-import 'package:grab_clone/screens/main_layout.dart';
-import 'package:grab_clone/screens/auth/logins.dart';
-import 'package:grab_clone/screens/auth/finish_sign_up.dart';
-import 'package:grab_clone/screens/onboarding/splash_screen.dart';
-import 'package:grab_clone/screens/onboarding/verify_phone_number.dart';
-
-import 'package:grab_clone/screens/onboarding/login.dart';
-// import 'screens/home.dart';
-// import 'screens/onboarding/splash_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +43,7 @@ class MyApp extends StatelessWidget {
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
         primarySwatch: Colors.orange,
+        // useMaterial3: true,
       ),
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
