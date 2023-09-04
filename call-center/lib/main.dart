@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:web/screens/coord_picker/check_auth.dart';
 import 'package:web/screens/coord_picker/coord_picker.dart';
-import 'package:web/screens/coord_picker/login.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:web/screens/dash_board/dashboard.dart';
 

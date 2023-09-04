@@ -7,9 +7,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'constant.dart';
 import 'model/Staff.dart';
 
-Future<Map<String, dynamic>> getStoredData() async {
+Future<Map<String, dynamic>?> getStoredData() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  Staff staff = Staff.fromMap(jsonDecode(prefs.getString('user')!));
+  var user = prefs.getString('user');
+  if (user == null) {
+    return null;
+  }
+  Staff staff = Staff.fromMap(jsonDecode(user));
 
   return {
     'user': staff,
