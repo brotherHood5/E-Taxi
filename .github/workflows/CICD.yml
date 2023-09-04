@@ -122,73 +122,73 @@
 #             $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
 
 
-name: CI/CD Pipeline
+# name: CI/CD Pipeline
 
-on:
-  push:
-    branches:
-      - develop
-    paths:
-      - ".github/workflows/CICD.yml"
-      - "server/**"
+# on:
+#   push:
+#     branches:
+#       - develop
+#     paths:
+#       - ".github/workflows/CICD.yml"
+#       - "server/**"
 
-env:
-  IMAGE_NAME: "nguyenhau2506/e-tax"
+# env:
+#   IMAGE_NAME: "nguyenhau2506/e-tax"
 
-jobs:
-  build_and_push:
-    runs-on: ubuntu-latest
+# jobs:
+#   build_and_push:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v3
+#     steps:
+#       - name: Checkout branch
+#         uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: 14
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v2
+#         with:
+#           node-version: 14
 
-      - name: Install dependencies
-        run: npm i
+#       - name: Install dependencies
+#         run: npm i
 
-      - name: Build Docker image
-        run: docker build -t nguyenhau2506/e-tax:${{ github.sha }} ./server/.
+#       - name: Build Docker image
+#         run: docker build -t nguyenhau2506/e-tax:${{ github.sha }} ./server/.
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+#       - name: Log in to Docker Hub
+#         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
 
-      - name: Push Docker image
-        run: docker push docker.io/nguyenhau2506/e-tax:${{ github.sha }}
+#       - name: Push Docker image
+#         run: docker push docker.io/nguyenhau2506/e-tax:${{ github.sha }}
 
-  deploy:
-    needs: build_and_push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to DigitalOcean Droplet
-        uses: appleboy/ssh-action@master
-        with:
-          script_stop: true
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_PRIVATE_KEY }}
-          envs: IMAGE_NAME
-          script: |
-            # Login to registry
-            docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}
-            # Stop and remove the old container if it exists
-            docker stop $(echo $IMAGE_NAME | tr ':/' '-') || true && docker rm -f $(echo $IMAGE_NAME | tr ':/' '-') || true
-            # Run a new container from the new image without the DB_CONNECTIONSTR environment variable
-            docker run -d \
-            --restart always \
-            --name $(echo $IMAGE_NAME | tr ':/' '-') \
-            -p 7772:3000 \
-            -p 7773:443 \
-            nguyenhau2506/e-tax:${{ github.sha }} \
-            # Remove if error
-            # Copy the .env file to the container
-            docker exec $(echo $IMAGE_NAME | tr ':/' '-') /bin/sh -c 'echo -e "${{ secrets.ENV_FILE }}" > .env'
-            # Restart the container
-            docker restart $(echo $IMAGE_NAME | tr ':/' '-')
+#   deploy:
+#     needs: build_and_push
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Deploy to DigitalOcean Droplet
+#         uses: appleboy/ssh-action@master
+#         with:
+#           script_stop: true
+#           host: ${{ secrets.SERVER_HOST }}
+#           username: ${{ secrets.SERVER_USER }}
+#           key: ${{ secrets.SERVER_PRIVATE_KEY }}
+#           envs: IMAGE_NAME
+#           script: |
+#             # Login to registry
+#             docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}
+#             # Stop and remove the old container if it exists
+#             docker stop $(echo $IMAGE_NAME | tr ':/' '-') || true && docker rm -f $(echo $IMAGE_NAME | tr ':/' '-') || true
+#             # Run a new container from the new image without the DB_CONNECTIONSTR environment variable
+#             docker run -d \
+#             --restart always \
+#             --name $(echo $IMAGE_NAME | tr ':/' '-') \
+#             -p 7772:3000 \
+#             -p 7773:443 \
+#             nguyenhau2506/e-tax:${{ github.sha }} \
+#             # Remove if error
+#             # Copy the .env file to the container
+#             docker exec $(echo $IMAGE_NAME | tr ':/' '-') /bin/sh -c 'echo -e "${{ secrets.ENV_FILE }}" > .env'
+#             # Restart the container
+#             docker restart $(echo $IMAGE_NAME | tr ':/' '-')
         
 
 
