@@ -31,16 +31,24 @@ const AddressCustomerService: ServiceSchema = {
 
 	actions: {
 		find: {
-			cache: false,
+			cache: {
+				ttl: 60,
+			},
 		},
 
 		get: {
-			cache: false,
+			cache: {
+				ttl: 60,
+			},
 		},
 
 		getTop5Address: {
 			params: {
 				phoneNumber: "string",
+			},
+			cache: {
+				keys: ["phoneNumber"],
+				ttl: 60,
 			},
 			async handler(this: Service, ctx: any) {
 				const result = await this.actions.find({
@@ -52,6 +60,7 @@ const AddressCustomerService: ServiceSchema = {
 				return result;
 			},
 		},
+
 		increaseCount: {
 			params: {
 				phoneNumber: "string",

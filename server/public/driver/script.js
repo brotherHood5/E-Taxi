@@ -71,7 +71,11 @@ function convertCoord(coordinate) {
 
 const customerId = "64de13237ee4b5326542e99e";
 function updateLocation(coordinate) {
-	socket.emit("call", "bookingSystem.updateDriverLocation", { ...coordinate });
+	const customerIdValue = document.querySelector("input[name=customerId]").value;
+	socket.emit("call", "bookingSystem.updateDriverLocation", {
+		...coordinate,
+		customerId: customerIdValue,
+	});
 }
 
 function showDriverMarker(coord) {
@@ -112,10 +116,28 @@ async function login() {
 	authToken = myJson.accessToken;
 	main();
 }
+
+window.onload = function () {
+	window.addEventListener("beforeunload", function () {
+		if (window.socket) {
+			console.log("Closing socket");
+			window.socket.close();
+			window.socket = null;
+			socket.close();
+		}
+	});
+};
+
 function main() {
 	var booking;
 	const eventDiv = document.getElementById("events");
 	const resultDiv = document.getElementById("res");
+	console.log("Closing socket");
+	if (window.socket) {
+		window.socket.close();
+		window.socket = null;
+		if (socket) socket.close();
+	}
 	var socket = io("ws://localhost:3003/drivers", {
 		transports: ["websocket", "polling", "flashsocket"],
 		auth: {
@@ -127,40 +149,55 @@ function main() {
 	});
 
 	window.socket = socket;
+	var currBookReceive = null;
 
-	socket.on("booking_found", (data) => {
+	function onBookingFound(data) {
+		socket.off("booking_found");
 		console.log("Data: ", data);
-		socket.emit("call", "bookingSystem.driverAccept", data, (err, res) => {
-			console.log("Accepted: ", res);
-		});
-	});
+		currBookReceive = data;
+		if (currBookReceive) {
+			socket.emit("call", "bookingSystem.driverAccept", data, (err, res) => {
+				console.log("Accepted: ", res);
+				if (!res) {
+					currBookReceive = null;
+					socket.on("booking_found", onBookingFound);
+				}
+			});
+			// setTimeout(() => {
+
+			// }, 4000);
+		}
+	}
+	socket.on("booking_found", onBookingFound);
 
 	socket.on("connect", function () {
 		console.log("Websocket connection established!");
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition((pos) => {
-				socket.emit(
-					"call",
-					"bookingSystem.driverConnected",
-					{
+				try {
+					socket.emit(
+						"call",
+						"bookingSystem.driverConnected",
+						{
+							lat: pos.coords.latitude,
+							lon: pos.coords.longitude,
+						},
+						(err, res) => {
+							console.log(res);
+						},
+					);
+					const coord = {
 						lat: pos.coords.latitude,
 						lon: pos.coords.longitude,
-					},
-					(err, res) => {
-						console.log(res);
-					},
-				);
-				const coord = {
-					lat: pos.coords.latitude,
-					lon: pos.coords.longitude,
-				};
-				showDriverMarker(coord);
-				try {
+					};
+					showDriverMarker(coord);
 					map.getView().setCenter(ol.proj.fromLonLat([coord.lon, coord.lat]));
 				} catch (e) {
 					console.log(e);
 				}
 			});
+		} else {
+			console.log("No geolocation");
 		}
 	});
 

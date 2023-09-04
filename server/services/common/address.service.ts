@@ -39,7 +39,9 @@ const AddressService: AddresssServiceSchema = {
 
 	actions: {
 		get: {
-			cache: false,
+			cache: {
+				ttl: 60,
+			},
 		},
 	},
 

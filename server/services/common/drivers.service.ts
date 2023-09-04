@@ -1,5 +1,6 @@
 import type { ActionParams, Context } from "moleculer";
 import { Config } from "../../common";
+import type { IDriver } from "../../entities";
 import { DriverStatus, VehicleType } from "../../entities";
 import { createTestDrivers } from "../../helpers/seed";
 import { AuthMixin, DbMixin } from "../../mixins";
@@ -101,7 +102,7 @@ const DriversService: DriversServiceSchema = {
 			},
 		},
 
-		indexes: [{ phoneNumber: 1 }],
+		indexes: [{ phoneNumber: 1, unique: 1 }],
 
 		accessTokenSecret: Config.ACCESS_TOKEN_SECRET,
 		accessTokenExpiry: Config.ACCESS_TOKEN_EXPIRY,
@@ -110,9 +111,40 @@ const DriversService: DriversServiceSchema = {
 		otpExpireMin: Config.OTP_EXPIRE_MIN || 1,
 	},
 
+	events: {
+		"drivers.updateStatus": {
+			async handler(this: DriversThis, ctx: Context<any, any>) {
+				await ctx.call("drivers.update", ctx.params);
+			},
+		},
+
+		"drivers.connected": {
+			async handler(this: DriversThis, ctx: Context<any, any>) {
+				const driver = await ctx.call<IDriver, any>("drivers.get", {
+					id: ctx.meta.user._id,
+				});
+				await ctx.emit("drivers.updateStatus", {
+					id: ctx.meta.user._id,
+					driverStatus:
+						driver.driverStatus === DriverStatus.INACTIVE
+							? DriverStatus.ACTIVE
+							: driver.driverStatus,
+				});
+			},
+		},
+
+		"drivers.disconnected": {
+			async handler(this: DriversThis, ctx: Context<any, any>) {
+				await ctx.emit("drivers.updateStatus", {
+					id: ctx.params,
+					driverStatus: DriverStatus.INACTIVE,
+				});
+			},
+		},
+	},
+
 	actions: {
 		create: {
-			restricted: ["api"],
 			params: {
 				...validateDriverBase,
 				passwordHash: { type: "string" },
@@ -123,21 +155,25 @@ const DriversService: DriversServiceSchema = {
 				return entity;
 			},
 		},
+
 		list: {
-			restricted: ["api", "bookingSystem"],
 			cache: {
-				ttl: 60 * 2, // 2min
+				ttl: 60,
 			},
 		},
+
 		get: {
-			cache: false,
+			cache: {
+				keys: ["id"],
+				ttl: 60,
+			},
 		},
+
 		update: {},
-		remove: {
-			restricted: ["api"],
-		},
+
+		remove: {},
+
 		find: {
-			restricted: ["api", "bookingSystem"],
 			cache: false,
 		},
 	},
@@ -161,11 +197,15 @@ const DriversService: DriversServiceSchema = {
 	},
 
 	async started() {
-		const res = await this.actions.login({
-			phoneNumber: "0972360214",
-			password: "Vinh1706!",
-		});
-		this.logger.warn("Driver:", res.accessToken);
+		try {
+			const res = await this.actions.login({
+				phoneNumber: "0972360214",
+				password: "Vinh1706!",
+			});
+			this.logger.warn("Driver:", res.accessToken);
+		} catch (e) {
+			/* empty */
+		}
 	},
 };
 

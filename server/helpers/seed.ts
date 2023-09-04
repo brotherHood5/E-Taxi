@@ -1,7 +1,7 @@
 import { fakerVI as faker } from "@faker-js/faker";
 import _ from "lodash";
 import type { AddressEntity, CustomerEntity, IDriver, StaffEntity } from "../entities";
-import { VehicleType } from "../entities";
+import { DriverStatus, VehicleType } from "../entities";
 import { UserRole } from "../types/common";
 import { hashPassword } from "./password.helper";
 
@@ -52,6 +52,7 @@ export function createTestDrivers(n = 10): IDriver[] {
 				days: faker.number.int({ min: 1, max: 10 }),
 				refDate: currentDate,
 			}),
+			driverStatus: DriverStatus.INACTIVE,
 			roles: [UserRole.DRIVER],
 			vehicleType: faker.helpers.enumValue(VehicleType),
 		} as IDriver;
@@ -65,6 +66,7 @@ export function createTestDrivers(n = 10): IDriver[] {
 		active: true,
 		createdAt: new Date(),
 		updatedAt: new Date(),
+		driverStatus: DriverStatus.INACTIVE,
 		roles: [UserRole.DRIVER],
 		vehicleType: faker.helpers.enumValue(VehicleType),
 	} as IDriver);

@@ -141,6 +141,11 @@ const AuthMixin: AuthMixinSchema = {
 						{ field: "phoneNumber", message: "is not verified" },
 					]);
 				}
+				// else if (user.active) {
+				// 	throw new ServiceError("Your account is logged!", 422, [
+				// 		{ field: "phoneNumber", message: "is logged" },
+				// 	]);
+				// }
 
 				// Check password
 				if (!this.verifyPassword(password, user.passwordHash)) {
@@ -149,7 +154,17 @@ const AuthMixin: AuthMixinSchema = {
 						{ field: "password", message: "wrong" },
 					]);
 				}
-				const doc = await this.transformDocuments(ctx, {}, user);
+				const updatedUser = await ctx.call(
+					`${this.name}.update`,
+					{ id: user._id, active: true },
+					{ parentCtx: ctx },
+				);
+
+				const doc = await this.transformDocuments(ctx, {}, updatedUser ?? user);
+				if (doc.passwordHash) {
+					delete doc.passwordHash;
+				}
+
 				// Generate access token
 				const accessToken = await this.generateAccessToken(user);
 
@@ -163,7 +178,6 @@ const AuthMixin: AuthMixinSchema = {
 					...ctx.meta.$responseHeaders,
 					Authorization: `Bearer ${accessToken}`,
 				};
-				await this.broker.emit(`${this.name}.logged`, doc);
 				return { user: doc, accessToken, refreshToken };
 			},
 		},
@@ -236,12 +250,18 @@ const AuthMixin: AuthMixinSchema = {
 				this: AuthThis,
 				ctx: Context<AuthResolveTokenParams>,
 			): Promise<IUserBase> {
-				const { token } = ctx.params;
-				const decoded = await verifyJWT(token, this.settings.accessTokenSecret);
-				const json = _.pick(decoded, ["user"]) as { user: IUserBase };
-				const user = await this.actions.get({ id: json.user._id }, { parentCtx: ctx });
-				const result = await this.transformDocuments(ctx, {}, user);
-				return result;
+				try {
+					const { token } = ctx.params;
+					const decoded = await verifyJWT(token, this.settings.accessTokenSecret);
+					const json = _.pick(decoded, ["user"]) as { user: IUserBase };
+					const user = await this.actions.get({ id: json.user._id }, { parentCtx: ctx });
+					const result = await this.transformDocuments(ctx, {}, user);
+					return result;
+				} catch (err) {
+					throw new ServiceError("Token is invalid!", 422, [
+						{ field: "token", message: "is invalid" },
+					]);
+				}
 			},
 		},
 
@@ -314,6 +334,15 @@ const AuthMixin: AuthMixinSchema = {
 				const { roles } = ctx.params;
 				const userRoles = ctx.meta.user.roles;
 				return !roles || !roles.length || roles.some((r) => userRoles?.includes(r));
+			},
+		},
+
+		logout: {
+			rest: "GET /logout",
+			auth: true,
+			async handler(this: AuthThis, ctx: Context<any, UserAuthMeta>): Promise<any> {
+				const { user } = ctx.meta;
+				await this.actions.update({ id: user._id, active: false }, { parentCtx: ctx });
 			},
 		},
 	},

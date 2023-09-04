@@ -56,6 +56,7 @@ var markerVectorLayer = new ol.layer.Vector({
 map.addLayer(markerVectorLayer);
 
 var booking = {
+	customerId: "64d8abbacd43b24158a8c2f3",
 	phoneNumber: "0972360214",
 	vehicleType: "2",
 	pickupAddr: {},
@@ -160,6 +161,10 @@ var socket = io("ws://localhost:3003/customers", {
 	query: {
 		service: "customers",
 	},
+});
+
+socket.on("booking_updated", (data) => {
+	console.log(JSON.stringify(data, null, 2));
 });
 
 socket.on("connect", function () {
