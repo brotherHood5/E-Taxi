@@ -30,6 +30,6 @@ class ApiClient extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     request.headers.addAll(await _getHeaders());
     print(request.url);
-    return request.send().timeout(const Duration(seconds: 2));
+    return request.send().timeout(const Duration(seconds: 30));
   }
 }
