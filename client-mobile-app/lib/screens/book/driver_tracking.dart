@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:grab_clone/helpers/helper.dart';
 import 'package:grab_clone/models/Booking.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../api/SocketApi.dart';
 
@@ -34,17 +37,28 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     ),
   );
   final SocketApi _socket = SocketApi();
+  GeoPoint? _lastKnownDriverLocation = null;
+  late BookingModel _currentBooking;
 
   @override
   void initState() {
     super.initState();
-    print("init state");
-    _controller = MapController(initMapWithUserPosition: UserTrackingOption());
+    _socket.ins.off("driver_update_location");
+
+    getCurrentBooking().then((value) => {
+          _currentBooking = value!,
+          _controller = MapController(
+              initPosition: GeoPoint(
+                  latitude: _currentBooking.pickupAddr!.lat!,
+                  longitude: _currentBooking.pickupAddr!.lon!)),
+          _controller.addObserver(this),
+        });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _socket.ins.off("driver_update_location");
     super.dispose();
   }
 
@@ -72,12 +86,12 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
                         roadWidth: 30,
                         roadBorderColor: Colors.black,
                         roadBorderWidth: 2,
-                        roadColor: Colors.blue,
+                        roadColor: Colors.green,
                         zoomInto: true,
                       ),
                       showZoomController: true,
                       zoomOption: const ZoomOption(
-                          initZoom: 13, minZoomLevel: 10, maxZoomLevel: 19),
+                          initZoom: 15, minZoomLevel: 2, maxZoomLevel: 19),
                     ));
               }
               return const Center(child: CircularProgressIndicator());
@@ -97,9 +111,48 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     );
   }
 
+  Future<void> _updateDriverLocation(GeoPoint p) async {
+    if (_lastKnownDriverLocation != null) {
+      await _controller.removeMarker(_lastKnownDriverLocation!);
+    }
+
+    _lastKnownDriverLocation = p;
+    await _controller.addMarker(p, markerIcon: driverMarker);
+    await _controller.removeLastRoad();
+    RoadInfo roadInfo = await _controller.drawRoad(
+      p,
+      GeoPoint(
+          latitude: _currentBooking.pickupAddr!.lat!,
+          longitude: _currentBooking.pickupAddr!.lon!),
+      roadType: RoadType.car,
+    );
+    print("${roadInfo.distance}km");
+    print("${roadInfo.duration}sec");
+    print("${roadInfo.instructions}");
+  }
+
   @override
   Future<void> mapIsReady(bool isReady) async {
-    print("map is ready");
-    if (isReady) {}
+    print("MAP IS LOADED");
+    if (isReady) {
+      SharedPreferences pref = await SharedPreferences.getInstance();
+      String? driverLocJson = pref.getString("driverLoc");
+      if (driverLocJson != null) {
+        print("driverLocJson");
+        print(driverLocJson);
+        Map<String, dynamic> driverLoc = jsonDecode(driverLocJson);
+        await _updateDriverLocation(GeoPoint(
+            latitude: double.parse(driverLoc["lat"]),
+            longitude: double.parse(driverLoc["lon"])));
+      }
+      _socket.ins.on("driver_update_location", (data) async {
+        print("driver_update_location");
+        print(data);
+        GeoPoint p = GeoPoint(
+            latitude: data["lat"].toDouble(),
+            longitude: data["lon"].toDouble());
+        await _updateDriverLocation(p);
+      });
+    }
   }
 }

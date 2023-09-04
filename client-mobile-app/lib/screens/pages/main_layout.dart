@@ -28,9 +28,9 @@ class _MainScreenState extends State<MainScreen> {
     getStoredData().then((value) => {
           SocketApi.setAuthToken(value?["accessToken"]),
           SocketApi.init(),
-          SocketApi().ins.on("booking_updated", (data) {
-            print("booking_updated: $data");
-          })
+          // SocketApi().ins.on("booking_updated", (data) {
+          //   print("booking_updated: $data");
+          // })
         });
 
     _tabs = [

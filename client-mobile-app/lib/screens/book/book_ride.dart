@@ -7,11 +7,13 @@ import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:grab_clone/api/CustomerService.dart';
 import 'package:grab_clone/helpers/helper.dart';
 import 'package:grab_clone/screens/book/driver_tracking.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../api/SocketApi.dart';
 import '../../constants.dart';
 import '../../models/Booking.dart';
 import '../../models/Address.dart';
+import '../../models/BookingStatus.dart';
 
 class BookRideScreen extends StatefulWidget {
   final GeoPoint pickUpGeoPoint;
@@ -49,27 +51,78 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
   bool _isBooking = false;
   final SocketApi _socket = SocketApi();
 
-  Timer? cancelTimer;
-
-  void startCancelTimer() {
-    cancelTimer = Timer(const Duration(minutes: 1), () {
+  Timer? failTimer;
+  void startFailTimer() {
+    failTimer = Timer(const Duration(seconds: 5), () {
       setState(() {
         _isBooking = false;
       });
-      EasyLoading.removeAllCallbacks();
       EasyLoading.dismiss();
       EasyLoading.showError("Không tìm được tài xế. Thử lại sau");
     });
   }
 
+  StreamController<int> _events = StreamController<int>();
+
+  int _counter = 2;
+  Timer? _cancelTimer;
+  void _startTimer() {
+    EasyLoading.dismiss();
+
+    _counter = 2;
+    _events.close();
+    _events = StreamController<int>();
+    _events.add(_counter);
+
+    if (_cancelTimer != null) {
+      _cancelTimer?.cancel();
+    }
+    _cancelTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      (_counter != 1)
+          ? _counter--
+          : {
+              _cancelTimer?.cancel(),
+              Navigator.of(context).pop(),
+              setState(() {
+                _isBooking = true;
+              })
+            };
+      _events.add(_counter);
+    });
+  }
+
   @override
   void initState() {
+    bool _flag = false;
     super.initState();
     _navigator = Navigator.of(context);
-    _socket.ins.on("booking_accepted", (data) {
+    _socket.ins.on("driver_accepted", (data) async {
+      if (_flag) return;
+      _flag = true;
+      var req = data["booking"];
+      var driverLoc = data["driver"];
+
+      print("Driver accepted");
+      print(data);
+
       if (_isBooking) {
-        onSuccess();
+        onSuccess(BookingModel.fromMap(req));
+        SharedPreferences pref = await SharedPreferences.getInstance();
+        await pref.setString("driverLoc", jsonEncode(driverLoc));
         _isBooking = false;
+      }
+    });
+    _socket.ins.on("booking_updated", (data) async {
+      BookingModel req = BookingModel.fromMap(data);
+      switch (req.status) {
+        // case BookingStatus.ASSIGNED:
+        //   onSuccess();
+        //   break;
+        case BookingStatus.FAILED: // fail
+          EasyLoading.showError("Không tìm được tài xế. Thử lại sau");
+          _isBooking = false;
+          await clearCurrentBooking();
+          break;
       }
     });
     _booking = BookingModel(
@@ -120,8 +173,9 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
     _controller.dispose();
     _price.dispose();
     EasyLoading.removeAllCallbacks();
-    cancelTimer?.cancel();
-    cancelTimer = null;
+    failTimer?.cancel();
+    failTimer = null;
+    _events.close();
     super.dispose();
   }
 
@@ -209,40 +263,27 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
                   horizontal: layoutMedium, vertical: layoutSmall),
               child: ElevatedButton(
                   onPressed: () async {
+                    _startTimer();
+                    var res = await showDialog(
+                      barrierDismissible: false,
+                      context: context,
+                      builder: _buildCancelReqDialog,
+                    );
+
                     try {
-                      if (!mounted) return;
-                      setState(() {
-                        _isBooking = true;
-                      });
+                      if (_isBooking) {
+                        EasyLoading.show(
+                            status: "Đang đặt xe...",
+                            maskType: EasyLoadingMaskType.black,
+                            dismissOnTap: false);
+                      } else {
+                        EasyLoading.showError("Hủy đặt xe thành công");
+                        return;
+                      }
 
                       final res = await CustomerService.bookRide(_booking);
                       if (res.statusCode == 200) {
-                        await saveCurrentBooking(
-                            BookingModel.fromJson(res.body));
-                        startCancelTimer();
-                        EasyLoading.addStatusCallback((status) async {
-                          if (status == EasyLoadingStatus.dismiss) {
-                            cancelTimer!.cancel();
-                            setState(() {
-                              _isBooking = false;
-                            });
-                            EasyLoading.showError("Hủy đặt xe thành công");
-                            // await clearCurrentBooking();
-                            try {
-                              onSuccess();
-                            } catch (error) {
-                              print(error);
-                            }
-                            Future.delayed(const Duration(milliseconds: 10),
-                                () {
-                              EasyLoading.removeAllCallbacks();
-                            });
-                          }
-                        });
-                        EasyLoading.show(
-                            status: "Đang đặt xe...",
-                            maskType: EasyLoadingMaskType.clear,
-                            dismissOnTap: true);
+                        startFailTimer();
                         return;
                       } else {
                         setState(() {
@@ -255,10 +296,9 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
                       setState(() {
                         _isBooking = false;
                       });
-                      await clearCurrentBooking();
                       EasyLoading.showError("Đặt xe thất bại");
+                      await clearCurrentBooking();
                     }
-                    _navigator.pop();
                   },
                   style: ButtonStyle(
                       maximumSize: MaterialStateProperty.all<Size>(
@@ -282,12 +322,62 @@ class _BookRideScreenState extends State<BookRideScreen> with OSMMixinObserver {
     );
   }
 
-  void onSuccess() {
-    cancelTimer!.cancel();
-    EasyLoading.removeAllCallbacks();
+  AlertDialog _buildCancelReqDialog(BuildContext context) {
+    return AlertDialog(
+        content: StreamBuilder(
+      stream: _events.stream,
+      builder: (context, snapshot) {
+        return Container(
+            child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Yêu cầu sẽ được xử lí trong ${snapshot.data} giây?"),
+            const SizedBox(height: layoutMedium),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                    onPressed: () => {
+                          _cancelTimer?.cancel(),
+                          Navigator.of(context).pop(),
+                          setState(() {
+                            _isBooking = true;
+                          })
+                        },
+                    child: Text("Đồng ý")),
+                const SizedBox(
+                  width: layoutSmall,
+                ),
+                TextButton(
+                    onPressed: () {
+                      _cancelTimer?.cancel();
+                      Navigator.of(context).pop();
+                      setState(() {
+                        _isBooking = false;
+                      });
+                    },
+                    child: Text("Hủy"))
+              ],
+            )
+          ],
+        ));
+      },
+    ));
+  }
+
+  void onSuccess(BookingModel req) async {
+    failTimer?.cancel();
+    await saveCurrentBooking(req);
+
     EasyLoading.dismiss();
     _navigator.pushReplacement(
         MaterialPageRoute(builder: (context) => const DriverTrackingScreen()));
+    // failTimer!.cancel();
+
+    // EasyLoading.removeAllCallbacks();
+    // EasyLoading.dismiss();
+    // _navigator.pushReplacement(
+    //     MaterialPageRoute(builder: (context) => const DriverTrackingScreen()));
   }
 
   @override
