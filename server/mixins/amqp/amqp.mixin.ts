@@ -48,6 +48,7 @@ const AmqpService: ServiceSchema = {
 			}
 			return this.$queues[name];
 		},
+
 		async addAMQPJob(name, message, options) {
 			const jobOption = _.defaultsDeep(options, {
 				persistent: true,
@@ -55,7 +56,7 @@ const AmqpService: ServiceSchema = {
 
 			const queue = await this.getAMQPQueue(name);
 			await queue.sendToQueue(name, Buffer.from(JSON.stringify(message)), jobOption);
-			this.logger.info(`AMQP Job ${name} added to queue`);
+			this.logger.info(`New job added to ${name} queue`);
 		},
 
 		async amqpDispose() {
@@ -79,7 +80,6 @@ const AmqpService: ServiceSchema = {
 			throw new Errors.ServiceSchemaError("Missing options URL", null);
 		}
 
-		this.logger.warn("Connecting to AMQP server...");
 		try {
 			this.AMQPConn = await amqp.connect(this.settings.AMQPUrl);
 			if (this.schema.AMQPQueues) {

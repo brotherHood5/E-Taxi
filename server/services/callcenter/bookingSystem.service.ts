@@ -1,35 +1,16 @@
-import type { Cachers, Service, ServiceSchema } from "moleculer";
+import type { Channel } from "amqplib";
+import type { Cachers, Context, Service, ServiceSchema } from "moleculer";
 import { Config } from "../../common";
 import type { AddressEntity, IAddress, IBooking, IDriver } from "../../entities";
-import { BookingStatus, VehicleType } from "../../entities";
+import { BookingStatus, DriverStatus } from "../../entities";
 import { AMQPMixin, DbMixin } from "../../mixins";
 import type { ObjectId } from "../../types";
 import { MongoObjectId } from "../../types";
-import { DriverFinder } from "./core";
 
 const BookingService: ServiceSchema = {
 	name: "bookingSystem",
 	authToken: Config.BOOKING_AUTH_TOKEN,
 	mixins: [DbMixin("bookings"), AMQPMixin],
-
-	events: {
-		"drivers.logged": {
-			handler(this: Service, ctx: any) {
-				this.logger.warn("Driver logged: ", this.loggedDriver);
-				this.loggedDriver.add(ctx.params);
-			},
-		},
-		"drivers.updateLocation": {
-			handler(this: Service, ctx: any) {
-				this.logger.warn("Driver update location: ", ctx.params);
-			},
-		},
-		"drivers.updateStatus": {
-			handler(this: Service, ctx: any) {
-				this.logger.warn("Driver update status: ", ctx.params);
-			},
-		},
-	},
 
 	settings: {
 		rest: "/booking-system",
@@ -65,7 +46,7 @@ const BookingService: ServiceSchema = {
 			},
 			driver: {
 				field: "driverId",
-				action: "driver.get",
+				action: "drivers.get",
 				params: {
 					fields: "_id fullName phoneNumber vehicleType",
 				},
@@ -87,24 +68,179 @@ const BookingService: ServiceSchema = {
 			createdAt: "date|optional",
 			updatedAt: "date|optional",
 		},
+
+		driverAcceptTimeout: JSON.parse(process.env.DRIVER_ACCEPT_TIMEOUT ?? "10"),
+	},
+
+	events: {
+		"booking.update": {
+			params: {
+				_id: "string",
+			},
+			async handler(this: Service, ctx: Context<any, any>) {
+				const { _id, status, driverId, staff } = ctx.params;
+				const result: IBooking = await ctx.call("bookingSystem.updateAndGet", {
+					id: _id,
+					status,
+					driverId,
+				});
+
+				this.logger.info("Booking updated status: ", result);
+				this.addAMQPJob("monitor.update", {
+					request: result,
+					data: {
+						staff,
+					},
+				});
+
+				// Send notification
+				switch (result.status) {
+					case BookingStatus.ASSIGNED: {
+						// Lay thong tin vi tri cua driver
+						const driverGeo = await this.geopos(result.driverId);
+						if (driverGeo) {
+							if (result.customerId && result.inApp) {
+								await ctx.emit("socket.appNotify", {
+									namespace: "/customers",
+									event: "driver_accepted",
+									args: [
+										{
+											booking: result, // Thong tin booking
+											driver: {
+												// Thong tin driver
+												driverId: result.driverId,
+												lat: driverGeo[0][1],
+												lon: driverGeo[0][0],
+											},
+										},
+									],
+									rooms: [result.customerId.toString()],
+								});
+								await this.geoRemove(result.driverId);
+							} else {
+								const { driver } = result as any;
+								await ctx.emit("socket.smsNotify", {
+									to: result.phoneNumber,
+									message: `Tai xe da nhan. Tai xe: ${driver.fullName} - SDT:${driver.phoneNumber}`,
+								});
+							}
+						}
+						break;
+					}
+					case BookingStatus.FAILED: {
+						if (result.customerId && result.inApp) {
+							await ctx.emit("socket.appNotify", {
+								namespace: "/customers",
+								event: "booking_updated",
+								args: [result],
+								room: [result.customerId.toString()],
+							});
+						} else {
+							await ctx.emit("socket.smsNotify", {
+								to: result.phoneNumber,
+								message: `Xin loi, hien tai chung toi khong co tai xe phu hop voi yeu cau cua ban. Xin vui long thu lai sau.`,
+							});
+						}
+						break;
+					}
+					case BookingStatus.DONE:
+					default:
+						break;
+				}
+
+				return result as any;
+			},
+		},
+
+		"booking.driversFound": {
+			handler(this: Service, ctx: any) {
+				const { req, drivers } = ctx.params;
+
+				// Gui thong bao den tai xe
+				ctx.call("socket.notify", {
+					provider: "app",
+					data: {
+						namespace: "/drivers",
+						rooms: drivers.map((item: IDriver) => item._id),
+						event: "booking_found",
+						args: [req],
+					},
+				});
+
+				setTimeout(() => {
+					ctx.emit("booking.noDriversFound", req);
+				}, (this.settings.driverAcceptTimeout as number) * 1000);
+
+				return drivers;
+			},
+		},
+
+		"booking.noDriversFound": {
+			async handler(this: Service, ctx: any) {
+				const booking = await ctx.call("bookingSystem.get", { id: ctx.params._id });
+				if (booking.status === BookingStatus.PROCESSING) {
+					await ctx.emit("booking.update", {
+						_id: ctx.params._id,
+						status: BookingStatus.FAILED,
+					});
+				}
+			},
+		},
 	},
 
 	AMQPQueues: {
-		"booking.processing": {
-			async handler(this: Service, channel: any, msg: any): Promise<void> {
-				const req = JSON.parse(msg.content.toString());
-				req.status = BookingStatus.PROCESSING;
+		"booking.findDrivers": {
+			async handler(this: Service, channel: Channel, msg: any): Promise<void> {
 				try {
-					await this.actions.updateBookingStatus({
-						id: req._id,
-						status: req.status,
-					});
+					const req = JSON.parse(msg.content.toString());
 
-					// TODO: Find Driver
+					// Tim tai xe gan nhat
+					await this.broker
+						.call("bookingSystem.findDrivers", {
+							lat: (req.pickupAddr as IAddress).lat,
+							lon: (req.pickupAddr as IAddress).lon,
+							vehicleType: req.vehicleType,
+						})
+						.then((drivers: any) => {
+							this.logger.info("Find drivers: ", drivers);
+							if (drivers.length !== 0) {
+								// Tim thay tai xe
+								this.broker
+									.emit("booking.driversFound", {
+										req,
+										drivers,
+									})
+									.then(() => {})
+									.catch(() => {});
+							} else {
+								// Khong tim thay tai xe
+								this.broker
+									.emit("booking.noDriversFound", req)
+									.then(() => {})
+									.catch(() => {});
+							}
+						})
+						.catch((err) => {
+							this.logger.error(err);
+							this.broker
+								.emit("booking.noDriversFound", req)
+								.then(() => {})
+								.catch(() => {});
+						});
 					channel.ack(msg);
 				} catch (error) {
-					channel.nack(msg);
+					this.logger.error(error);
+					channel.ack(msg);
 				}
+			},
+			channel: {
+				assert: {
+					durable: true,
+				},
+				prefetch: 5,
+			},
+			consume: {
+				noAck: false,
 			},
 		},
 
@@ -134,7 +270,33 @@ const BookingService: ServiceSchema = {
 				assert: {
 					durable: true,
 				},
-				prefetch: 1,
+				prefetch: 5,
+			},
+			consume: {
+				noAck: false,
+			},
+		},
+
+		"booking.processing": {
+			async handler(this: Service, channel: Channel, msg: any): Promise<void> {
+				const req = JSON.parse(msg.content.toString());
+				req.status = BookingStatus.PROCESSING;
+				try {
+					const result = (await this.broker.emit(
+						"booking.update",
+						req,
+					)) as unknown as IBooking[];
+					this.addAMQPJob("booking.findDrivers", result[0]);
+					channel.ack(msg);
+				} catch (error) {
+					channel.nack(msg);
+				}
+			},
+			channel: {
+				assert: {
+					durable: true,
+				},
+				prefetch: 5,
 			},
 			consume: {
 				noAck: false,
@@ -143,87 +305,151 @@ const BookingService: ServiceSchema = {
 	},
 
 	actions: {
-		debug: {
+		// Driver
+		driverConnected: {
+			params: {
+				lat: ["number", "string"],
+				lon: ["number", "string"],
+			},
 			async handler(this: Service, ctx: any) {
-				const { phoneNumber, vehicleType, pickupAddr, destAddr } = ctx.params;
-				const coord = {
-					lat: 21.027763,
-					lon: 105.83416,
-				};
+				let { lat, lon } = ctx.params;
 
-				const id1 = "64dcbfa928d2047859049e68";
-				const id2 = "64dcd2fd32d8cf1144801d57";
-
-				const data: IBooking = {
-					// _id: new MongoObjectId("64dcba3c94b438a1b79c4ba0"),
-					phoneNumber: "0123456789",
-					vehicleType: VehicleType.FOUR_SEATS,
-					pickupAddr: {
-						homeNo: "123",
-						street: "Binh Chieu",
-						ward: "BinhChieu",
-						district: "Thu Duc",
-						city: "Ho Chi Minh",
-					},
-					destAddr: {
-						homeNo: "123",
-						street: "Nguyen Van Cu",
-						ward: "Long Bien",
-						district: "Long Bien",
-						city: "Ha Noi",
-					},
-					// pickupAddr: id1,
-					// destAddr: id2,
-					status: BookingStatus.NEW,
-				};
-				const result = await this.createNew(data);
-				this.addAMQPJob("booking.new", result);
-				return result;
-
-				// const { a } = ctx.params;
-				// const coord = {
-				// 	lat: 21.027763,
-				// 	lon: 105.83416,
-				// };
-
-				// const data: IBooking = {
-				// 	_id: new MongoObjectId(),
-				// 	phoneNumber: "0972360214",
-				// 	vehicleType: "4-seat",
-				// 	pickupAddr: {
-				// 		homeNo: "123",
-				// 		street: "Binh Chieu",
-				// 		ward: "BinhChieu",
-				// 		district: "Thu Duc",
-				// 		city: "Ho Chi Minh",
-				// 	},
-				// 	destAddr: {
-				// 		homeNo: "123",
-				// 		street: "Nguyen Van Cu",
-				// 		ward: "Long Bien",
-				// 		district: "Long Bien",
-				// 		city: "Ha Noi",
-				// 	},
-				// 	status: BookingStatus.NEW,
-				// 	createdAt: new Date(),
-				// 	updatedAt: new Date(),
-				// };
-				// if (a === 1) {
-				// 	data.pickupAddr = {
-				// 		...(data.pickupAddr as IAddress),
-				// 		...coord,
-				// 	};
-				// 	data.destAddr = {
-				// 		...(data.destAddr as IAddress),
-				// 		...coord,
-				// 	};
-				// }
-
-				// const job = this.addAMQPJob("bookingSystem.booking_req", data);
-				// return data;
+				try {
+					lat = Number(lat);
+					lon = Number(lon);
+					await ctx.call("bookingSystem.updateDriverLocation", {
+						lat,
+						lon,
+					});
+					await ctx.emit("drivers.connected");
+				} catch (error) {
+					return false;
+				}
+				return true;
 			},
 		},
 
+		driverDisconnected: {
+			async handler(this: Service, ctx: Context<any, any>) {
+				const id = ctx.params;
+				this.geoRemove(id);
+				await ctx.emit("drivers.disconnected", id);
+			},
+		},
+
+		findDrivers: {
+			async handler(this: Service, ctx: any) {
+				const { lat, lon, vehicleType, maxRadius } = ctx.params;
+				const result = await this.findNearby(lat, lon, maxRadius);
+				const drivers = await ctx.call("drivers.find", {
+					query: {
+						_id: {
+							$in: result.map((item: any) => new MongoObjectId(item[0])),
+						},
+						vehicleType,
+						driverStatus: DriverStatus.ACTIVE,
+					},
+				});
+
+				return drivers;
+			},
+		},
+
+		driverAccept: {
+			rest: "POST /driver-accept",
+			async handler(this: Service, ctx: any): Promise<any> {
+				const { user } = ctx.meta;
+				const driverId = user._id;
+				const data = ctx.params as IBooking;
+
+				try {
+					const fetchedBooking: IBooking = await this.actions.get({
+						id: data._id,
+						populate: ["pickupAddr", "destAddr", "driver"],
+					});
+					// Kiem tra xem booking co ton tai khong
+					if (!fetchedBooking) {
+						throw new Error("Booking not found");
+					} else if (fetchedBooking.status !== BookingStatus.PROCESSING) {
+						throw new Error("Booking time out");
+					} else if (fetchedBooking.driverId) {
+						// Kiem tra xem booking da duoc accept boi driver khac chua
+						throw new Error("Booking has been accepted by another driver");
+					} else {
+						// Kiem tra xem booking co bi lock boi driver khac khong
+						const result = await this.redisClient.set(
+							`${this.prefix}.driver_accept:${data._id}`,
+							driverId,
+							"NX",
+							"EX",
+							10,
+						);
+						if (!result) {
+							throw new Error("Booking has been accepting by another driver");
+						}
+					}
+
+					// await this.broker.emit("drivers.updateStatus", {
+					// 	id: driverId,
+					// 	driverStatus: DriverStatus.ON_GOING,
+					// });
+					const result: any = await this.broker.emit("booking.update", {
+						_id: data._id,
+						driverId,
+						status: BookingStatus.ASSIGNED,
+					});
+					return result[0];
+				} catch (error) {
+					throw new Error(error);
+				}
+			},
+		},
+
+		updateDriverLocation: {
+			params: {
+				lon: "number",
+				lat: "number",
+				customerId: "string|optional",
+				inApp: "boolean|optional",
+				phoneNumber: "string|optional",
+			},
+			handler(this: Service, ctx: any) {
+				const { lon, lat, customerId, inApp, phoneNumber } = ctx.params;
+				const { user } = ctx.meta;
+				const driverId = user._id;
+
+				// Gui thong tin vi tri cua driver toi customer
+				if (customerId || phoneNumber) {
+					ctx.call("socket.notify", {
+						provider: inApp ? "app" : "sms",
+						data: inApp
+							? {
+									namespace: "/customers",
+									room: [customerId],
+									event: "driver_update_location",
+									args: [
+										{
+											driverId: user._id,
+											lon,
+											lat,
+										},
+									],
+							  }
+							: {
+									to: phoneNumber,
+									message: `Tai xe dang o vi tri: ${lat}, ${lon}`,
+							  },
+					});
+				} else {
+					// Cap nhat vi tri cua driver vao redis
+					this.geoadd(lon, lat, driverId);
+				}
+			},
+		},
+		// -----------------------------
+
+		// Done
+		// -----------------------------
 		bookThroughApp: {
 			params: {
 				phoneNumber: "string",
@@ -238,8 +464,6 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
-		// Done
-		// -----------------------------
 		bookThroughCallCenter: {
 			rest: "POST /book",
 			params: {
@@ -258,8 +482,8 @@ const BookingService: ServiceSchema = {
 		updateBookingAddress: {
 			params: {
 				id: "string",
-				pickupAddr: "object",
-				destAddr: "object",
+				pickupAddr: "object|optional",
+				destAddr: "object|optional",
 			},
 			async handler(this: Service, ctx: any) {
 				const { id, pickupAddr, destAddr } = ctx.params;
@@ -289,58 +513,36 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
-		updateBookingStatus: {
+		updateAndGet: {
 			params: {
 				id: "string",
-				status: "string",
 			},
-			async handler(this: Service, ctx: any) {
-				const { id, status } = ctx.params;
-				const result = await this.actions.update({
-					id,
-					status,
+			async handler(this: Service, ctx: Context<any, any>): Promise<IBooking> {
+				const { id, status, driverId } = ctx.params;
+				return new this.Promise((resolve, reject) => {
+					ctx.call<IBooking, any>("bookingSystem.update", { id, status, driverId })
+						.then(
+							(res) =>
+								this.transformDocuments(
+									ctx,
+									{
+										populate: ["pickupAddr", "destAddr", "driver"],
+									},
+									res,
+								)
+									.then(resolve)
+									.catch(reject),
+							// ctx
+							// 	.call<IBooking, any>("bookingSystem.get", {
+							// 		id,
+							// 		populate: ["pickupAddr", "destAddr", "driver"],
+							// 	})
+							// 	.then(resolve)
+							// 	.catch(reject),
+						)
+						.catch(reject);
 				});
-				return result;
 			},
-		},
-
-		updateDriverLocation: {
-			params: {
-				lon: "number",
-				lat: "number",
-				customerId: "string|optional",
-			},
-			handler(this: Service, ctx: any) {
-				const { lon, lat, customerId } = ctx.params;
-				const { user } = ctx.meta;
-				const driverId = user._id;
-
-				// Gui thong tin vi tri cua driver toi customer
-				if (customerId) {
-					ctx.call("socket.broadcast", {
-						namespace: "/customers",
-						room: [customerId],
-						event: "driver_update_location",
-						args: [
-							{
-								driverId: user._id,
-								lon,
-								lat,
-							},
-						],
-					});
-				}
-
-				// Cap nhat vi tri cua driver vao redis
-				this.geoadd(lon, lat, driverId);
-			},
-		},
-
-		updateDriverStatus: {
-			params: {
-				status: "string",
-			},
-			handler(this: Service, ctx: any) {},
 		},
 
 		getBookingHistory: {
@@ -382,6 +584,7 @@ const BookingService: ServiceSchema = {
 		},
 		// -----------------------------
 	},
+
 	methods: {
 		async createNew(this: Service, data: IBooking) {
 			const entity = {
@@ -404,14 +607,18 @@ const BookingService: ServiceSchema = {
 					if (typeof data.destAddr === "object") {
 						this.createNewAddress(data.destAddr).then((destAddr: IAddress) => {
 							entity.destAddr = destAddr._id as ObjectId;
-							this.broker
-								.call("address_customer.create", {
-									phoneNumber: entity.phoneNumber,
-									addressId: destAddr._id,
-									count: -1,
-								})
-								.then(resolve)
-								.catch(reject);
+							if (!data.inApp) {
+								this.broker
+									.call("address_customer.create", {
+										phoneNumber: entity.phoneNumber,
+										addressId: destAddr._id,
+										count: -1,
+									})
+									.then(resolve)
+									.catch(reject);
+							} else {
+								resolve(true);
+							}
 						});
 					} else {
 						reject();
@@ -435,6 +642,7 @@ const BookingService: ServiceSchema = {
 					populate: ["pickupAddr", "destAddr"],
 				}),
 			);
+			this.addAMQPJob("monitor.create", result);
 			return result;
 		},
 
@@ -443,12 +651,16 @@ const BookingService: ServiceSchema = {
 			return entity;
 		},
 
-		async geoadd(this: Service, lon, lat, driverId) {
+		async geoadd(this: Service, lon: number, lat: number, driverId: string) {
 			await this.redisClient.geoadd(`${this.prefix}.drivers_location`, lon, lat, driverId);
 		},
 
-		async remove(this: Service, dirverId) {
-			await this.redisClient.zrem(`${this.prefix}.drivers_location`, dirverId);
+		geopos(this: Service, driverId: string) {
+			return this.redisClient.geopos(`${this.prefix}.drivers_location`, driverId);
+		},
+
+		async geoRemove(this: Service, driverId: string) {
+			await this.redisClient.zrem(`${this.prefix}.drivers_location`, driverId);
 		},
 
 		async findNearby(this: Service, lat: number, lon: number, maxRadius = 5, isAsc = true) {
@@ -468,18 +680,13 @@ const BookingService: ServiceSchema = {
 		},
 	},
 
-	created() {},
-
 	started() {
-		this.loggedDriver = new Set<IDriver>();
-		this.activeDriver = [];
-		this.driverFinder = new DriverFinder();
-
 		this.redisClient = (this.broker.cacher as Cachers.Redis).client;
 		this.prefix = `${(this.broker.cacher as Cachers.Redis).prefix}${this.name}`;
 	},
 
 	async stopped() {
+		// Xoa tat ca driver dang online
 		if (this.redisClient) {
 			await this.redisClient.del(`${this.prefix}.drivers_location`);
 		}
@@ -489,18 +696,15 @@ const BookingService: ServiceSchema = {
 		if (entity.customerId) {
 			entity.customerId = new MongoObjectId(entity.customerId as string);
 		}
-
 		if (entity.driverId) {
 			entity.driverId = new MongoObjectId(entity.driverId as string);
 		}
-
 		if (entity.destAddr) {
 			entity.destAddr = new MongoObjectId(entity.destAddr as string);
 		}
 		if (entity.pickupAddr) {
 			entity.pickupAddr = new MongoObjectId(entity.pickupAddr as string);
 		}
-
 		entity.createdAt = new Date();
 		entity.updatedAt = new Date();
 		return entity;

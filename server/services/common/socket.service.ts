@@ -15,7 +15,37 @@ const ApiGatewayErrors = ApiGateway.Errors;
 const SocketService: SocketServiceSchema = {
 	name: "socket",
 	authToken: Config.SOCKET_AUTH_TOKEN,
+
 	mixins: [SocketIOService as any],
+
+	events: {
+		"socket.appNotify": {
+			handler(this: Service, ctx: Context<any, any>): void {
+				console.log("socket.appNotify", ctx.params);
+				return this.actions.notify(
+					{
+						provider: "app",
+						data: ctx.params,
+					},
+					{ meta: ctx.meta, parentCtx: ctx },
+				);
+			},
+		},
+
+		"socket.smsNotify": {
+			handler(this: Service, ctx: Context<any, any>): void {
+				console.log("socket.smsNotify", ctx.params);
+
+				return this.actions.notify(
+					{
+						provider: "sms",
+						data: ctx.params,
+					},
+					{ meta: ctx.meta, parentCtx: ctx },
+				);
+			},
+		},
+	},
 
 	settings: {
 		port: Config.SOCKET_PORT,
@@ -54,11 +84,9 @@ const SocketService: SocketServiceSchema = {
 						async disconnect(data, ack) {
 							try {
 								// eslint-disable-next-line @typescript-eslint/no-this-alias
-								const socket = this;
-								console.log(socket.client.user);
-								await socket.$service.broker.call(
+								await this.$service.broker.call(
 									"coordSystem.disconnect",
-									(socket.client.user as IUserBase)._id,
+									(this.client.user as IUserBase)._id,
 								);
 							} catch (error) {
 								/* empty */
@@ -93,11 +121,9 @@ const SocketService: SocketServiceSchema = {
 						},
 						async disconnect(data, ack) {
 							try {
-								// eslint-disable-next-line @typescript-eslint/no-this-alias
-								const socket = this;
-								await socket.$service.broker.emit(
-									"drivers.disconnect",
-									(socket.client.user as IUserBase)._id,
+								await this.$service.broker.call(
+									"bookingSystem.driverDisconnected",
+									(this.client.user as IUserBase)._id,
 								);
 							} catch (error) {
 								/* empty */
@@ -227,7 +253,7 @@ const SocketService: SocketServiceSchema = {
 						IUserBase | undefined,
 						AuthResolveTokenParams
 					>(`${service}.resolveToken`, { token: accessToken });
-					if (user) {
+					if (user && user.active) {
 						await this.socketJoinRooms(socket, user._id);
 						this.logger.info("Socket connected: ", Array.from(socket.rooms.keys()));
 						return await Promise.resolve(user);

@@ -19,10 +19,11 @@ const CoordSystemService: ServiceSchema = {
 				const userId = this.freeStaffQueue.shift();
 
 				if (userId) {
-					req.status = BookingStatus.COORDINATING;
-					await this.broker.call("bookingSystem.updateBookingStatus", {
-						id: req._id,
-						status: req.status,
+					const staff = await this.broker.call("staffs.get", { id: userId });
+					await this.broker.emit("booking.update", {
+						...req,
+						status: BookingStatus.COORDINATING,
+						staff,
 					});
 					await this.actions.sendBookingReqToStaff({ userId, req });
 					channel.ack(msg);
@@ -73,23 +74,21 @@ const CoordSystemService: ServiceSchema = {
 					) {
 						return Promise.reject(new Error("Invalid address, please check again"));
 					}
-					if (req.inApp !== true) {
-						// Cap nhat dia chi da phan giai vo db tuong duong cai dat xe do
-						await this.broker.call("bookingSystem.updateBookingAddress", {
-							id: req._id,
-							pickupAddr: req.pickupAddr,
-							destAddr: req.destAddr,
-						});
-					}
+					// Cap nhat dia chi da phan giai vo db tuong duong cai dat xe do
+					await this.broker.call("bookingSystem.updateBookingAddress", {
+						id: req._id,
+						pickupAddr: req.pickupAddr,
+						destAddr: req.destAddr,
+					});
 				}
 
+				this.addAMQPJob("booking.processing", req);
 				// Free staff
 				if (userId && this.staffSocket[userId]) {
 					delete this.staffsTask[userId];
 					this.freeStaffQueue.push(userId);
 				}
 
-				this.addAMQPJob("booking.processing", req);
 				return Promise.resolve();
 			},
 		},

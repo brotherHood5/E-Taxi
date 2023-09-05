@@ -81,7 +81,7 @@ export default abstract class DbBaseMixin {
 							this.settings.indexes.map((index: any) => {
 								const opt: { unique?: boolean } = {};
 								if (index.unique) {
-									opt.unique = index.unique;
+									opt.unique = Boolean(index.unique);
 									delete index.unique;
 								}
 

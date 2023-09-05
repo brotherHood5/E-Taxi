@@ -1,95 +1,200 @@
-import type { Service, ServiceSchema } from "moleculer";
-import type { DriverEntity, IBooking, StaffEntity } from "../../entities";
+import type { Channel } from "amqplib";
+import type { Context, Service, ServiceSchema } from "moleculer";
+import { MongoObjectId } from "types/common";
+import type { IBooking } from "../../entities";
 import { BookingStatus } from "../../entities";
-import { AMQPMixin } from "../../mixins";
+import { AMQPMixin, DbMixin } from "../../mixins";
 
 const MonitorSystemService: ServiceSchema = {
 	name: "monitorSystem",
-	mixins: [AMQPMixin],
+	mixins: [AMQPMixin, DbMixin("booking_logs")],
+	dependencies: ["bookingSystem", "socket"],
+	settings: {
+		fields: ["_id", "bookingId", "logs", "detail", "createdAt", "updatedAt"],
+		entityValidator: {
+			bookingId: ["string", { type: "objectID", ObjectID: MongoObjectId }],
+			logs: {
+				type: "array",
+				items: "string",
+			},
+			createdAt: "date",
+			updatedAt: "date",
+		},
+		populates: {
+			detail: {
+				field: "bookingId",
+				action: "bookingSystem.get",
+				// params: {
+				// 	fields: "_id status phoneNumber vehicleType driver customerId inApp createdAt updatedAt",
+				// },
+			},
+		},
+		indexes: [{ bookingId: 1, unique: true }],
+	},
 
 	AMQPQueues: {
-		// "booking.monitor": {
-		// 	handler(this: Service, channel: any, msg: any): void {
-		// 		const request = JSON.parse(msg.content.toString()) as IBooking;
-		// 		this.add(request);
-		// 		channel.ack(msg);
-		// 	},
-		// },
-		// "booking.listen_event": {
-		// 	handler(this: Service, channel: any, msg: any): void {
-		// 		const { id, status, data } = JSON.parse(msg.content.toString());
-		// 		this.logs(id, status, data);
-		// 		channel.ack(msg);
-		// 	},
-		// },
+		"monitor.create": {
+			async handler(this: Service, channel: Channel, msg: any): Promise<void> {
+				try {
+					const request = JSON.parse(msg.content.toString()) as IBooking;
+					await this.actions.create({
+						bookingId: request._id?.toString(),
+						logs: [this.getMsg(request)],
+					});
+					channel.ack(msg);
+				} catch (err) {
+					this.logger.error(err);
+					channel.nack(msg);
+				}
+			},
+			channel: {
+				assert: {
+					durable: true,
+				},
+				prefetch: 5,
+			},
+			consume: {
+				noAck: false,
+			},
+		},
+
+		"monitor.update": {
+			async handler(this: Service, channel: any, msg: any): Promise<void> {
+				try {
+					const params: any = JSON.parse(msg.content.toString());
+					const log = this.getMsg(params.request, params.data);
+					await this.actions.addLog({ _id: params.request._id, log });
+					channel.ack(msg);
+				} catch (error) {
+					channel.nack(msg);
+				}
+			},
+			channel: {
+				assert: {
+					durable: true,
+				},
+				prefetch: 1,
+			},
+			consume: {
+				noAck: false,
+			},
+		},
+	},
+
+	actions: {
+		addLog: {
+			async handler(this: Service, ctx: Context<any, any>): Promise<void> {
+				const { _id, log } = ctx.params;
+				const doc: any = await this.adapter.findOne({
+					bookingId: new MongoObjectId(_id?.toString()),
+				});
+				doc.logs.push(log);
+				let result = await this.adapter.updateById(doc._id, {
+					$set: { logs: doc.logs },
+				});
+				result = await this.transformDocuments(
+					ctx,
+					{
+						populate: ["detail"],
+					},
+					doc,
+				);
+
+				await this.broker.call("socket.broadcast", {
+					namespace: "/monitor",
+					event: "log",
+					args: [result],
+				});
+			},
+		},
 	},
 
 	methods: {
-		// add(this: Service, request: IBooking) {
-		// 	this.bookings_requests.push(request);
-		// 	this.addAMQPJob("monitorSystem.listen_event", {
-		// 		id: request._id,
-		// 		status: request.status,
-		// 	});
-		// },
-		// remove(this: Service, id: string) {
-		// 	const index = this.bookings_requests.findIndex((req: IBooking) => req._id === id);
-		// 	if (index !== -1) {
-		// 		this.bookings_requests.splice(index, 1);
-		// 	}
-		// },
-		// async logs(this: Service, id: string, status?: any, data?: any): Promise<boolean> {
-		// 	const request = this.bookings_requests.find((req: IBooking) => req._id === id);
-		// 	if (!request) {
-		// 		return false;
-		// 	}
-		// 	request.status = status;
-		// 	let msg = "";
-		// 	switch (status) {
-		// 		case BookingStatus.NEW: {
-		// 			msg = `[${request.phoneNumber}] - New booking request`;
-		// 			break;
-		// 		}
-		// 		case BookingStatus.COORDINATING: {
-		// 			msg = `[${request.phoneNumber}] - Coordinating address by [${data.id}] - ${data.fullName}}`;
-		// 			break;
-		// 		}
-		// 		case BookingStatus.PROCESSING: {
-		// 			msg = `[${request.phoneNumber}] - Processing the request. Finding driver...`;
-		// 			break;
-		// 		}
-		// 		case BookingStatus.ASSIGNED: {
-		// 			msg = `[${request.phoneNumber}] - Assigned to driver [${data.id}] - ${data.fullName}`;
-		// 			break;
-		// 		}
-		// 		case BookingStatus.DRIVER_CANCELLED: {
-		// 			msg = `[${request.phoneNumber}] - Driver Cancelled`;
-		// 			break;
-		// 		}
-		// 		case BookingStatus.CUSTOMER_CANCELLED: {
-		// 			msg = `[${request.phoneNumber}] - Customer Cancelled`;
-		// 			break;
-		// 		}
-		// 		default:
-		// 			msg = `[${request.phoneNumber}] - Unknown status`;
-		// 			break;
-		// 	}
-		// 	await this.broker.call("socket.broadcast", {
-		// 		namespace: "/monitor",
-		// 		event: "log",
-		// 		args: [msg],
-		// 	});
-		// 	return true;
-		// },
+		getMsg(this: Service, request: IBooking, data: any): string {
+			let msg = "";
+			switch (request.status) {
+				case BookingStatus.NEW: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: New booking request`;
+					break;
+				}
+				case BookingStatus.COORDINATING: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: Coordinating address by [${data.staff.id} - ${data.staff.fullName}]}`;
+					break;
+				}
+				case BookingStatus.PROCESSING: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: Processing the request. Finding driver...`;
+					break;
+				}
+				case BookingStatus.ASSIGNED: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: Assigned to driver [${request.driverId} - ${request.driver?.fullName}]`;
+					break;
+				}
+				case BookingStatus.DRIVER_CANCELLED: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: Driver Cancelled`;
+					break;
+				}
+				case BookingStatus.CUSTOMER_CANCELLED: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: Customer Cancelled`;
+					break;
+				}
+				case BookingStatus.ON_GOING: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: On going`;
+					break;
+				}
+				case BookingStatus.DONE: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: Done`;
+					break;
+				}
+				case BookingStatus.FAILED: {
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: Failed`;
+					break;
+				}
+				default:
+					msg = `[${new Date().toUTCString()} - ${request._id} - ${
+						request.phoneNumber
+					}]: Unknown status`;
+					break;
+			}
+
+			return msg;
+		},
 	},
 
-	started() {
-		this.bookings_requests = [];
+	beforeEntityCreate(entity: any) {
+		if (entity.bookingId) {
+			entity.bookingId = new MongoObjectId(entity.bookingId as string);
+		}
+		entity.createdAt = new Date();
+		entity.updatedAt = new Date();
+		return entity;
 	},
 
-	stopped() {
-		this.bookings_requests.length = 0;
+	beforeEntityUpdate(entity: any) {
+		entity.updatedAt = new Date();
+		return entity;
 	},
+
+	started() {},
+
+	stopped() {},
 };
 
 export default MonitorSystemService;

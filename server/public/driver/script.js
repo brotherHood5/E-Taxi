@@ -71,7 +71,11 @@ function convertCoord(coordinate) {
 
 const customerId = "64de13237ee4b5326542e99e";
 function updateLocation(coordinate) {
-	socket.emit("call", "bookingSystem.updateDriverLocation", { ...coordinate, customerId });
+	const customerIdValue = document.querySelector("input[name=customerId]").value;
+	socket.emit("call", "bookingSystem.updateDriverLocation", {
+		...coordinate,
+		customerId: customerIdValue,
+	});
 }
 
 function showDriverMarker(coord) {
@@ -94,31 +98,111 @@ map.on("click", function (event) {
 });
 
 // Test
-var booking;
-let authToken =
-	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY0ZGUxMzIzN2VlNGI1MzI2NTQyZTk5ZSIsImZ1bGxOYW1lIjoiRMawxqFuZyBRdWFuZyBWaW5oIiwicGhvbmVOdW1iZXIiOiIwOTcyMzYwMjE0IiwicGFzc3dvcmRIYXNoIjoiJDJhJDEwJGdETU1oUlg3aXNrNlptRW1FMnZYaXVWWUZIeEh6ODJCcXppRVhjMGRSbHRpQWMyeGtBbkU2IiwicGhvbmVOdW1iZXJWZXJpZmllZCI6dHJ1ZSwiZW5hYmxlIjp0cnVlLCJhY3RpdmUiOnRydWUsImNyZWF0ZWRBdCI6IjIwMjMtMDgtMTdUMTI6MzE6MzEuOTYxWiIsInVwZGF0ZWRBdCI6IjIwMjMtMDgtMTdUMTI6MzE6MzEuOTYxWiIsInJvbGVzIjpbIkRSSVZFUiJdLCJ2ZWhpY2xlVHlwZSI6IjQifSwiaWF0IjoxNjkzMzIyNTczLCJleHAiOjE2OTM5MjczNzN9.U62G7psfN2EKjJ78QauqcMpFvNI_zP5t2R2CJ9dCtKU";
-const eventDiv = document.getElementById("events");
-const resultDiv = document.getElementById("res");
-var socket = io("ws://localhost:3003/drivers", {
-	transports: ["websocket", "polling", "flashsocket"],
-	auth: {
-		token: authToken,
-	},
-	query: {
-		service: "drivers",
-	},
-});
+var baseUrl = "http://localhost:3002/api/v1";
+var authToken = "";
+async function login() {
+	const phoneNumber = document.querySelector("input[name=phoneNumber]").value;
+	const password = document.querySelector("input[name=password]").value;
+	const response = await fetch(`${baseUrl}/drivers/login`, {
+		method: "POST",
+		body: JSON.stringify({ phoneNumber, password }), // string or object
+		headers: {
+			"Content-Type": "application/json",
+		},
+	});
+	const myJson = await response.json();
+	console.log(myJson);
 
-window.socket = socket;
+	authToken = myJson.accessToken;
+	main();
+}
 
-socket.on("connect", function () {
-	console.log("Websocket connection established!");
-});
+window.onload = function () {
+	window.addEventListener("beforeunload", function () {
+		if (window.socket) {
+			console.log("Closing socket");
+			window.socket.close();
+			window.socket = null;
+			socket.close();
+		}
+	});
+};
 
-socket.on("disconnect", function () {
-	console.log("Websocket disconnected!");
-});
+function main() {
+	var booking;
+	const eventDiv = document.getElementById("events");
+	const resultDiv = document.getElementById("res");
+	console.log("Closing socket");
+	if (window.socket) {
+		window.socket.close();
+		window.socket = null;
+		if (socket) socket.close();
+	}
+	var socket = io("ws://localhost:3003/drivers", {
+		transports: ["websocket", "polling", "flashsocket"],
+		auth: {
+			token: authToken,
+		},
+		query: {
+			service: "drivers",
+		},
+	});
 
-socket.on("connect_error", (error) => {
-	console.log(error);
-});
+	window.socket = socket;
+	var currBookReceive = null;
+
+	function onBookingFound(data) {
+		socket.off("booking_found");
+		console.log("Data: ", data);
+		currBookReceive = data;
+		if (currBookReceive) {
+			socket.emit("call", "bookingSystem.driverAccept", data, (err, res) => {
+				console.log("Accepted: ", res);
+				if (!res) {
+					currBookReceive = null;
+					socket.on("booking_found", onBookingFound);
+				}
+			});
+		}
+	}
+	socket.on("booking_found", onBookingFound);
+
+	socket.on("connect", function () {
+		console.log("Websocket connection established!");
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition((pos) => {
+				try {
+					socket.emit(
+						"call",
+						"bookingSystem.driverConnected",
+						{
+							lat: pos.coords.latitude,
+							lon: pos.coords.longitude,
+						},
+						(err, res) => {
+							console.log(res);
+						},
+					);
+					const coord = {
+						lat: pos.coords.latitude,
+						lon: pos.coords.longitude,
+					};
+					showDriverMarker(coord);
+					map.getView().setCenter(ol.proj.fromLonLat([coord.lon, coord.lat]));
+				} catch (e) {
+					console.log(e);
+				}
+			});
+		} else {
+			console.log("No geolocation");
+		}
+	});
+
+	socket.on("disconnect", function () {
+		console.log("Websocket disconnected!");
+	});
+
+	socket.on("connect_error", (error) => {
+		console.log(error);
+	});
+}

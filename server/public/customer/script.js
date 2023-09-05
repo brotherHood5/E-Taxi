@@ -40,15 +40,13 @@ var onDriverIconStyle = new ol.style.Style({
 });
 
 // //Adding a marker on the map
-const src = [106.752583612375, 10.918649726255254];
-var marker = new ol.Feature({
-	geometry: new ol.geom.Point(ol.proj.fromLonLat(src)),
-});
-marker.setStyle(customerIconStyle);
+// const src = [106.752583612375, 10.918649726255254];
+// var marker = new ol.Feature({
+// 	geometry: new ol.geom.Point(ol.proj.fromLonLat(src)),
+// });
+// marker.setStyle(customerIconStyle);
 
-var vectorSource = new ol.source.Vector({
-	features: [marker],
-});
+var vectorSource = new ol.source.Vector({});
 
 var markerVectorLayer = new ol.layer.Vector({
 	source: vectorSource,
@@ -57,22 +55,29 @@ var markerVectorLayer = new ol.layer.Vector({
 // add style to Vector layer style map
 map.addLayer(markerVectorLayer);
 
-let markerFeature = null;
 var booking = {
+	customerId: "64d8abbacd43b24158a8c2f3",
 	phoneNumber: "0972360214",
 	vehicleType: "2",
-	pickupAddr: {
-		lat: src[1],
-		lon: src[0],
-	},
+	pickupAddr: {},
 	destAddr: {},
 };
 
 const logPos = document.getElementById("logPos");
 function book() {
+	if (
+		!booking.pickupAddr.lat ||
+		!booking.pickupAddr.lon ||
+		!booking.destAddr.lat ||
+		!booking.destAddr.lon
+	) {
+		return;
+	}
 	var el = document.createElement("div");
 	el.innerHTML = "Booking: <br>" + "<pre>" + JSON.stringify(booking, null, 2) + "</pre>";
 	logPos.appendChild(el);
+
+	console.log(booking);
 	socket.emit("call", "bookingSystem.bookThroughApp", booking);
 }
 
@@ -96,6 +101,20 @@ function updateLocation(coordinate) {
 	socket.emit("call", "storeSystem.updateDriverLocation", coordinate);
 }
 
+let myMarkerFeature = null;
+function showMyMarker(coord) {
+	if (myMarkerFeature) {
+		vectorSource.removeFeature(myMarkerFeature);
+	}
+	myMarkerFeature = new ol.Feature({
+		geometry: new ol.geom.Point(ol.proj.fromLonLat([coord.lon, coord.lat])),
+	});
+
+	myMarkerFeature.setStyle(customerIconStyle);
+	vectorSource.addFeature(myMarkerFeature);
+}
+
+let markerFeature = null;
 function showDriverMarker(coord) {
 	if (markerFeature) {
 		vectorSource.removeFeature(markerFeature);
@@ -131,7 +150,7 @@ map.on("click", function (event) {
 
 // Test
 let authToken =
-	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY0ZDhhYmJhY2Q0M2IyNDE1OGE4YzJmMyIsImZ1bGxOYW1lIjoiRMawxqFuZyBRdWFuZyBWaW5oIiwicGhvbmVOdW1iZXIiOiIwOTcyMzYwMjE0IiwicGFzc3dvcmRIYXNoIjoiJDJhJDEwJDNCN1pPdVhRQUxBUUJlTzZXOExrYXV5VmpodFhwbDEwQ3ZLbXkuNTFZV3JYWEJjdWIzUTRtIiwicGhvbmVOdW1iZXJWZXJpZmllZCI6dHJ1ZSwiZW5hYmxlIjp0cnVlLCJhY3RpdmUiOnRydWUsImNyZWF0ZWRBdCI6IjIwMjMtMDgtMTNUMTA6MDg6NTguODc4WiIsInVwZGF0ZWRBdCI6IjIwMjMtMDgtMTNUMTA6MDg6NTguODc4WiIsInJvbGVzIjpbIkNVU1RPTUVSIl19LCJpYXQiOjE2OTMzMjM4MjUsImV4cCI6MTY5MzkyODYyNX0.EhLxvjO0q7-Hg72PZgvt7qjIgogKQj8eIxhjC8cA_LE";
+	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY0ZDhhYmJhY2Q0M2IyNDE1OGE4YzJmMyIsImZ1bGxOYW1lIjoiRMawxqFuZyBRdWFuZyBWaW5oIiwicGhvbmVOdW1iZXIiOiIwOTcyMzYwMjE0IiwicGFzc3dvcmRIYXNoIjoiJDJhJDEwJDNCN1pPdVhRQUxBUUJlTzZXOExrYXV5VmpodFhwbDEwQ3ZLbXkuNTFZV3JYWEJjdWIzUTRtIiwicGhvbmVOdW1iZXJWZXJpZmllZCI6dHJ1ZSwiZW5hYmxlIjp0cnVlLCJhY3RpdmUiOnRydWUsImNyZWF0ZWRBdCI6IjIwMjMtMDgtMTNUMTA6MDg6NTguODc4WiIsInVwZGF0ZWRBdCI6IjIwMjMtMDktMDRUMDM6Mzc6MzguNzI4WiIsInJvbGVzIjpbIkNVU1RPTUVSIl19LCJpYXQiOjE2OTM5MjkxOTksImV4cCI6MTY5NDUzMzk5OX0.IFhMSGy0XeBZoG-2pz02oiGSObGB4xeqkZgFEU3Jq2s";
 const eventDiv = document.getElementById("events");
 const resultDiv = document.getElementById("res");
 var socket = io("ws://localhost:3003/customers", {
@@ -144,8 +163,29 @@ var socket = io("ws://localhost:3003/customers", {
 	},
 });
 
+socket.on("booking_updated", (data) => {
+	console.log(JSON.stringify(data, null, 2));
+});
+
 socket.on("connect", function () {
 	console.log("Websocket connection established!");
+	if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition((pos) => {
+			const coord = {
+				lat: pos.coords.latitude,
+				lon: pos.coords.longitude,
+			};
+			logCoord(coord);
+			showMyMarker(coord);
+			booking.pickupAddr.lat = coord.lat;
+			booking.pickupAddr.lon = coord.lon;
+			try {
+				map.getView().setCenter(ol.proj.fromLonLat([coord.lon, coord.lat]));
+			} catch (e) {
+				console.log(e);
+			}
+		});
+	}
 });
 
 socket.on("driver_update_location", function (data) {
