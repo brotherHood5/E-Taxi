@@ -45,10 +45,6 @@ class SocketApi {
       print("Socket is not connected");
       throw Exception("Socket is not connected");
     }
-    // _io.io.options!["auth"] = {
-    //   "token": accessToken,
-    // };
-    // print(_io.io.options!["auth"]);
 
     _io.connect();
 
@@ -78,11 +74,11 @@ class SocketApi {
     });
   }
 
-  void registerStreamEvent<T>(String event, StreamSocket<T> streamSocket) {
-    _io.on(event, (dynamic data) {
-      streamSocket.addResponse(data);
-    });
-  }
+  // void registerStreamEvent<T>(String event, StreamSocket<T> streamSocket) {
+  //   _io.on(event, (dynamic data) {
+  //     streamSocket.addResponse(data);
+  //   });
+  // }
 
   void emit(String event, [dynamic data]) {
     _io.emit(event, data);
