@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { ObjectId, ObjectIdNull } from "../types/common";
 import type { IAddress } from "./address.entity";
-import type { VehicleType } from "./driver.entity";
+import type { IDriver, VehicleType } from "./driver.entity";
 
 export enum BookingStatus {
 	NEW = "NEW",
@@ -22,6 +22,7 @@ export interface IBooking {
 	phoneNumber: string;
 	customerId?: ObjectIdNull;
 	driverId?: ObjectIdNull;
+	driver?: IDriver;
 	vehicleType: VehicleType;
 	pickupAddr: IAddress | ObjectId;
 	destAddr: IAddress | ObjectId;

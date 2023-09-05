@@ -163,9 +163,6 @@ function main() {
 					socket.on("booking_found", onBookingFound);
 				}
 			});
-			// setTimeout(() => {
-
-			// }, 4000);
 		}
 	}
 	socket.on("booking_found", onBookingFound);
