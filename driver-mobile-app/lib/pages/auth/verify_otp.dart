@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:grab_clone/screens/auth/finish_sign_up.dart';
+import 'package:get/get.dart';
 import 'package:otp_text_field/otp_field.dart';
 import 'package:otp_text_field/style.dart';
 
 import '../../api/AuthService.dart';
-import '../../constants.dart';
+import '../../utils/app_constants.dart';
+import 'finish_sign_up.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen(
@@ -45,7 +45,9 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
   @override
   void initState() {
     super.initState();
-    AuthService.reSendOtp(widget.phoneNumber);
+    try {
+      AuthService.reSendOtp(widget.phoneNumber);
+    } catch (e) {}
     startTimer();
   }
 
@@ -114,7 +116,7 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  "otp_screen_title".tr(),
+                  "otp_screen_title".tr,
                   style: theme.textTheme.headlineSmall!.merge(const TextStyle(
                     fontWeight: FontWeight.w600,
                   )),
@@ -122,7 +124,7 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
                 const SizedBox(height: layoutSmall),
                 RichText(
                     text: TextSpan(
-                        text: "otp_screen_hint_1".tr(),
+                        text: "otp_screen_hint_1".tr,
                         style: theme.textTheme.titleMedium,
                         children: [
                       TextSpan(
@@ -133,7 +135,7 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
                               fontSize: theme.textTheme.titleMedium!.fontSize,
                               fontWeight: FontWeight.w600)),
                       TextSpan(
-                          text: "otp_screen_hint_2".tr(),
+                          text: "otp_screen_hint_2".tr,
                           style: theme.textTheme.titleMedium),
                     ])),
                 const SizedBox(height: layoutXLarge),
@@ -141,15 +143,14 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
                   hasError: isOtpWrong,
                   obscureText: false,
                   length: otpLength,
-                  width: MediaQuery.of(context).size.width,
+                  width: Get.width,
                   fieldWidth:
-                      (MediaQuery.of(context).size.width - (layoutMedium * 2)) /
-                              6 -
-                          layoutSmall,
+                      (Get.width - (layoutMedium * 2)) / 6 - layoutSmall,
                   style: const TextStyle(
                     fontSize: 20,
                   ),
                   textFieldAlignment: MainAxisAlignment.spaceBetween,
+                  spaceBetween: 0,
                   fieldStyle: FieldStyle.box,
                   outlineBorderRadius: borderRadiusSmall,
                   onChanged: (pin) => {},
@@ -158,7 +159,7 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
                 if (isOtpWrong) const SizedBox(height: layoutSmall),
                 if (isOtpWrong)
                   Text(
-                    "invalid_otp".tr(),
+                    "invalid_otp".tr,
                     style: theme.textTheme.titleMedium!.merge(TextStyle(
                       color: theme.colorScheme.error,
                     )),
@@ -173,7 +174,7 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
                           overlayColor: MaterialStateProperty.resolveWith(
                               (states) => Colors.transparent)),
                       child: Text(
-                          "${toBeginningOfSentenceCase("resend_otp_text".tr())!}${!enabled ? " (${formatTime(_secondsRemaining)})" : ""}"),
+                          "${"resend_otp_text".tr}${!enabled ? " (${formatTime(_secondsRemaining)})" : ""}"),
                     )),
               ],
             ),

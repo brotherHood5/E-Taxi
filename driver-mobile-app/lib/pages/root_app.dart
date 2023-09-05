@@ -1,15 +1,34 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:socket_io_client/socket_io_client.dart';
+
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
+import 'package:grab_eat_ui/api/SocketApi.dart';
+import 'package:grab_eat_ui/pages/account.dart';
 import 'package:grab_eat_ui/pages/home_page.dart';
 import 'package:grab_eat_ui/theme/colors.dart';
+import 'package:grab_eat_ui/utils/helper.dart';
 
 class RootApp extends StatefulWidget {
+  const RootApp({Key? key}) : super(key: key);
   @override
   _RootAppState createState() => _RootAppState();
 }
 
 class _RootAppState extends State<RootApp> {
   int pageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    getStoredData().then((data) {
+      print(data);
+      SocketApi.setAuthToken(data?["accessToken"]);
+      SocketApi.init();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,18 +55,13 @@ class _RootAppState extends State<RootApp> {
               fontSize: 20, fontWeight: FontWeight.bold, color: black),
         ),
       ),
-      Center(
-        child: Text(
-          "Account Page",
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: black),
-        ),
-      )
+      AccountScreen(),
     ];
-    return IndexedStack(
-      index: pageIndex,
-      children: pages,
-    );
+    // return IndexedStack(
+    //   index: pageIndex,
+    //   children: pages,
+    // );
+    return pages[pageIndex];
   }
 
   Widget getFooter() {
@@ -57,49 +71,27 @@ class _RootAppState extends State<RootApp> {
       "assets/images/inbox_icon.svg",
       "assets/images/account_icon.svg"
     ];
-    List textItems = ["Home", "Earnings", "Inbox", "Account"];
-    return Container(
-      width: double.infinity,
-      height: 90,
-      decoration: BoxDecoration(
-          color: white,
-          border: Border(
-              top: BorderSide(width: 2, color: black.withOpacity(0.06)))),
-      child: Padding(
-        padding:
-            const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(textItems.length, (index) {
-            return InkWell(
-                onTap: () {
-                  selectedTab(index);
-                },
-                child: Column(
-                  children: [
-                    SvgPicture.asset(
-                      bottomItems[index],
-                      width: 22,
-                      color: pageIndex == index ? black : Colors.grey,
-                    ),
-                    SizedBox(
-                      height: 5,
-                    ),
-                    Text(
-                      textItems[index],
-                      style: TextStyle(
-                          fontSize: 10,
-                          color: pageIndex == index
-                              ? black
-                              : black.withOpacity(0.5)),
-                    )
-                  ],
-                ));
-          }),
-        ),
-      ),
-    );
+    List textItems = ["Trang chủ", "Ví", "Inbox", "Tài khoản"];
+    return BottomNavigationBar(
+        iconSize: 48,
+        unselectedFontSize: 13.0,
+        type: BottomNavigationBarType.fixed,
+        currentIndex: pageIndex,
+        onTap: (i) => setState(() => pageIndex = i),
+        items: List.generate(
+          bottomItems.length,
+          (index) => BottomNavigationBarItem(
+              label: textItems[index],
+              icon: SvgPicture.asset(
+                bottomItems[index],
+                width: 22,
+                colorFilter: ColorFilter.mode(
+                    pageIndex == index
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey,
+                    BlendMode.srcIn),
+              )),
+        ));
   }
 
   selectedTab(index) {

@@ -47,6 +47,29 @@
             "program": "lib/main.dart",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "driver-mobile-app",
+            "cwd": "driver-mobile-app",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "driver-mobile-app (profile mode)",
+            "cwd": "driver-mobile-app",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "driver-mobile-app (release mode)",
+            "cwd": "driver-mobile-app",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "type": "dart",
+            "flutterMode": "release"
         }
     ]
 }
