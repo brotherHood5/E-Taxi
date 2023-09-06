@@ -21,7 +21,7 @@ const SocketService: SocketServiceSchema = {
 	events: {
 		"socket.appNotify": {
 			handler(this: Service, ctx: Context<any, any>): void {
-				console.log("socket.appNotify", ctx.params);
+				this.logger.info("Send APP Notify:", ctx.params);
 				return this.actions.notify(
 					{
 						provider: "app",
@@ -34,7 +34,7 @@ const SocketService: SocketServiceSchema = {
 
 		"socket.smsNotify": {
 			handler(this: Service, ctx: Context<any, any>): void {
-				console.log("socket.smsNotify", ctx.params);
+				this.logger.info("Send SMS:", ctx.params);
 
 				return this.actions.notify(
 					{
@@ -159,7 +159,6 @@ const SocketService: SocketServiceSchema = {
 				room: "string",
 			},
 			handler(this: Service, ctx: Context<any, any>): void {
-				this.logger.info("join", ctx.params.room);
 				ctx.meta.$join = ctx.params.room;
 				if (ctx.options.parentCtx) {
 					ctx.options.parentCtx.meta = ctx.meta;
@@ -253,9 +252,8 @@ const SocketService: SocketServiceSchema = {
 						IUserBase | undefined,
 						AuthResolveTokenParams
 					>(`${service}.resolveToken`, { token: accessToken });
-					if (user && user.active) {
+					if (user) {
 						await this.socketJoinRooms(socket, user._id);
-						this.logger.info("Socket connected: ", Array.from(socket.rooms.keys()));
 						return await Promise.resolve(user);
 					}
 				} catch (error) {

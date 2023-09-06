@@ -1,4 +1,3 @@
-import type { Context } from "moleculer";
 import DbService from "moleculer-db";
 import type MongoDbAdapter from "moleculer-db-adapter-mongo";
 import type { DbServiceSchema, DbServiceThis } from "../../types/mixin/db";
@@ -29,23 +28,12 @@ export default abstract class DbBaseMixin {
 				 */
 				async [this.cacheCleanEventName](this: DbServiceThis) {
 					if (this.broker.cacher) {
-						await this.broker.cacher.clean(`${this.fullName}.*`);
+						await this.broker.cacher.clean(`${this.fullName}.**`);
 					}
 				},
 			},
 
-			methods: {
-				/**
-				 * Send a cache clearing event when an entity changed.
-				 *
-				 * @param {String} type
-				 * @param {any} json
-				 * @param {Context} ctx
-				 */
-				async entityChanged(type: string, json: unknown, ctx: Context): Promise<void> {
-					await ctx.broadcast(this.cacheCleanEventName);
-				},
-			},
+			methods: {},
 
 			async started() {
 				// Check the count of items in the DB. If it's empty,

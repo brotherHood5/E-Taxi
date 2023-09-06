@@ -65,24 +65,21 @@ const CoordSystemService: ServiceSchema = {
 				req.pickupAddr = req.pickupAddr as IAddress;
 				req.destAddr = req.destAddr as IAddress;
 
-				if (req.status === BookingStatus.COORDINATING) {
-					if (
-						!req.pickupAddr.lat ||
-						!req.pickupAddr.lon ||
-						!req.destAddr.lat ||
-						!req.destAddr.lon
-					) {
-						return Promise.reject(new Error("Invalid address, please check again"));
-					}
-					// Cap nhat dia chi da phan giai vo db tuong duong cai dat xe do
-					await this.broker.call("bookingSystem.updateBookingAddress", {
-						id: req._id,
-						pickupAddr: req.pickupAddr,
-						destAddr: req.destAddr,
-					});
+				if (
+					!req.pickupAddr.lat ||
+					!req.pickupAddr.lon ||
+					!req.destAddr.lat ||
+					!req.destAddr.lon
+				) {
+					return Promise.reject(new Error("Invalid address, please check again"));
 				}
-
-				this.addAMQPJob("booking.processing", req);
+				// Cap nhat dia chi da phan giai vo db tuong duong cai dat xe do
+				const value = await this.broker.call("bookingSystem.updateBookingAddress", {
+					id: req._id,
+					pickupAddr: req.pickupAddr,
+					destAddr: req.destAddr,
+				});
+				this.addAMQPJob("booking.processing", value);
 				// Free staff
 				if (userId && this.staffSocket[userId]) {
 					delete this.staffsTask[userId];
@@ -105,7 +102,7 @@ const CoordSystemService: ServiceSchema = {
 					};
 					this.freeStaffQueue.push(user._id);
 				}
-				this.logger.info(this.staffSocket);
+				this.logger.debug("Connected:", this.staffSocket);
 				return true;
 			},
 		},
@@ -113,7 +110,6 @@ const CoordSystemService: ServiceSchema = {
 		disconnect: {
 			handler(this: Service, ctx: Context<any, any>): any {
 				const userId = ctx.params;
-				this.logger.info("disconnect", userId);
 
 				if (this.staffSocket[userId]) {
 					// Remove socket from freeStaffQueue
@@ -132,7 +128,7 @@ const CoordSystemService: ServiceSchema = {
 					// Remove socket from staffSocket
 					delete this.staffSocket[userId];
 				}
-				this.logger.info(this.staffSocket);
+				this.logger.debug("Disconnect:", this.staffSocket);
 				return true;
 			},
 		},

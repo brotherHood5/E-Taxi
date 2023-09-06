@@ -24,9 +24,6 @@ const MonitorSystemService: ServiceSchema = {
 			detail: {
 				field: "bookingId",
 				action: "bookingSystem.get",
-				// params: {
-				// 	fields: "_id status phoneNumber vehicleType driver customerId inApp createdAt updatedAt",
-				// },
 			},
 		},
 		indexes: [{ bookingId: 1, unique: true }],
@@ -43,7 +40,6 @@ const MonitorSystemService: ServiceSchema = {
 					});
 					channel.ack(msg);
 				} catch (err) {
-					this.logger.error(err);
 					channel.nack(msg);
 				}
 			},
@@ -122,7 +118,7 @@ const MonitorSystemService: ServiceSchema = {
 				case BookingStatus.COORDINATING: {
 					msg = `[${new Date().toUTCString()} - ${request._id} - ${
 						request.phoneNumber
-					}]: Coordinating address by [${data.staff.id} - ${data.staff.fullName}]}`;
+					}]: Coordinating address by [${data.staff._id} - ${data.staff.fullName}]}`;
 					break;
 				}
 				case BookingStatus.PROCESSING: {
