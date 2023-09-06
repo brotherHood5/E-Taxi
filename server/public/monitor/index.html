@@ -20,6 +20,13 @@
             transports: ['websocket', 'polling', 'flashsocket'],
         });
 
+        window.addEventListener("beforeunload", function () {
+            if (window.socket) {
+                socket.close();
+                window.socket = null;
+            }
+        });
+
         socket.on("connect", function () {
             console.log("Websocket connection established!");
             socket.on("disconnect", function () {
@@ -31,9 +38,37 @@
             console.log(error);
         });
 
+        function showList(id) {
+            const ul = document.getElementById(id);
+            const button = document.getElementById(id.split("-")[0]);
+            if (ul.style.display === "none") {
+                ul.style.display = "block";
+                button.style.backgroundColor = "#00cc66";
+                button.style.marginBottom = "0";
+            }
+            else {
+                ul.style.display = "none";
+                button.style.backgroundColor = "#c0c0c0";
+                button.style.marginBottom = "1rem";
+            }
+        }
+        function build(msg) {
+            return `<button style="margin-bottom: 1rem;background-color: #c0c0c0;" id="${msg.bookingId}" onclick="showList('${msg.bookingId}-logs')">` + `${msg.bookingId} - ${msg.detail.phoneNumber}` + `</button>` +
+                `<ul style="display: none;" id="${msg.bookingId}-logs">` +
+                msg.logs.reverse().map((log) => {
+                    return `<li>${log}</li>`;
+                }).join("") +
+                `</ul>`;
+        }
+
         socket.on("log", function (msg) {
+            let button = document.getElementById(msg.bookingId);
+            if (button) {
+                button.parentElement.innerHTML = build(msg);
+                return;
+            }
             var el = document.createElement("div");
-            el.innerHTML = "<pre>" + msg + "</pre>";
+            el.innerHTML = build(msg);
             eventDiv.appendChild(el);
         });
 

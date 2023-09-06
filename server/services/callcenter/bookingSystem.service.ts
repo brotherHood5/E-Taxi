@@ -74,14 +74,24 @@ const BookingService: ServiceSchema = {
 
 	events: {
 		"booking.update": {
+			params: {
+				_id: "string",
+			},
 			async handler(this: Service, ctx: Context<any, any>) {
-				const { _id } = ctx.params;
+				const { _id, status, driverId, staff } = ctx.params;
 				const result: IBooking = await ctx.call("bookingSystem.updateAndGet", {
 					id: _id,
-					...ctx.params,
+					status,
+					driverId,
 				});
 
 				this.logger.info("Booking updated status: ", result);
+				this.addAMQPJob("monitor.update", {
+					request: result,
+					data: {
+						staff,
+					},
+				});
 
 				// Send notification
 				switch (result.status) {
@@ -384,7 +394,7 @@ const BookingService: ServiceSchema = {
 					// 	driverStatus: DriverStatus.ON_GOING,
 					// });
 					const result: any = await this.broker.emit("booking.update", {
-						id: data._id,
+						_id: data._id,
 						driverId,
 						status: BookingStatus.ASSIGNED,
 					});
@@ -503,6 +513,38 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
+		updateAndGet: {
+			params: {
+				id: "string",
+			},
+			async handler(this: Service, ctx: Context<any, any>): Promise<IBooking> {
+				const { id, status, driverId } = ctx.params;
+				return new this.Promise((resolve, reject) => {
+					ctx.call<IBooking, any>("bookingSystem.update", { id, status, driverId })
+						.then(
+							(res) =>
+								this.transformDocuments(
+									ctx,
+									{
+										populate: ["pickupAddr", "destAddr", "driver"],
+									},
+									res,
+								)
+									.then(resolve)
+									.catch(reject),
+							// ctx
+							// 	.call<IBooking, any>("bookingSystem.get", {
+							// 		id,
+							// 		populate: ["pickupAddr", "destAddr", "driver"],
+							// 	})
+							// 	.then(resolve)
+							// 	.catch(reject),
+						)
+						.catch(reject);
+				});
+			},
+		},
+
 		getBookingHistory: {
 			rest: "GET /history",
 			params: {
@@ -530,28 +572,6 @@ const BookingService: ServiceSchema = {
 					phoneNumber,
 				});
 				return data;
-			},
-		},
-
-		updateAndGet: {
-			params: {
-				id: "string",
-			},
-			async handler(this: Service, ctx: Context<any, any>): Promise<IBooking> {
-				const { id, status, driverId } = ctx.params;
-				return new this.Promise((resolve, reject) => {
-					ctx.call<IBooking, any>("bookingSystem.update", { id, status, driverId })
-						.then(() =>
-							ctx
-								.call<IBooking, any>("bookingSystem.get", {
-									id,
-									populate: ["pickupAddr", "destAddr", "driver"],
-								})
-								.then(resolve)
-								.catch(reject),
-						)
-						.catch(reject);
-				});
 			},
 		},
 
@@ -622,6 +642,7 @@ const BookingService: ServiceSchema = {
 					populate: ["pickupAddr", "destAddr"],
 				}),
 			);
+			this.addAMQPJob("monitor.create", result);
 			return result;
 		},
 
