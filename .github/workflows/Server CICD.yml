@@ -2,7 +2,14 @@ name: Deploy to server
 
 on:
   push:
-    branches: [server]
+    branches:
+      - server
+      - develop
+      - master
+    paths:
+      - ".github/workflows/Server CICD.yml"
+      - "server/**"
+
 
 env:
     REMOTE_PATH: /mnt/server
