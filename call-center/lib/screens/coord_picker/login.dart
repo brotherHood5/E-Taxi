@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:socket_io_client/socket_io_client.dart';
 import 'package:web/screens/coord_picker/coord_picker.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import '../../constant.dart';
 import '../../helper.dart';
@@ -100,10 +98,7 @@ class _LoginState extends State<Login> {
                   setState(() {
                     _isObscure = !_isObscure;
                   });
-                }
-                // Icons.visibility_off_outlined,
-                // color: Colors.grey,
-                ),
+                }),
             filled: true,
             fillColor: Colors.blueGrey[50],
             labelStyle: TextStyle(fontSize: 12),

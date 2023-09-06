@@ -221,7 +221,6 @@ const BookingService: ServiceSchema = {
 							}
 						})
 						.catch((err) => {
-							this.logger.error(err);
 							this.broker
 								.emit("booking.noDriversFound", req)
 								.then(() => {})
@@ -229,7 +228,6 @@ const BookingService: ServiceSchema = {
 						});
 					channel.ack(msg);
 				} catch (error) {
-					this.logger.error(error);
 					channel.ack(msg);
 				}
 			},
@@ -247,16 +245,14 @@ const BookingService: ServiceSchema = {
 		"booking.new": {
 			handler(this: Service, channel: any, msg: any): void {
 				const req = JSON.parse(msg.content.toString()) as IBooking;
-				req.status = BookingStatus.NEW;
-
 				req.destAddr = req.destAddr as AddressEntity;
 				req.pickupAddr = req.pickupAddr as AddressEntity;
 
 				if (
-					!req.pickupAddr.lat ||
-					!req.pickupAddr.lon ||
-					!req.destAddr.lat ||
-					!req.destAddr.lon
+					req.pickupAddr.lat === null ||
+					req.pickupAddr.lon === null ||
+					req.destAddr.lat === null ||
+					req.destAddr.lon === null
 				) {
 					// Chuyen qua phan giai dia chi
 					this.addAMQPJob("booking.coordinating", req);
@@ -509,7 +505,13 @@ const BookingService: ServiceSchema = {
 					});
 				}
 
-				return true;
+				return this.transformDocuments(
+					ctx,
+					{
+						populate: ["pickupAddr", "destAddr"],
+					},
+					result[0],
+				);
 			},
 		},
 

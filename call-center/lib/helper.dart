@@ -27,7 +27,7 @@ Future<String?> getRefreshToken() async {
   return prefs.getString('refreshToken');
 }
 
-Future<bool> refreshToken() async {
+Future<String?> refreshToken() async {
   final res =
       await http.post(Uri.parse("$BASE_URL/staffs/refresh-token"), body: {
     'token': await getRefreshToken(),
@@ -41,7 +41,7 @@ Future<bool> refreshToken() async {
     return json['accessToken'];
   }
 
-  return res.statusCode == 200;
+  return null;
 }
 
 Future<void> showMyDialog(

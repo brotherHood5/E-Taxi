@@ -174,7 +174,7 @@ const StaffsService: StaffsServiceSchema = {
 				const json = pick(decoded, ["user"]) as { user: StaffEntity };
 				const user = await this.actions.get({ id: json.user._id }, { parentCtx: ctx });
 				const result = await this.transformDocuments(ctx, {}, user);
-				return result.user;
+				return result;
 			},
 		},
 

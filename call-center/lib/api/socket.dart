@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:socket_io_client/socket_io_client.dart';
 
 import '../constant.dart';
@@ -41,36 +43,41 @@ class SocketApi {
 
   static void init() {
     if (_io.connected) {
-      print("Socket is connected1: ${_io.id}");
+      log("Socket is connected: ${_io.id}", name: "SocketApi");
       return;
     }
+
     if (accessToken == null) {
-      print("Socket is not connected");
+      log("Socket is not connected", name: "SocketApi");
       throw Exception("Socket is not connected");
     }
+    try {
+      log("Socket is connecting", name: "SocketApi");
+      _io.connect();
 
-    _io.connect();
+      _io.onConnect((dynamic data) {
+        log("Socket is connected: ${_io.id}", name: "SocketApi");
+        _io.emit("call", "coordSystem.connect");
+      });
 
-    _io.onConnect((dynamic data) {
-      print("Socket is connected: ${_io.id}");
-      _io.emit("call", "coordSystem.connect");
-    });
+      _io.onConnectError((dynamic data) {
+        log('Socket connect error: \n$data', name: "SocketApi");
+      });
 
-    _io.onConnectError((dynamic data) {
-      print('Socket connect error: \n$data');
-    });
+      _io.on('unauthorized', (dynamic data) {
+        log('Socket unauthorized', name: "SocketApi");
+      });
 
-    _io.on('unauthorized', (dynamic data) {
-      print('Socket unauthorized');
-    });
+      _io.onError(
+        (dynamic error) => {log("Socket error: \n$error", name: "SocketApi")},
+      );
 
-    _io.onError(
-      (dynamic error) => {print("Socket error: \n$error")},
-    );
-
-    _io.onDisconnect((dynamic data) {
-      print('Socket disconnected');
-    });
+      _io.onDisconnect((dynamic data) {
+        log('Socket disconnected', name: "SocketApi");
+      });
+    } catch (e, s) {
+      log(e.toString(), name: "SocketApi", error: e, stackTrace: s);
+    }
   }
 
   Socket get ins => _io;

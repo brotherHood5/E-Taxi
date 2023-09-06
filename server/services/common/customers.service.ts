@@ -7,7 +7,6 @@ import type {
 	CustomersServiceSchema,
 	CustomersThis,
 } from "../../types/common/customer";
-import type { UserAuthMeta } from "../../types/common/user";
 import { UserRole } from "../../types/common/user";
 
 const phoneNumberRegex = /^0[0-9]{9}$/;

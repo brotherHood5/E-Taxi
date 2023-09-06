@@ -46,6 +46,28 @@ class BookingReq {
     );
   }
 
+  BookingReq deepCopyWith({
+    String? id,
+    String? vehicleType,
+    String? phoneNumber,
+    String? status,
+    Location? pickupAddr,
+    Location? destAddr,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return BookingReq(
+      id: id ?? this.id,
+      vehicleType: vehicleType ?? this.vehicleType,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      status: status ?? this.status,
+      pickupAddr: pickupAddr ?? this.pickupAddr.copyWith(),
+      destAddr: destAddr ?? this.destAddr.copyWith(),
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       '_id': id,

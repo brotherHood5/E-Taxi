@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
+import '../../api/socket.dart';
 import '../../constant.dart';
 import '../../helper.dart';
 import 'coord_picker.dart';
@@ -36,7 +37,6 @@ class _CheckAuthState extends State<CheckAuth> {
   Future<Widget> _checkAuth() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? accessToken = prefs.getString('accessToken');
-    await Future.delayed(Duration(seconds: 1));
 
     if (accessToken != null) {
       final res =
@@ -44,11 +44,15 @@ class _CheckAuthState extends State<CheckAuth> {
         'token': accessToken,
       });
       if (res.statusCode != 200) {
-        var isSuccess = await refreshToken();
-        if (isSuccess) {
+        var newAccessToken = await refreshToken();
+        if (newAccessToken != null) {
+          SocketApi.setAuthToken(newAccessToken);
+          SocketApi.init();
           return const CoordSystem();
         }
       } else {
+        SocketApi.setAuthToken(accessToken);
+        SocketApi.init();
         return const CoordSystem();
       }
     }

@@ -43,6 +43,8 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
   @override
   void initState() {
     super.initState();
+    _socket = SocketApi().ins;
+
     mapController.addObserver(this);
     currentRequest.addListener(() async {
       debugPrint("Current request: ${currentRequest.value}");
@@ -79,6 +81,7 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
 
   void _disconnectSocket() {
     if (_socket.connected) {
+      _socket.off(SocketEvent.RECEIVE_BOOKING);
       _socket.disconnect(); // Disconnect the socket when the widget is disposed
     }
   }
@@ -199,7 +202,20 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
                                     .textTheme.bodyMedium
                                     ?.merge(const TextStyle(
                                         fontWeight: FontWeight.bold));
-
+                                String formattedAddress = "";
+                                if (value != null) {
+                                  List<String?> array = [
+                                    value.homeNo,
+                                    value.street,
+                                    value.ward,
+                                    value.district,
+                                    value.city
+                                  ]
+                                      .where((element) =>
+                                          element != null && element.isNotEmpty)
+                                      .toList();
+                                  formattedAddress = array.join(", ");
+                                }
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -240,10 +256,7 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
                                     const SizedBox(height: 4.0),
                                     Text("Formatted Address",
                                         style: labelStyle),
-                                    Text(
-                                        value == null
-                                            ? ""
-                                            : "${value.homeNo}, ${value.street}, ${value.ward}, ${value.district}, ${value.city}",
+                                    Text(formattedAddress,
                                         softWrap: true,
                                         style: theme.textTheme.bodySmall),
                                   ],
@@ -412,7 +425,7 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
           user.value = data['user'];
           SocketApi.setAuthToken(data['accessToken']);
           SocketApi.init();
-          _socket = SocketApi().ins;
+
           _socket.on(SocketEvent.RECEIVE_BOOKING, (data) {
             streamSocket.addResponse(data);
           });
@@ -447,7 +460,6 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
   }
 
   Future<void> _bookFunc() async {
-    debugPrint("Call Booking");
     if (latController.text.isEmpty && lonController.text.isEmpty) return;
     await _coordFunc();
 
@@ -480,9 +492,7 @@ class _CoordSystemState extends State<CoordSystem> with OSMMixinObserver {
 
   @override
   Future<void> mapIsReady(bool isReady) async {
-    if (isReady) {
-      debugPrint("Map Loaded");
-    }
+    if (isReady) {}
   }
 
   @override

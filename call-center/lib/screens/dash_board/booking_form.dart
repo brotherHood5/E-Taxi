@@ -1,5 +1,4 @@
 import 'package:easy_debounce/easy_debounce.dart';
-import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:web/model/TopHistory.dart';
 
@@ -10,18 +9,17 @@ class BookingFormController {
   VoidCallback clear = () {};
   void Function(TopHistory req) insertBookReq = (TopHistory req) {};
   BookingReq bookingReq = BookingReq(
-      destAddr: Location(),
-      phoneNumber: '',
-      pickupAddr: Location(),
-      status: '',
-      vehicleType: '');
+    phoneNumber: '',
+    vehicleType: '2',
+    destAddr: Location(),
+    pickupAddr: Location(),
+  );
 
   void dispose() {}
 }
 
 class BookingForm extends StatefulWidget {
   final Function onPhoneNumberChanged;
-
   final BookingFormController controller;
 
   const BookingForm({
@@ -34,10 +32,6 @@ class BookingForm extends StatefulWidget {
 }
 
 class _BookingFormState extends State<BookingForm> {
-  void saveChildCallback() {
-    print("submit");
-  }
-
   String vehicleType = '2';
   TextEditingController phoneController = TextEditingController();
 
@@ -58,83 +52,10 @@ class _BookingFormState extends State<BookingForm> {
     super.initState();
     BookingFormController controller = widget.controller;
     controller.bookingReq.vehicleType = vehicleType;
-
-    controller.clear = () => setState(() => {
-          phoneController.text = "",
-          pickupNoText.text = "",
-          pickupStreetText.text = "",
-          pickupWardText.text = "",
-          pickupDistrictText.text = "",
-          pickupCityText.text = "",
-          destNoText.text = "",
-          destStreetText.text = "",
-          destWardText.text = "",
-          destDistrictText.text = "",
-          destCityText.text = "",
-          setState(() => {
-                controller.bookingReq.pickupAddr = Location(),
-                controller.bookingReq.destAddr = Location(),
-                vehicleType = "2",
-                controller.bookingReq.vehicleType = vehicleType,
-              })
-        });
-    controller.insertBookReq = (TopHistory req) => {
-          phoneController.text = req.phoneNumber ?? "",
-          pickupNoText.text = req.pickupAddr?.homeNo ?? "",
-          pickupStreetText.text = req.pickupAddr?.street ?? "",
-          pickupWardText.text = req.pickupAddr?.ward ?? "",
-          pickupDistrictText.text = req.pickupAddr?.district ?? "",
-          pickupCityText.text = req.pickupAddr?.city ?? "",
-          destNoText.text = req.destAddr?.homeNo ?? "",
-          destStreetText.text = req.destAddr?.street ?? "",
-          destWardText.text = req.destAddr?.ward ?? "",
-          destDistrictText.text = req.destAddr?.district ?? "",
-          destCityText.text = req.destAddr?.city ?? "",
-          // Change the value of the bookingReq
-          setState(() => {
-                controller.bookingReq.phoneNumber = req.phoneNumber!,
-                controller.bookingReq.pickupAddr = req.pickupAddr!,
-                controller.bookingReq.destAddr = req.destAddr!,
-                controller.bookingReq.pickupAddr.id = null,
-                controller.bookingReq.destAddr.id = null,
-                vehicleType = req.vehicleType!,
-                controller.bookingReq.vehicleType = vehicleType,
-              })
-        };
-    phoneController.addListener(() {
-      controller.bookingReq.phoneNumber = phoneController.text;
-    });
-    pickupNoText.addListener(() {
-      controller.bookingReq.pickupAddr.homeNo = pickupNoText.text;
-    });
-    pickupStreetText.addListener(() {
-      controller.bookingReq.pickupAddr.street = pickupStreetText.text;
-    });
-    pickupWardText.addListener(() {
-      controller.bookingReq.pickupAddr.ward = pickupWardText.text;
-    });
-    pickupDistrictText.addListener(() {
-      controller.bookingReq.pickupAddr.district = pickupWardText.text;
-    });
-    pickupCityText.addListener(() {
-      controller.bookingReq.pickupAddr.city = pickupCityText.text;
-    });
-    destNoText.addListener(() {
-      controller.bookingReq.destAddr.homeNo = destNoText.text;
-    });
-    destStreetText.addListener(() {
-      controller.bookingReq.destAddr.street = destStreetText.text;
-    });
-    destWardText.addListener(() {
-      controller.bookingReq.destAddr.ward = destWardText.text;
-    });
-    destDistrictText.addListener(() {
-      controller.bookingReq.destAddr.district = destDistrictText.text;
-    });
-    destCityText.addListener(() {
-      controller.bookingReq.destAddr.city = destCityText.text;
-    });
-    phoneController.text = "0972360214";
+    controller.clear = clearForm;
+    controller.insertBookReq = insertToForm;
+    initListener();
+    phoneController.text = "";
   }
 
   @override
@@ -152,6 +73,96 @@ class _BookingFormState extends State<BookingForm> {
     destDistrictText.dispose();
     destCityText.dispose();
     super.dispose();
+  }
+
+  void clearForm() {
+    phoneController.text = "";
+    pickupNoText.text = "";
+    pickupStreetText.text = "";
+    pickupWardText.text = "";
+    pickupDistrictText.text = "";
+    pickupCityText.text = "";
+    destNoText.text = "";
+    destStreetText.text = "";
+    destWardText.text = "";
+    destDistrictText.text = "";
+    destCityText.text = "";
+
+    BookingFormController controller = widget.controller;
+    controller.bookingReq = controller.bookingReq.copyWith(
+      phoneNumber: '',
+      vehicleType: '2',
+      destAddr: Location(),
+      pickupAddr: Location(),
+    );
+    if (!mounted) return;
+    setState(() {
+      vehicleType = "2";
+    });
+  }
+
+  void insertToForm(TopHistory req) {
+    phoneController.text = req.phoneNumber!;
+    pickupNoText.text = req.pickupAddr?.homeNo ?? "";
+    pickupStreetText.text = req.pickupAddr?.street ?? "";
+    pickupWardText.text = req.pickupAddr?.ward ?? "";
+    pickupDistrictText.text = req.pickupAddr?.district ?? "";
+    pickupCityText.text = req.pickupAddr?.city ?? "";
+    destNoText.text = req.destAddr?.homeNo ?? "";
+    destStreetText.text = req.destAddr?.street ?? "";
+    destWardText.text = req.destAddr?.ward ?? "";
+    destDistrictText.text = req.destAddr?.district ?? "";
+    destCityText.text = req.destAddr?.city ?? "";
+
+    // Change the value of the bookingReq
+    BookingFormController controller = widget.controller;
+    controller.bookingReq = controller.bookingReq.deepCopyWith(
+      phoneNumber: req.phoneNumber,
+      pickupAddr: req.pickupAddr,
+      destAddr: req.destAddr,
+      vehicleType: req.vehicleType,
+    );
+    setState(
+      () => vehicleType = req.vehicleType!,
+    );
+  }
+
+  void initListener() {
+    BookingFormController controller = widget.controller;
+    BookingReq bookingReq = controller.bookingReq;
+    phoneController.addListener(() {
+      bookingReq.phoneNumber = phoneController.text;
+    });
+    pickupNoText.addListener(() {
+      bookingReq.pickupAddr.homeNo = pickupNoText.text;
+    });
+    pickupStreetText.addListener(() {
+      bookingReq.pickupAddr.street = pickupStreetText.text;
+    });
+    pickupWardText.addListener(() {
+      bookingReq.pickupAddr.ward = pickupWardText.text;
+    });
+    pickupDistrictText.addListener(() {
+      bookingReq.pickupAddr.district = pickupWardText.text;
+    });
+    pickupCityText.addListener(() {
+      bookingReq.pickupAddr.city = pickupCityText.text;
+    });
+    destNoText.addListener(() {
+      bookingReq.destAddr.homeNo = destNoText.text;
+    });
+    destStreetText.addListener(() {
+      bookingReq.destAddr.street = destStreetText.text;
+    });
+    destWardText.addListener(() {
+      bookingReq.destAddr.ward = destWardText.text;
+    });
+    destDistrictText.addListener(() {
+      bookingReq.destAddr.district = destDistrictText.text;
+    });
+    destCityText.addListener(() {
+      bookingReq.destAddr.city = destCityText.text;
+    });
   }
 
   @override
@@ -265,25 +276,25 @@ class _BookingFormState extends State<BookingForm> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: pickupStreetText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text("Pick up Street"),
                       hintText: 'Pick up street',
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20.0,
                 ),
                 Expanded(
                   child: TextFormField(
                     controller: destStreetText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text("Destination Street"),
                       hintText: 'Destination Street   ',
                     ),
@@ -291,25 +302,25 @@ class _BookingFormState extends State<BookingForm> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: pickupWardText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text("Pick up Ward"),
                       hintText: 'Pick up ward',
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20.0,
                 ),
                 Expanded(
                   child: TextFormField(
                     controller: destWardText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text("Destination Ward"),
                       hintText: 'Destination ward',
                     ),
@@ -317,25 +328,25 @@ class _BookingFormState extends State<BookingForm> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: pickupDistrictText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text("Pick up District"),
                       hintText: 'Pick up district',
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20.0,
                 ),
                 Expanded(
                   child: TextFormField(
                     controller: destDistrictText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text("Destination District"),
                       hintText: 'Destination district',
                     ),
@@ -343,25 +354,25 @@ class _BookingFormState extends State<BookingForm> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: pickupCityText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text("Pick up City"),
                       hintText: 'Pick up city',
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20.0,
                 ),
                 Expanded(
                   child: TextFormField(
                     controller: destCityText,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text("Destination City"),
                       hintText: 'Destination city',
                     ),
