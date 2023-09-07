@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <h1>Hello Moleculer IO</h1>
+    <input name="room" />
+    <button onclick="join(document.querySelector('input[name=room]').value)">Join room</button>
+    <button onclick="callResolvedAddress()">Call `coordSystem.resolvedAddress` via websocket</button>
+    <button onclick="clearResult()">Clear</button>
+    <div>
+        <input name="name" />
+        <button onclick="login(document.querySelector('input[name=name]').value)">Login</button>
+        <button onclick="getUserInfo()">getUserInfo</button>
+    </div>
+    <div>
+        <pre id="res"></pre>
+    </div>
+    <hr />
+    <div id="events">
+    </div>
+
+    <script src="http://localhost:3003/socket.io/socket.io.js"></script>
+    <script>
+        var booking;
+        const refreshToken = "1b0eb5c1-91bd-45e5-a3c1-3a6b84290dc9";
+        let authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY0ZDhhYmJkY2Q0M2IyNDE1OGE4YzMwNyIsImZ1bGxOYW1lIjoiRMawxqFuZyBRdWFuZyBWaW5oIiwidXNlcm5hbWUiOiIyMDEyNzY2NSIsInBhc3N3b3JkSGFzaCI6IiQyYSQxMCRUcjZwRDk5TTRTajJuWnN6UXBlTWp1RFQzN1FQTUJGQlN3NVhyQWtTVG1HaGVtUHRWN3lvUyIsImNyZWF0ZWRBdCI6IjIwMjMtMDgtMTNUMTA6MDk6MDEuNDc4WiIsInVwZGF0ZWRBdCI6IjIwMjMtMDgtMTNUMTA6MDk6MDEuNDc4WiIsInJvbGVzIjpbIlNUQUZGIl19LCJpYXQiOjE2OTI4NzcyNzcsImV4cCI6MTY5MzQ4MjA3N30.343W1NUeKnrcveiBGbQW4X8SoYGO1mPeMB9B2rMNxAM"
+        const eventDiv = document.getElementById("events");
+        const resultDiv = document.getElementById("res");
+        var socket = io("ws://localhost:3003/coord-system", {
+            transports: ['websocket', 'polling', 'flashsocket'],
+            auth: {
+                token: authToken,
+                refreshToken,
+            },
+            query: {
+                service: "staffs"
+            }
+        });
+
+        socket.on("connect", function () {
+            console.log("Websocket connection established!");
+            socket.emit("call", "coordSystem.connect")
+            socket.on("disconnect", function () {
+                console.log("Websocket disconnected!");
+            });
+        });
+
+        socket.on("token", function (token) {
+            console.log("Token received: ", token);
+            authToken = token;
+        });
+
+        socket.on("connect_error", (error) => {
+            console.log(error);
+        });
+
+        socket.on("receive_booking", function (data) {
+            console.log(data);
+            var el = document.createElement("div");
+            booking = data;
+            el.innerHTML = "<pre>" + JSON.stringify(data, null, 4) + "</pre> event received!";
+            eventDiv.appendChild(el);
+        });
+
+        function login(name) {
+            socket.emit("call", "coordSystem.free", (err, res) => {
+                console.log(res);
+            });
+        }
+
+        function getUserInfo() {
+            socket.emit('call', 'notif.getUserInfo', function (err, res) {
+                if (err) {
+                    alert(JSON.stringify(err))
+                } else {
+                    resultDiv.textContent += 'Get user info:' + JSON.stringify(res) + '\n'
+                }
+                console.log()
+            })
+        }
+
+        function join(room) {
+            socket.emit("call", "notif.join", { room }, (err, data) => { console.log(data) });
+            socket.emit("call", "notif.getClientsInRoom", {
+                room: room
+            }, (err, res) => {
+                console.log(res);
+            });
+        }
+
+        window.socket = socket;
+
+        function clearResult() {
+            eventDiv.innerHTML = '';
+        }
+
+        function callResolvedAddress() {
+            console.log("callResolvedAddress");
+            const coord = {
+                lat: 10,
+                lon: 10,
+            }
+            const bookResolved = booking;
+            bookResolved.pickupAddr = {
+                ...bookResolved.pickupAddr,
+                ...coord
+            };
+            bookResolved.destAddr = {
+                ...bookResolved.destAddr,
+                ...coord
+            };
+            console.log(bookResolved)
+            socket.emit("call", "coordSystem.resolvedAddress", { req: bookResolved }, (err, data) => { console.log(data) });
+            // socket.emit("call", "notif.list", (err, data) => { console.log(data) });
+        }
+
+    </script>
+</body>
+
+</html>

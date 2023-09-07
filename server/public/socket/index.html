@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+	</head>
+
+	<body>
+		<h1>Hello Moleculer IO</h1>
+		<input name="room" />
+		<button onclick="join(document.querySelector('input[name=room]').value)">Join room</button>
+		<button onclick="callMath()">Call `math.add` via websocket</button>
+		<button onclick="clearResult()">Clear</button>
+		<div>
+			<input name="name" />
+			<button onclick="login(document.querySelector('input[name=name]').value)">Login</button>
+			<button onclick="getUserInfo()">getUserInfo</button>
+		</div>
+
+		<div>
+			<input name="token" />
+			<button onclick="auth(document.querySelector('input[name=token]').value)">Auth</button>
+		</div>
+		<div>
+			<pre id="res"></pre>
+		</div>
+		<hr />
+		<div id="events"></div>
+
+		<script src="http://localhost:3003/socket.io/socket.io.js"></script>
+		<script>
+			function auth(authToken) {}
+			var socket = io("ws://localhost:3003", {
+				transports: ["websocket", "polling", "flashsocket"],
+				auth: {
+					token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY0ZDQzZjU5NzhkMWI1NmVkNDczYmYwMyIsImZ1bGxOYW1lIjoiRMawxqFuZyBRdWFuZyBWaW5oIiwicGhvbmVOdW1iZXIiOiIwOTcyMzYwMjE0IiwicGFzc3dvcmRIYXNoIjoiJDJhJDEwJEl2OC9UWG15Z2Fua09wSS5JVk1wL09RLnR0TTltRGNYSE8uVGJlMGV6N3E2NzRKTjVTajcyIiwicGhvbmVOdW1iZXJWZXJpZmllZCI6dHJ1ZSwiZW5hYmxlIjp0cnVlLCJhY3RpdmUiOnRydWUsImNyZWF0ZWRBdCI6IjIwMjMtMDgtMTBUMDE6Mzc6MjkuODcyWiIsInVwZGF0ZWRBdCI6IjIwMjMtMDgtMTBUMDE6Mzc6MjkuODcyWiIsInJvbGVzIjpbIkNVU1RPTUVSIl19LCJpYXQiOjE2OTE2MzY5ODcsImV4cCI6MTY5MTYzODc4N30.ay_DArvnVCy_4Uew6_Z4P20P0Zxsh_npXNVzr5sxUKM",
+				},
+				query: {
+					service: "customers",
+				},
+			});
+
+			socket.on("connect", function () {
+				console.log("Websocket connection established!");
+			});
+
+			socket.on("connect_error", (error) => {
+				console.log(error);
+			});
+
+			socket.on("event", function (data) {
+				console.log(data);
+				var el = document.createElement("div");
+				el.textContent = "'" + data + "' event received!";
+				document.getElementById("events").appendChild(el);
+			});
+
+			function login(name) {
+				socket.emit.call("math.customerSendGPS", { lat: 1, lon: 2 }, (err, res) => {
+					c;
+				});
+				socket.emit("call", "math.login", { name });
+			}
+
+			function getUserInfo() {
+				socket.emit("call", "math.getUserInfo", function (err, res) {
+					if (err) {
+						alert(JSON.stringify(err));
+					} else {
+						document.getElementById("res").textContent +=
+							"Get user info:" + JSON.stringify(res) + "\n";
+					}
+					console.log();
+				});
+			}
+
+			function join(room) {
+				socket.emit("call", "math.join", { room }, (err, data) => {
+					console.log(data);
+				});
+				socket.emit(
+					"call",
+					"notif.getClients",
+					{
+						room: room,
+					},
+					(err, res) => {
+						console.log(res);
+					},
+				);
+			}
+
+			window.socket = socket;
+
+			function clearResult() {
+				const eventsList = document.getElementById("events");
+				console.log(eventsList);
+				eventsList.innerHTML = "";
+			}
+
+			function callMath() {
+				socket.emit("call", "math.list", (err, data) => {
+					console.log(data);
+				});
+
+				let a = Math.round(Math.random() * 100);
+				let b = Math.round(Math.random() * 100);
+				socket.emit(
+					"call",
+					"math.add",
+					{
+						a: a,
+						b: b,
+					},
+					(err, res) => {
+						console.log(res);
+						document.getElementById("res").textContent =
+							"" + a + " + " + b + " = " + JSON.stringify(res, null, 4);
+					},
+				);
+			}
+		</script>
+	</body>
+</html>

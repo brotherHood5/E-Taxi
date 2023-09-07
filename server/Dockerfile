@@ -1,26 +1,36 @@
-# Use the official Node.js image as the base image
-FROM node:14
+FROM node:16 as build
 
-# Set the working directory inside the container
-WORKDIR /app
+WORKDIR /tmp/app
 
-# Copy package.json and package-lock.json to the working directory
+# Install dependencies
 COPY package*.json ./
 
-# Copy the Prisma schema to the working directory
-COPY prisma ./prisma/
+RUN npm ci --silent
 
-# Copy the rest of the application code to the working directory
+# Copy source
 COPY . .
 
-# Install the dependencies
-RUN npm install
+# Build
+RUN npm run build
 
-# Generate the Prisma client
-RUN npm run prisma_gen
+# -------------------
+FROM node:16-alpine as run
 
-# Expose the port the application will run on
-EXPOSE 3000
+WORKDIR /app
 
-# Start the application
+# Copy source
+COPY .env .
+COPY public ./public
+COPY package*.json ./
+
+# Copy built files
+COPY --from=build /tmp/app/dist .
+
+# Build and cleanup
+# ENV NODE_ENV=production
+RUN npm ci --silent
+
+# Start server
+# CMD ["node", "./node_modules/moleculer/bin/moleculer-runner.js", "-e"]
 CMD ["npm", "start"]
+

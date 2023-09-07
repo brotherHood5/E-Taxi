@@ -1,0 +1,75 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "call-center",
+            "cwd": "call-center",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "call-center (profile mode)",
+            "cwd": "call-center",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "call-center (release mode)",
+            "cwd": "call-center",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "client-mobile-app",
+            "cwd": "client-mobile-app",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "client-mobile-app (profile mode)",
+            "cwd": "client-mobile-app",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "client-mobile-app (release mode)",
+            "cwd": "client-mobile-app",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "driver-mobile-app",
+            "cwd": "driver-mobile-app",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "driver-mobile-app (profile mode)",
+            "cwd": "driver-mobile-app",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "driver-mobile-app (release mode)",
+            "cwd": "driver-mobile-app",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
