@@ -60,6 +60,8 @@ class _HomePageState extends State<HomePage>
         print("AppLifecycleState.detached");
         // widget is detached
         break;
+      case AppLifecycleState.hidden:
+      // TODO: Handle this case.
     }
     print(state);
     super.didChangeAppLifecycleState(state);

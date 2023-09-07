@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:grab_eat_ui/pages/splash_screen.dart';
+import 'package:grab_eat_ui/pages/root_app.dart';
 
 class Messages extends Translations {
   @override
@@ -52,7 +52,7 @@ void main() async {
     theme: ThemeData(
       primarySwatch: Colors.indigo,
     ),
-    home: SplashScreen(),
+    home: RootApp(),
     builder: EasyLoading.init(),
   ));
 }
