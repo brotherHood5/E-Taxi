@@ -24,6 +24,8 @@ dependencies:
   get:
   google_fonts:
   flutter_osm_plugin: ^0.60.3
+  fl_country_code_picker: ^0.0.2+1
+  pinput: ^2.2.12
   flutter:
     sdk: flutter
 

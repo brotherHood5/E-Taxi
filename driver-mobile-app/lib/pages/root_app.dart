@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:grab_eat_ui/pages/account_page.dart';
+import 'package:grab_eat_ui/pages/earnings_page.dart';
 import 'package:grab_eat_ui/pages/home_page.dart';
+import 'package:grab_eat_ui/pages/inbox_page.dart';
 import 'package:grab_eat_ui/theme/colors.dart';
 
 class RootApp extends StatefulWidget {
@@ -22,27 +25,9 @@ class _RootAppState extends State<RootApp> {
   Widget getBody() {
     List<Widget> pages = [
       HomePage(),
-      Center(
-        child: Text(
-          "Earnings Page",
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: black),
-        ),
-      ),
-      Center(
-        child: Text(
-          "Inbox Page",
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: black),
-        ),
-      ),
-      Center(
-        child: Text(
-          "Account Page",
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: black),
-        ),
-      )
+      EarningsPage(),
+      InboxPage(),
+      AccountPage()
     ];
     return IndexedStack(
       index: pageIndex,
