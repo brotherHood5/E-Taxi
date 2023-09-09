@@ -6,3 +6,6 @@ var bgColor = Color(0xFFf0f1f3);
 var black = Color(0xFF000000);
 var textFieldColor = Colors.grey.withOpacity(0.15);
 var yellowStar = Color(0xFFfacb00);
+
+const kPrimaryColor = Color(0xFF1976D2);
+const kPrimaryLightColor = Color(0xffE3F2FD);

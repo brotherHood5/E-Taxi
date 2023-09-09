@@ -3,13 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:get/get.dart';
+import 'package:grab_eat_ui/api/AuthService.dart';
+import 'package:grab_eat_ui/components/components.dart';
+import 'package:grab_eat_ui/pages/auth/verify_otp.dart';
+import 'package:grab_eat_ui/theme/colors.dart';
+import 'package:grab_eat_ui/utils/helper.dart';
+import 'package:grab_eat_ui/widgets/text_field_container.dart';
 
-import '../../api/AuthService.dart';
 import '../../utils/app_constants.dart';
-import '../../utils/helper.dart';
 import 'login.dart';
-import 'verify_otp.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -89,6 +91,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+
     final theme = Theme.of(context);
 
     Future<void> signup([bool mounted = true]) async {
@@ -143,139 +147,200 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ? signup
             : null;
 
-    Widget _signupForm = Center(
+    Widget _signupForm = SizedBox(
+      width: size.width,
+      height: size.height,
       child: SingleChildScrollView(
-          child: Container(
-        margin: const EdgeInsets.only(top: layoutXLarge),
-        padding: const EdgeInsets.symmetric(horizontal: layoutMedium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            Text("welcome_text".tr, style: theme.textTheme.titleLarge),
-            const SizedBox(height: layoutSmall),
-            Text("guild_text".tr, style: theme.textTheme.titleMedium),
-            const SizedBox(height: layoutXLarge),
-            Text("sdt_text".tr, style: theme.textTheme.titleSmall),
-            const SizedBox(height: layoutSmall),
-            TextField(
-              autofocus: true,
-              controller: _phoneNumberController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(
-                errorText: _phoneNumberController.text.isNotEmpty
-                    ? _phoneNumberError
-                    : null,
-                hintText: "sdt_hint_text".tr,
-                border: const OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(borderRadiusSmall)),
-                ),
-                suffixIcon: _phoneNumberController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () => _phoneNumberController.clear(),
-                      )
-                    : null,
-              ),
+            const Upside(
+              imgUrl: "assets/images/signUp.png",
             ),
-            const SizedBox(height: layoutSmall),
-            Text("password_text".tr, style: theme.textTheme.titleSmall),
-            const SizedBox(height: layoutSmall),
-            TextField(
-              controller: _passwordController,
-              obscureText: _hiddenPassword,
-              keyboardType: TextInputType.text,
-              inputFormatters: [
-                FilteringTextInputFormatter.singleLineFormatter
-              ],
-              decoration: InputDecoration(
-                hintText: "password_hint_text".tr,
-                errorText: _passwordError,
-                errorMaxLines: 3,
-                border: const OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(borderRadiusSmall)),
-                ),
-                suffixIcon: _passwordController.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                            _hiddenPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey),
-                        onPressed: () => {
-                          setState(() {
-                            _hiddenPassword = !_hiddenPassword;
-                          })
-                        },
-                      )
-                    : null,
-              ),
-            ),
-            const SizedBox(height: layoutSmall),
-            Text("confirm_password_text".tr, style: theme.textTheme.titleSmall),
-            const SizedBox(height: layoutSmall),
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: _hiddenPassword,
-              keyboardType: TextInputType.text,
-              inputFormatters: [
-                FilteringTextInputFormatter.singleLineFormatter
-              ],
-              decoration: InputDecoration(
-                errorText: _confirmPasswordError,
-                hintText: "confirm_password_hint_text".tr,
-                border: const OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(borderRadiusSmall)),
-                ),
-                suffixIcon: _passwordController.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                            _hiddenPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey),
-                        onPressed: () => {
-                          setState(() {
-                            _hiddenPassword = !_hiddenPassword;
-                          })
-                        },
-                      )
-                    : null,
-              ),
-            ),
-            Container(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                  onPressed: () => {
-                        Navigator.of(context).pushReplacement(MaterialPageRoute(
-                            builder: (context) => const LoginScreen()))
-                      },
-                  child: Text('login_btn_text'.tr)),
-            ),
-            const SizedBox(height: layoutSmall),
-            ElevatedButton(
-                onPressed: _onSignupPressed,
-                style: ButtonStyle(
-                  minimumSize: MaterialStateProperty.all(
-                      const Size(double.infinity, minTouchSize)),
-                  elevation: MaterialStateProperty.all(0),
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(borderRadiusXSmall),
-                    ),
+            const PageTitleBar(title: 'Tạo tài khoản mới'),
+            Padding(
+              padding: const EdgeInsets.only(top: 320.0),
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(50),
+                    topRight: Radius.circular(50),
                   ),
                 ),
-                child: Text("signup_btn_text".tr)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    Form(
+                      child: Column(
+                        children: [
+                          TextFieldContainer(
+                            child: TextFormField(
+                              autofocus: true,
+                              controller: _phoneNumberController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              cursorColor: kPrimaryColor,
+                              decoration: InputDecoration(
+                                  icon: Icon(
+                                    Icons.phone,
+                                    color: kPrimaryColor,
+                                  ),
+                                  hintText: "Số điện thoại",
+                                  errorText: _phoneNumberError,
+                                  suffixIcon: _phoneNumberController
+                                          .text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear,
+                                              color: Colors.grey),
+                                          onPressed: () =>
+                                              _phoneNumberController.clear(),
+                                        )
+                                      : null,
+                                  hintStyle:
+                                      const TextStyle(fontFamily: 'OpenSans'),
+                                  border: InputBorder.none),
+                            ),
+                          ),
+                          TextFieldContainer(
+                            child: TextFormField(
+                              controller: _passwordController,
+                              obscureText: _hiddenPassword,
+                              keyboardType: TextInputType.text,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.singleLineFormatter
+                              ],
+                              cursorColor: kPrimaryColor,
+                              decoration: InputDecoration(
+                                  icon: Icon(
+                                    Icons.lock,
+                                    color: kPrimaryColor,
+                                  ),
+                                  hintText: "Mật khẩu",
+                                  hintStyle: TextStyle(fontFamily: 'OpenSans'),
+                                  errorText: _passwordError,
+                                  errorMaxLines: 3,
+                                  suffixIcon:
+                                      _passwordController.text.isNotEmpty
+                                          ? IconButton(
+                                              icon: Icon(
+                                                  _hiddenPassword
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
+                                                  color: Colors.grey),
+                                              onPressed: () => {
+                                                setState(() {
+                                                  _hiddenPassword =
+                                                      !_hiddenPassword;
+                                                })
+                                              },
+                                            )
+                                          : null,
+                                  border: InputBorder.none),
+                            ),
+                          ),
+                          TextFieldContainer(
+                            child: TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _hiddenPassword,
+                              keyboardType: TextInputType.text,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.singleLineFormatter
+                              ],
+                              cursorColor: kPrimaryColor,
+                              decoration: InputDecoration(
+                                  icon: Icon(
+                                    Icons.lock,
+                                    color: kPrimaryColor,
+                                  ),
+                                  hintText: "Xác nhận mật khẩu",
+                                  hintStyle: TextStyle(fontFamily: 'OpenSans'),
+                                  errorText: _confirmPasswordError,
+                                  suffixIcon:
+                                      _passwordController.text.isNotEmpty
+                                          ? IconButton(
+                                              icon: Icon(
+                                                  _hiddenPassword
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
+                                                  color: Colors.grey),
+                                              onPressed: () => {
+                                                setState(() {
+                                                  _hiddenPassword =
+                                                      !_hiddenPassword;
+                                                })
+                                              },
+                                            )
+                                          : null,
+                                  border: InputBorder.none),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 10),
+                            width: size.width * 0.8,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(29),
+                              child: ElevatedButton(
+                                child: Text(
+                                  "Đăng ký",
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 17),
+                                ),
+                                onPressed: _onSignupPressed,
+                                style: ElevatedButton.styleFrom(
+                                    primary: kPrimaryColor,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 40, vertical: 20),
+                                    textStyle: TextStyle(
+                                        letterSpacing: 2,
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'OpenSans')),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          UnderPart(
+                            title: "Bạn đã có tài khoản?",
+                            navigatorText: "Đăng nhập",
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const LoginScreen()));
+                            },
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            )
           ],
         ),
-      )),
+      ),
     );
 
-    return Scaffold(
-      body: _signupForm,
+    return SafeArea(
+      child: Scaffold(
+        body: _signupForm,
+      ),
     );
   }
 }
