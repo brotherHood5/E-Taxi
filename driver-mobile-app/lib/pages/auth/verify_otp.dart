@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grab_eat_ui/theme/colors.dart';
 import 'package:otp_text_field/otp_field.dart';
 import 'package:otp_text_field/style.dart';
 
@@ -101,84 +102,109 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
         : null;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            icon: const Icon(Icons.arrow_back)),
-      ),
       body: Center(
-        child: Container(
-          margin: const EdgeInsets.only(top: layoutLarge),
-          child: SingleChildScrollView(
-              child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: layoutMedium),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  "otp_screen_title".tr,
-                  style: theme.textTheme.headlineSmall!.merge(const TextStyle(
-                    fontWeight: FontWeight.w600,
-                  )),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 30),
+          child: Column(children: [
+            Align(
+              alignment: Alignment.topLeft,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(false),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: kPrimaryColor,
                 ),
-                const SizedBox(height: layoutSmall),
-                RichText(
-                    text: TextSpan(
-                        text: "otp_screen_hint_1".tr,
-                        style: theme.textTheme.titleMedium,
-                        children: [
-                      TextSpan(
-                          text:
-                              " ${widget.phonePrefix}  ${widget.phoneNumber}.\n",
-                          style: TextStyle(
-                              color: theme.textTheme.titleMedium!.color,
-                              fontSize: theme.textTheme.titleMedium!.fontSize,
-                              fontWeight: FontWeight.w600)),
-                      TextSpan(
-                          text: "otp_screen_hint_2".tr,
-                          style: theme.textTheme.titleMedium),
-                    ])),
-                const SizedBox(height: layoutXLarge),
-                OTPTextField(
-                  hasError: isOtpWrong,
-                  obscureText: false,
-                  length: otpLength,
-                  width: Get.width,
-                  fieldWidth:
-                      (Get.width - (layoutMedium * 2)) / 6 - layoutSmall,
-                  style: const TextStyle(
-                    fontSize: 20,
-                  ),
-                  textFieldAlignment: MainAxisAlignment.spaceBetween,
-                  spaceBetween: 0,
-                  fieldStyle: FieldStyle.box,
-                  outlineBorderRadius: borderRadiusSmall,
-                  onChanged: (pin) => {},
-                  onCompleted: onOtpCompleted,
-                ),
-                if (isOtpWrong) const SizedBox(height: layoutSmall),
-                if (isOtpWrong)
-                  Text(
-                    "invalid_otp".tr,
-                    style: theme.textTheme.titleMedium!.merge(TextStyle(
-                      color: theme.colorScheme.error,
-                    )),
-                  ),
-                const SizedBox(height: layoutXXLarge),
-                Container(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton(
-                      onPressed: onResendOtpBtn,
-                      style: ButtonStyle(
-                          elevation: MaterialStateProperty.all(0),
-                          overlayColor: MaterialStateProperty.resolveWith(
-                              (states) => Colors.transparent)),
-                      child: Text(
-                          "${"resend_otp_text".tr}${!enabled ? " (${formatTime(_secondsRemaining)})" : ""}"),
-                    )),
-              ],
+              ),
             ),
-          )),
+            const SizedBox(
+              height: 20,
+            ),
+            SingleChildScrollView(
+              child: Container(
+                width: 200,
+                height: 200,
+                padding: const EdgeInsets.all(20.0),
+                child: Image.asset(
+                  "assets/images/verifyOTP.png",
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "otp_screen_title".tr,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: kPrimaryColor,
+              ),
+            ),
+            const SizedBox(height: 30),
+            RichText(
+                text: TextSpan(
+                    text: "otp_screen_hint_1".tr,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black38,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    children: [
+                  TextSpan(
+                    text: " ${widget.phonePrefix}  ${widget.phoneNumber}.\n",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                    text: "otp_screen_hint_2".tr,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black38,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                ])),
+            const SizedBox(height: 30),
+            OTPTextField(
+              hasError: isOtpWrong,
+              obscureText: false,
+              length: otpLength,
+              width: Get.width,
+              fieldWidth: (Get.width - (layoutMedium * 2)) / 6 - layoutSmall,
+              style: const TextStyle(
+                fontSize: 20,
+              ),
+              textFieldAlignment: MainAxisAlignment.spaceBetween,
+              spaceBetween: 0,
+              fieldStyle: FieldStyle.box,
+              outlineBorderRadius: borderRadiusSmall,
+              onChanged: (pin) => {},
+              onCompleted: onOtpCompleted,
+            ),
+            if (isOtpWrong) const SizedBox(height: layoutSmall),
+            if (isOtpWrong)
+              Text(
+                "invalid_otp".tr,
+                style: theme.textTheme.titleMedium!.merge(TextStyle(
+                  color: theme.colorScheme.error,
+                )),
+              ),
+            const SizedBox(height: layoutXXLarge),
+            Container(
+                alignment: AlignmentDirectional.center,
+                child: TextButton(
+                  onPressed: onResendOtpBtn,
+                  style: ButtonStyle(
+                      elevation: MaterialStateProperty.all(0),
+                      overlayColor: MaterialStateProperty.resolveWith(
+                          (states) => Colors.transparent)),
+                  child: Text(
+                    "${"resend_otp_text".tr}${!enabled ? " (${formatTime(_secondsRemaining)})" : ""}",
+                    style: TextStyle(fontSize: 14),
+                  ),
+                )),
+          ]),
         ),
       ),
     );

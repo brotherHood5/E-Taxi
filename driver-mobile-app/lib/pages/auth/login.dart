@@ -3,11 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:grab_eat_ui/api/SocketApi.dart';
 import 'package:grab_eat_ui/components/components.dart';
 import 'package:grab_eat_ui/pages/auth/sign_up.dart';
-import 'package:grab_eat_ui/api/SocketApi.dart';
 import 'package:grab_eat_ui/pages/root_app.dart';
-import 'package:grab_eat_ui/theme/colors.dart';
 import 'package:grab_eat_ui/widgets/text_field_container.dart';
 
 import '../../../api/AuthService.dart';
@@ -137,6 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+    Color primary = Theme.of(context).primaryColor;
 
     Widget _loginForm = SizedBox(
       width: size.width,
@@ -175,11 +175,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly
                               ],
-                              cursorColor: kPrimaryColor,
+                              cursorColor: primary,
                               decoration: InputDecoration(
                                   icon: Icon(
                                     Icons.phone,
-                                    color: kPrimaryColor,
+                                    color: primary,
                                   ),
                                   hintText: "Số điện thoại",
                                   errorText: _phoneNumberError,
@@ -205,11 +205,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.singleLineFormatter
                               ],
-                              cursorColor: kPrimaryColor,
+                              cursorColor: primary,
                               decoration: InputDecoration(
                                   icon: Icon(
                                     Icons.lock,
-                                    color: kPrimaryColor,
+                                    color: primary,
                                   ),
                                   hintText: "Mật khẩu",
                                   errorText: _passwordError,
@@ -246,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Text(
                                   "Đăng nhập",
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 17),
+                                      color: Colors.white, fontSize: 16),
                                 ),
                                 onPressed:
                                     _passwordController.text.isNotEmpty &&
@@ -257,11 +257,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ? login
                                         : null,
                                 style: ElevatedButton.styleFrom(
-                                    primary: kPrimaryColor,
+                                    primary: primary,
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 40, vertical: 20),
                                     textStyle: TextStyle(
-                                        letterSpacing: 2,
+                                        letterSpacing: 1,
                                         color: Colors.white,
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,

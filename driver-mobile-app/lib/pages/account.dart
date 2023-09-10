@@ -130,8 +130,8 @@ class _AccountScreenState extends State<AccountScreen> {
                     Builder(builder: (context) {
                       const vehicleTypeMap = {
                         "2": "Xe máy",
-                        "4": "4 chỗ",
-                        "7": "7 chỗ"
+                        "4": "Xe 4 chỗ",
+                        "7": "Xe 7 chỗ"
                       };
                       const iconMap = {
                         "2": LineAwesomeIcons.motorcycle,
