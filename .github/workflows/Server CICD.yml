@@ -3,7 +3,6 @@ name: Deploy to server
 on:
   push:
     branches:
-      - server
       - develop
       - master
     paths:
