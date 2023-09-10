@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:grab_eat_ui/api/SocketApi.dart';
+import 'package:grab_eat_ui/pages/auth/finish_sign_up.dart';
 import 'package:grab_eat_ui/pages/auth/login.dart';
-import 'package:grab_eat_ui/pages/login_page.dart';
 import 'package:grab_eat_ui/pages/root_app.dart';
 
 import '../utils/helper.dart';
@@ -45,9 +46,11 @@ class _SplashScreenState extends State<SplashScreen> {
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.hasData) {
               var user = snapshot.data?["user"];
+              SocketApi.setAuthToken(snapshot.data?["accessToken"]);
+              SocketApi.init();
               if (user.phoneNumberVerified) {
                 if (user.fullName == null || user.fullName == "") {
-                  return const LoginScreen();
+                  return const FinishSignUpScreen();
                 } else {
                   return const RootApp();
                 }

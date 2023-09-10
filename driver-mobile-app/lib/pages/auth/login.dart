@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:grab_eat_ui/api/SocketApi.dart';
 import 'package:grab_eat_ui/pages/root_app.dart';
 
 import '../../utils/app_constants.dart';
@@ -25,8 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final TextEditingController _passwordController = TextEditingController();
   bool _hiddenPassword = true;
-  String? _phoneNumberError = null;
-  String? _passwordError = null;
+  String? _phoneNumberError;
+  String? _passwordError;
 
   late VoidCallback? _onLoginPressed;
   late final navigator = Navigator.of(context);
@@ -34,8 +35,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _phoneNumberController.text = "0972360214";
-    _passwordController.text = "Vinh1706!";
+    // _phoneNumberController.text = "0972360214";
+    // _passwordController.text = "Vinh1706!";
 
     _phoneNumberController.addListener(() {
       setState(() {
@@ -93,7 +94,6 @@ class _LoginScreenState extends State<LoginScreen> {
         dismissOnTap: false);
     try {
       final res = await AuthService.login(phoneNumber, password);
-      print(res.body);
       if (res.statusCode == 200) {
         var body = jsonDecode(res.body);
         EasyLoading.dismiss();
@@ -113,6 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
             userJsonEncoded: jsonEncode(body["user"]),
             accessToken: body["accessToken"],
             refreshToken: body["refreshToken"]);
+        SocketApi.setAuthToken(body["accessToken"]);
         navigator.pushReplacement(
             MaterialPageRoute(builder: (context) => const RootApp()));
         return;

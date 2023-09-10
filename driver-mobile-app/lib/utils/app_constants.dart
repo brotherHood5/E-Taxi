@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 class AppConstants {
   static const String helloNiceToMeetYou = 'Hello, nice to meet you!';
   static const String getMovingWithETaxi = 'Get moving with E-Taxi';
 }
 
+final LocationSettings locationSettings = AndroidSettings(
+  accuracy: LocationAccuracy.high,
+  distanceFilter: 10,
+);
+
 class ApiConstants {
-  static bool isDev = true;
-  static int timeoutSeconds = 30;
+  static bool isDev = false;
+  static int timeoutSeconds = 10;
 
   // Local
-  static String host = '192.168.0.163';
+  static String host = '10.0.2.2';
   static int port = 3002;
 
   // Remote

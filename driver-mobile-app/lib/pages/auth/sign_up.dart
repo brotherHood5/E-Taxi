@@ -24,18 +24,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  String? _phoneNumberError = null;
-  String? _passwordError = null;
-  String? _confirmPasswordError = null;
+  String? _phoneNumberError;
+  String? _passwordError;
+  String? _confirmPasswordError;
 
   bool _hiddenPassword = true;
 
   @override
   void initState() {
     super.initState();
-    _phoneNumberController.text = "0972360012";
-    _passwordController.text = "Vinh1706!";
-    _confirmPasswordController.text = "Vinh1706!";
+    // _phoneNumberController.text = "0972360012";
+    // _passwordController.text = "Vinh1706!";
+    // _confirmPasswordController.text = "Vinh1706!";
 
     _phoneNumberController.addListener(() {
       setState(() {

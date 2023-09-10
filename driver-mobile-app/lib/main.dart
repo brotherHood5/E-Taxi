@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:grab_eat_ui/pages/auth/finish_sign_up.dart';
-import 'package:grab_eat_ui/pages/auth/login.dart';
-import 'package:grab_eat_ui/pages/auth/verify_otp.dart';
-import 'package:grab_eat_ui/pages/login_page.dart';
-import 'package:grab_eat_ui/pages/root_app.dart';
-import 'package:grab_eat_ui/pages/splash_screen.dart';
+import './pages/splash_screen.dart';
 
 class Messages extends Translations {
   @override

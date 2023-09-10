@@ -60,8 +60,8 @@ class CustomerModel {
       'enable': enable,
       'active': active,
       'roles': roles,
-      'createdAt': createdAt?.millisecondsSinceEpoch,
-      'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      'createdAt': createdAt?.toString(),
+      'updatedAt': updatedAt?.toString(),
     };
   }
 

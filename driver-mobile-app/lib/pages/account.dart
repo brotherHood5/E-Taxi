@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:grab_eat_ui/api/AuthService.dart';
+import 'package:grab_eat_ui/api/SocketApi.dart';
 
 import '../models/Driver.dart';
 import '../utils/app_constants.dart';
@@ -117,6 +120,13 @@ class _AccountScreenState extends State<AccountScreen> {
                       }),
                       ElevatedButton(
                           onPressed: () async {
+                            try {
+                              await AuthService.logout();
+                              SocketApi.disconnect();
+                            } catch (e) {
+                              EasyLoading.showError(e.toString());
+                              return;
+                            }
                             await clearCredential();
                             await Future.delayed(Duration(milliseconds: 500));
                             await Navigator.pushReplacement(
