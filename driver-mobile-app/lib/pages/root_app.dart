@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:grab_eat_ui/api/SocketApi.dart';
 import 'package:grab_eat_ui/pages/account.dart';
+import 'package:grab_eat_ui/pages/earnings_page.dart';
 import 'package:grab_eat_ui/pages/home_page.dart';
-import 'package:grab_eat_ui/theme/colors.dart';
+import 'package:grab_eat_ui/pages/inbox_page.dart';
 import 'package:grab_eat_ui/utils/helper.dart';
+import 'package:socket_io_client/socket_io_client.dart';
 
 class RootApp extends StatefulWidget {
   const RootApp({Key? key}) : super(key: key);
@@ -42,20 +44,8 @@ class _RootAppState extends State<RootApp> {
   Widget getBody() {
     List<Widget> pages = [
       HomePage(),
-      Center(
-        child: Text(
-          "Earnings Page",
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: black),
-        ),
-      ),
-      Center(
-        child: Text(
-          "Inbox Page",
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: black),
-        ),
-      ),
+      EarningsPage(),
+      InboxPage(),
       AccountScreen(),
     ];
 

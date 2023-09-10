@@ -24,6 +24,8 @@ dependencies:
   get:
   google_fonts:
   flutter_osm_plugin: ^0.60.4
+  fl_country_code_picker: ^0.0.2+1
+  pinput: ^2.2.12
   shared_preferences: ^2.2.1
   flutter_easyloading: ^3.0.5
   easy_localization: ^3.0.3

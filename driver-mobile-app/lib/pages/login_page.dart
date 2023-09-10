@@ -1,10 +1,26 @@
+import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grab_eat_ui/pages/otp_page.dart';
 import 'package:grab_eat_ui/widgets/green_intro.dart';
 import 'package:grab_eat_ui/widgets/login_widget.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final countryPicker = const FlCountryCodePicker();
+
+  CountryCode countryCode =
+      CountryCode(name: 'Viet Nam', code: 'VN', dialCode: '+84');
+
+  onSubmit(String? input) {
+    Get.to(() => OtpVerificationPage(countryCode.dialCode + input!));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +36,11 @@ class LoginPage extends StatelessWidget {
               const SizedBox(
                 height: 50,
               ),
-              loginWidget()
+              loginWidget(countryCode, () async {
+                final code = await countryPicker.showPicker(context: context);
+                if (code != null) countryCode = code;
+                setState(() {});
+              }, onSubmit)
             ],
           ),
         ),
