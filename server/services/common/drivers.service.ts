@@ -123,22 +123,26 @@ const DriversService: DriversServiceSchema = {
 				const driver = await ctx.call<IDriver, any>("drivers.get", {
 					id: ctx.meta.user._id,
 				});
-				await ctx.emit("drivers.updateStatus", {
-					id: ctx.meta.user._id,
-					driverStatus:
-						driver.driverStatus === DriverStatus.INACTIVE
-							? DriverStatus.ACTIVE
-							: driver.driverStatus,
-				});
+				if (driver.driverStatus === DriverStatus.INACTIVE) {
+					await ctx.emit("drivers.updateStatus", {
+						id: ctx.meta.user._id,
+						driverStatus: DriverStatus.ACTIVE,
+					});
+				}
 			},
 		},
 
 		"drivers.disconnected": {
 			async handler(this: DriversThis, ctx: Context<any, any>) {
-				await ctx.emit("drivers.updateStatus", {
+				const driver = await ctx.call<IDriver, any>("drivers.get", {
 					id: ctx.params,
-					driverStatus: DriverStatus.INACTIVE,
 				});
+				if (driver.driverStatus === DriverStatus.ACTIVE) {
+					await ctx.emit("drivers.updateStatus", {
+						id: ctx.params,
+						driverStatus: DriverStatus.INACTIVE,
+					});
+				}
 			},
 		},
 	},
@@ -196,17 +200,7 @@ const DriversService: DriversServiceSchema = {
 		return entity;
 	},
 
-	async started() {
-		try {
-			const res = await this.actions.login({
-				phoneNumber: "0972360214",
-				password: "Vinh1706!",
-			});
-			this.logger.warn("Driver:", res.accessToken);
-		} catch (e) {
-			/* empty */
-		}
-	},
+	async started() {},
 };
 
 export default DriversService;

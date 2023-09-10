@@ -18,6 +18,7 @@ const BookingService: ServiceSchema = {
 			"_id",
 			"phoneNumber",
 			"customerId",
+			"customer",
 			"driverId",
 			"driver",
 			"vehicleType",
@@ -50,6 +51,10 @@ const BookingService: ServiceSchema = {
 				params: {
 					fields: "_id fullName phoneNumber vehicleType",
 				},
+			},
+			customer: {
+				field: "customerId",
+				action: "customers.get",
 			},
 		},
 
@@ -116,7 +121,6 @@ const BookingService: ServiceSchema = {
 									],
 									rooms: [result.customerId.toString()],
 								});
-								await this.geoRemove(result.driverId);
 							} else {
 								const { driver } = result as any;
 								await ctx.emit("socket.smsNotify", {
@@ -124,6 +128,7 @@ const BookingService: ServiceSchema = {
 									message: `Tai xe da nhan. Tai xe: ${driver.fullName} - SDT:${driver.phoneNumber}`,
 								});
 							}
+							await this.geoRemove(result.driverId);
 						}
 						break;
 					}
@@ -361,7 +366,7 @@ const BookingService: ServiceSchema = {
 				try {
 					const fetchedBooking: IBooking = await this.actions.get({
 						id: data._id,
-						populate: ["pickupAddr", "destAddr", "driver"],
+						populate: ["pickupAddr", "destAddr", "driver", "customer"],
 					});
 					// Kiem tra xem booking co ton tai khong
 					if (!fetchedBooking) {
@@ -398,6 +403,26 @@ const BookingService: ServiceSchema = {
 				} catch (error) {
 					throw new Error(error);
 				}
+			},
+		},
+
+		driverFinish: {
+			async handler(this: Service, ctx: any) {
+				const { user } = ctx.meta;
+				const driverId = user._id;
+				const data = ctx.params as IBooking;
+
+				const result = await Promise.allSettled([
+					this.broker.emit("drivers.updateStatus", {
+						id: driverId,
+						driverStatus: DriverStatus.ACTIVE,
+					}),
+					this.broker.emit("booking.update", {
+						_id: data._id,
+						status: BookingStatus.DONE,
+					}),
+				]);
+				return result;
 			},
 		},
 
@@ -522,25 +547,26 @@ const BookingService: ServiceSchema = {
 			async handler(this: Service, ctx: Context<any, any>): Promise<IBooking> {
 				const { id, status, driverId } = ctx.params;
 				return new this.Promise((resolve, reject) => {
-					ctx.call<IBooking, any>("bookingSystem.update", { id, status, driverId })
-						.then(
-							(res) =>
-								this.transformDocuments(
-									ctx,
-									{
-										populate: ["pickupAddr", "destAddr", "driver"],
-									},
-									res,
-								)
-									.then(resolve)
-									.catch(reject),
-							// ctx
-							// 	.call<IBooking, any>("bookingSystem.get", {
-							// 		id,
-							// 		populate: ["pickupAddr", "destAddr", "driver"],
-							// 	})
-							// 	.then(resolve)
-							// 	.catch(reject),
+					ctx.call<IBooking, any>(
+						"bookingSystem.update",
+						driverId
+							? {
+									id,
+									status,
+									driverId,
+							  }
+							: { id, status },
+					)
+						.then((res) =>
+							this.transformDocuments(
+								ctx,
+								{
+									populate: ["pickupAddr", "destAddr", "driver", "customer"],
+								},
+								res,
+							)
+								.then(resolve)
+								.catch(reject),
 						)
 						.catch(reject);
 				});
@@ -654,20 +680,20 @@ const BookingService: ServiceSchema = {
 		},
 
 		async geoadd(this: Service, lon: number, lat: number, driverId: string) {
-			await this.redisClient.geoadd(`${this.prefix}.drivers_location`, lon, lat, driverId);
+			await this.redisClient.geoadd(this.driversLocationKey, lon, lat, driverId);
 		},
 
 		geopos(this: Service, driverId: string) {
-			return this.redisClient.geopos(`${this.prefix}.drivers_location`, driverId);
+			return this.redisClient.geopos(this.driversLocationKey, driverId);
 		},
 
 		async geoRemove(this: Service, driverId: string) {
-			await this.redisClient.zrem(`${this.prefix}.drivers_location`, driverId);
+			await this.redisClient.zrem(this.driversLocationKey, driverId);
 		},
 
 		async findNearby(this: Service, lat: number, lon: number, maxRadius = 5, isAsc = true) {
 			const result = await this.redisClient.geosearch(
-				`${this.prefix}.drivers_location`,
+				this.driversLocationKey,
 				"FROMLONLAT",
 				lon,
 				lat,
@@ -685,12 +711,13 @@ const BookingService: ServiceSchema = {
 	started() {
 		this.redisClient = (this.broker.cacher as Cachers.Redis).client;
 		this.prefix = `${(this.broker.cacher as Cachers.Redis).prefix}${this.name}`;
+		this.driversLocationKey = `${this.prefix}:drivers_location`;
 	},
 
 	async stopped() {
 		// Xoa tat ca driver dang online
 		if (this.redisClient) {
-			await this.redisClient.del(`${this.prefix}.drivers_location`);
+			await this.redisClient.del(this.driversLocationKey);
 		}
 	},
 
@@ -713,6 +740,12 @@ const BookingService: ServiceSchema = {
 	},
 
 	beforeEntityUpdate(entity: IBooking) {
+		if (entity.customerId) {
+			entity.customerId = new MongoObjectId(entity.customerId as string);
+		}
+		if (entity.driverId) {
+			entity.driverId = new MongoObjectId(entity.driverId as string);
+		}
 		entity.updatedAt = new Date();
 		return entity;
 	},

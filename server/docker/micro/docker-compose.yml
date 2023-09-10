@@ -75,18 +75,15 @@ services:
       - mongo
       - rabbitmq
       - guard
-      - bookingSystem
-      - coordSystem
-      - monitorSystem
-      - customers
-      - drivers
-      - staffs
-      - sms
-      - refreshTokens
-      - address
-      - geo
-      - address_customer
-      - price
+      - callcenter_services
+      - helper_services
+      - core_services
+      # - customers
+      # - drivers
+      # - staffs
+      # - refreshTokens
+      # - address
+      # - address_customer
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.socket.entrypoints=socketPort"
@@ -106,11 +103,12 @@ services:
       - mongo
       - rabbitmq
   
-  geo:
+  helper_services: 
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
-      SERVICES: common/geo.service.js
+      SERVICEDIR: services/common
+      SERVICES: geo, sms, price
     depends_on:
       - nats
       - redis
@@ -118,110 +116,130 @@ services:
       - rabbitmq
       - guard
 
-  customers:
+  # geo:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: common/geo.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
+  # sms:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: common/sms.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
+  # price:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: callcenter/price.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
+  core_services: 
     image: e-taxi-micro:latest
     env_file: docker-compose.env
     environment:
-      SERVICES: common/customers.service.js
+      SERVICEDIR: services/common
+      SERVICES: customers, drivers, staffs, refreshTokens, address, address_customer
     depends_on:
       - nats
       - redis
       - mongo
       - rabbitmq
       - guard
+  
+  # address:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: common/address.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
 
-  address_customer:
-    image: e-taxi-micro:latest
-    env_file: docker-compose.env
-    environment:
-      SERVICES: common/address_customer.service.js
-    depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
-      - guard
+  # address_customer:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: common/address_customer.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
 
-  drivers:
-    image: e-taxi-micro:latest
-    env_file: docker-compose.env
-    environment:
-      SERVICES: common/drivers.service.js
-    depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
-      - guard
+  # customers:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: common/customers.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
 
-  staffs:
-    image: e-taxi-micro:latest
-    env_file: docker-compose.env
-    environment:
-      SERVICES: common/staffs.service.js
-    depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
-      - guard
+  # drivers:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: common/drivers.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
 
-  sms:
-    image: e-taxi-micro:latest
-    env_file: docker-compose.env
-    environment:
-      SERVICES: common/sms.service.js
-    depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
-      - guard
+  # staffs:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: common/staffs.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
 
-   
-  refreshTokens:
-    image: e-taxi-micro:latest
-    env_file: docker-compose.env
-    environment:
-      SERVICES: common/refreshTokens.service.js
-    depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
-      - guard
+  # refreshTokens:
+  #   image: e-taxi-micro:latest
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: common/refreshTokens.service.js
+  #   depends_on:
+  #     - nats
+  #     - redis
+  #     - mongo
+  #     - rabbitmq
+  #     - guard
 
-
-  address:
-    image: e-taxi-micro:latest
-    env_file: docker-compose.env
-    environment:
-      SERVICES: common/address.service.js
-    depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
-      - guard
-
-  price:
-    image: e-taxi-micro:latest
-    env_file: docker-compose.env
-    environment:
-      SERVICES: callcenter/price.service.js
-    depends_on:
-      - nats
-      - redis
-      - mongo
-      - rabbitmq
-      - guard
-
-  bookingSystem:
+  callcenter_services: 
     image: e-taxi-micro:latest
     restart: on-failure
     env_file: docker-compose.env
     environment:
-      SERVICES: callcenter/booking*.service.js
+      SERVICEDIR: services/callcenter
     depends_on:
       nats:
         condition: service_started
@@ -235,43 +253,60 @@ services:
       guard:
         condition: service_started
 
-  coordSystem:
-    image: e-taxi-micro:latest
-    restart: on-failure
-    env_file: docker-compose.env
-    environment:
-      SERVICES: callcenter/coord*.service.js
-    depends_on:
-      nats:
-        condition: service_started
-      redis:
-        condition: service_started
-      mongo:
-        condition: service_started
-      rabbitmq: 
-        condition: service_healthy
-        restart: true
-      guard:
-        condition: service_started
-
-  monitorSystem:
-    image: e-taxi-micro:latest
-    restart: on-failure
-    env_file: docker-compose.env
-    environment:
-      SERVICES: callcenter/monitor*.service.js
-    depends_on:
-      nats:
-        condition: service_started
-      redis:
-        condition: service_started
-      mongo:
-        condition: service_started
-      rabbitmq: 
-        condition: service_healthy
-        restart: true
-      guard:
-        condition: service_started
+  # bookingSystem:
+  #   image: e-taxi-micro:latest
+  #   restart: on-failure
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: callcenter/booking*.service.js
+  #   depends_on:
+  #     nats:
+  #       condition: service_started
+  #     redis:
+  #       condition: service_started
+  #     mongo:
+  #       condition: service_started
+  #     rabbitmq: 
+  #       condition: service_healthy
+  #       restart: true
+  #     guard:
+  #       condition: service_started
+  # coordSystem:
+  #   image: e-taxi-micro:latest
+  #   restart: on-failure
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: callcenter/coord*.service.js
+  #   depends_on:
+  #     nats:
+  #       condition: service_started
+  #     redis:
+  #       condition: service_started
+  #     mongo:
+  #       condition: service_started
+  #     rabbitmq: 
+  #       condition: service_healthy
+  #       restart: true
+  #     guard:
+  #       condition: service_started
+  # monitorSystem:
+  #   image: e-taxi-micro:latest
+  #   restart: on-failure
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: callcenter/monitor*.service.js
+  #   depends_on:
+  #     nats:
+  #       condition: service_started
+  #     redis:
+  #       condition: service_started
+  #     mongo:
+  #       condition: service_started
+  #     rabbitmq: 
+  #       condition: service_healthy
+  #       restart: true
+  #     guard:
+  #       condition: service_started
 
   mongo:
     image: mongo

@@ -257,17 +257,7 @@ const StaffsService: StaffsServiceSchema = {
 		return entity;
 	},
 
-	async started() {
-		try {
-			const res = await this.actions.login({
-				username: "20127665",
-				password: "Vinh1706!",
-			});
-			this.logger.warn("Staff:", res.accessToken);
-		} catch (e) {
-			/* empty */
-		}
-	},
+	async started() {},
 };
 
 export default StaffsService;

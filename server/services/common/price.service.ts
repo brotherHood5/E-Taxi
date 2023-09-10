@@ -1,6 +1,6 @@
-import { DbMixin } from "mixins";
 import type { Service, ServiceSchema } from "moleculer";
 import { VehicleType } from "../../entities";
+import { DbMixin } from "../../mixins";
 
 const PriceService: ServiceSchema = {
 	name: "price",
