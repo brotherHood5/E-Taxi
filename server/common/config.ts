@@ -65,7 +65,7 @@ export default class ConfigClass {
 			this[key] = configObj[key];
 		});
 		this.NODE_ENV = process.env.NODE_ENV;
-		this.NODEID = `${process.env.NODEID ? `${process.env.NODEID}-` : ""}${HOST_NAME}-${
+		this.NODEID = `${process.env.NODE_ID ? `${process.env.NODE_ID}-` : ""}${HOST_NAME}-${
 			this.NODE_ENV
 		}`;
 	}

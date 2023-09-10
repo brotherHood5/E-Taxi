@@ -406,6 +406,26 @@ const BookingService: ServiceSchema = {
 			},
 		},
 
+		driverFinish: {
+			async handler(this: Service, ctx: any) {
+				const { user } = ctx.meta;
+				const driverId = user._id;
+				const data = ctx.params as IBooking;
+
+				const result = await Promise.allSettled([
+					this.broker.emit("drivers.updateStatus", {
+						id: driverId,
+						driverStatus: DriverStatus.ACTIVE,
+					}),
+					this.broker.emit("booking.update", {
+						_id: data._id,
+						status: BookingStatus.DONE,
+					}),
+				]);
+				return result;
+			},
+		},
+
 		updateDriverLocation: {
 			params: {
 				lon: "number",
@@ -527,7 +547,16 @@ const BookingService: ServiceSchema = {
 			async handler(this: Service, ctx: Context<any, any>): Promise<IBooking> {
 				const { id, status, driverId } = ctx.params;
 				return new this.Promise((resolve, reject) => {
-					ctx.call<IBooking, any>("bookingSystem.update", { id, status, driverId })
+					ctx.call<IBooking, any>(
+						"bookingSystem.update",
+						driverId
+							? {
+									id,
+									status,
+									driverId,
+							  }
+							: { id, status },
+					)
 						.then((res) =>
 							this.transformDocuments(
 								ctx,
@@ -711,6 +740,12 @@ const BookingService: ServiceSchema = {
 	},
 
 	beforeEntityUpdate(entity: IBooking) {
+		if (entity.customerId) {
+			entity.customerId = new MongoObjectId(entity.customerId as string);
+		}
+		if (entity.driverId) {
+			entity.driverId = new MongoObjectId(entity.driverId as string);
+		}
 		entity.updatedAt = new Date();
 		return entity;
 	},

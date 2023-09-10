@@ -1,0 +1,44 @@
+version: "3.3"
+
+services:
+  helper_services: 
+    build:
+      context: ../..
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICEDIR: services/common
+      SERVICES: geo, sms, price
+    deploy :
+      replicas: 2
+    
+
+  core_services: 
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICEDIR: services/common
+      SERVICES: customers, drivers, staffs, refreshTokens, address, address_customer
+    deploy:
+      replicas: 2
+   
+  
+  # callcenter_services: 
+  #   image: e-taxi-micro:latest
+  #   restart: on-failure
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICEDIR: services/callcenter
+  #   depends_on:
+  #     nats:
+  #       condition: service_started
+  #     redis:
+  #       condition: service_started
+  #     mongo:
+  #       condition: service_started
+  #     rabbitmq: 
+  #       condition: service_healthy
+  #       restart: true
+  #     guard:
+  #       condition: service_started
+
