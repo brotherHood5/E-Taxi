@@ -196,17 +196,7 @@ const DriversService: DriversServiceSchema = {
 		return entity;
 	},
 
-	async started() {
-		try {
-			const res = await this.actions.login({
-				phoneNumber: "0972360214",
-				password: "Vinh1706!",
-			});
-			this.logger.warn("Driver:", res.accessToken);
-		} catch (e) {
-			/* empty */
-		}
-	},
+	async started() {},
 };
 
 export default DriversService;

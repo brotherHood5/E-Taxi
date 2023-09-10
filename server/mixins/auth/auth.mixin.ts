@@ -141,11 +141,11 @@ const AuthMixin: AuthMixinSchema = {
 						{ field: "phoneNumber", message: "is not verified" },
 					]);
 				}
-				// else if (user.active) {
-				// 	throw new ServiceError("Your account is logged!", 422, [
-				// 		{ field: "phoneNumber", message: "is logged" },
-				// 	]);
-				// }
+				else if (user.active) {
+					throw new ServiceError("Your account is logged!", 422, [
+						{ field: "phoneNumber", message: "is logged" },
+					]);
+				}
 
 				// Check password
 				if (!this.verifyPassword(password, user.passwordHash)) {

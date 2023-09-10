@@ -1,9 +1,9 @@
 import type { Channel } from "amqplib";
 import type { Context, Service, ServiceSchema } from "moleculer";
-import { MongoObjectId } from "types/common";
 import type { IBooking } from "../../entities";
 import { BookingStatus } from "../../entities";
 import { AMQPMixin, DbMixin } from "../../mixins";
+import { MongoObjectId } from "../../types/common";
 
 const MonitorSystemService: ServiceSchema = {
 	name: "monitorSystem",
