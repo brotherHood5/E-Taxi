@@ -121,11 +121,15 @@ class _LoginScreenState extends State<LoginScreen> {
       if (res.statusCode == 422) {
         EasyLoading.dismiss();
         var error = jsonDecode(res.body);
+        print(error);
         if (error["message"] == "Your phone number is not verified!") {
           navigator.push(MaterialPageRoute(
               builder: (context) => VerifyOtpScreen(
                     phoneNumber: phoneNumber,
                   )));
+        } else if (error["message"] == "Your account is logged!") {
+          EasyLoading.showError("Tài khoản đã đăng nhập",
+              maskType: EasyLoadingMaskType.black, dismissOnTap: true);
         } else {
           EasyLoading.showError("Số điện thoại hoặc mật khẩu không đúng",
               maskType: EasyLoadingMaskType.black, dismissOnTap: true);

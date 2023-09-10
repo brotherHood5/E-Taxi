@@ -1,6 +1,10 @@
+import 'dart:developer';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:grab_clone/api/SocketApi.dart';
 import 'package:grab_clone/constants.dart';
 import 'package:grab_clone/models/Booking.dart';
 import 'package:grab_clone/screens/book/driver_tracking.dart';
@@ -9,6 +13,7 @@ import 'package:grab_clone/widgets/vehicle_chosen_button.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../helpers/helper.dart';
+import '../../models/BookingStatus.dart';
 import '../../widgets/skeletons/skeleton_location_list_item.dart';
 import '../place_picker.dart';
 
@@ -67,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    SocketApi.disconnect();
     super.dispose();
   }
 
@@ -258,16 +264,44 @@ class _HomeScreenState extends State<HomeScreen> {
           FutureBuilder<BookingModel?>(
               future: getCurrentBooking(),
               builder: (context, snapshot) {
+                log("snapshot.hasData: ${snapshot.hasData}",
+                    name: "HomeScreen");
                 if (snapshot.hasData) {
+                  SocketApi().ins.on("booking_updated", (data) async {
+                    if (data == null) {
+                      return;
+                    }
+                    BookingModel req = BookingModel.fromMap(data);
+                    switch (req.status) {
+                      case BookingStatus.FAILED:
+                        EasyLoading.showError(
+                            "Không tìm được tài xế. Thử lại sau");
+                        await clearCurrentBooking();
+                        setState(() {
+                          SocketApi().ins.off("booking_updated");
+                        });
+                        break;
+                      case BookingStatus.DONE:
+                        await clearCurrentBooking();
+                        await EasyLoading.showInfo("Đã hoàn thành chuyến đi");
+                        setState(() {
+                          SocketApi().ins.off("booking_updated");
+                        });
+                        break;
+                    }
+                  });
+
                   return Positioned(
                       left: layoutMedium,
                       right: layoutMedium,
                       bottom: layoutMedium,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) =>
-                                  const DriverTrackingScreen()));
+                          Navigator.of(context)
+                              .push(MaterialPageRoute(
+                                  builder: (context) =>
+                                      const DriverTrackingScreen()))
+                              .then((value) => setState(() {}));
                         },
                         style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),

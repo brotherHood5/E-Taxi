@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -29,7 +30,7 @@ class ApiClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     request.headers.addAll(await _getHeaders());
-    print(request.url);
-    return request.send().timeout(const Duration(seconds: 30));
+    log(request.url.toString(), name: "Request");
+    return request.send().timeout(const Duration(seconds: 20));
   }
 }
