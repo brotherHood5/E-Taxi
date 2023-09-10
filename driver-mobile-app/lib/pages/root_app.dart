@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:grab_eat_ui/api/SocketApi.dart';
 import 'package:grab_eat_ui/pages/account.dart';
@@ -20,10 +21,15 @@ class _RootAppState extends State<RootApp> {
   void initState() {
     super.initState();
     getStoredData().then((data) {
-      print(data);
-      SocketApi.setAuthToken(data?["accessToken"]);
+      SocketApi.setAuthToken(data["accessToken"]);
       SocketApi.init();
     });
+  }
+
+  @override
+  void dispose() {
+    SocketApi.disconnect();
+    super.dispose();
   }
 
   @override
@@ -41,6 +47,7 @@ class _RootAppState extends State<RootApp> {
       InboxPage(),
       AccountScreen(),
     ];
+
     // return IndexedStack(
     //   index: pageIndex,
     //   children: pages,

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:grab_eat_ui/components/components.dart';
 import 'package:grab_eat_ui/pages/auth/sign_up.dart';
+import 'package:grab_eat_ui/api/SocketApi.dart';
 import 'package:grab_eat_ui/pages/root_app.dart';
 import 'package:grab_eat_ui/theme/colors.dart';
 import 'package:grab_eat_ui/widgets/text_field_container.dart';
@@ -27,17 +28,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _hiddenPassword = true;
-  String? _phoneNumberError = null;
-  String? _passwordError = null;
+  String? _phoneNumberError;
+  String? _passwordError;
 
-  late VoidCallback? _onLoginPressed;
   late final navigator = Navigator.of(context);
 
   @override
   void initState() {
     super.initState();
-    _phoneNumberController.text = "0972360214";
-    _passwordController.text = "Vinh1706!";
+    // _phoneNumberController.text = "0972360214";
+    // _passwordController.text = "Vinh1706!";
 
     _phoneNumberController.addListener(() {
       setState(() {
@@ -75,13 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
             TextPosition(offset: _passwordController.text.length));
       }
     });
-
-    _onLoginPressed = _passwordController.text.isNotEmpty &&
-            _phoneNumberController.text.isNotEmpty &&
-            _phoneNumberError == null &&
-            _passwordError == null
-        ? login
-        : null;
   }
 
   Future<void> login([bool mounted = true]) async {
@@ -95,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
         dismissOnTap: false);
     try {
       final res = await AuthService.login(phoneNumber, password);
-      print(res.body);
       if (res.statusCode == 200) {
         var body = jsonDecode(res.body);
         EasyLoading.dismiss();
@@ -115,6 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
             userJsonEncoded: jsonEncode(body["user"]),
             accessToken: body["accessToken"],
             refreshToken: body["refreshToken"]);
+        SocketApi.setAuthToken(body["accessToken"]);
         navigator.pushReplacement(
             MaterialPageRoute(builder: (context) => const RootApp()));
         return;
@@ -255,7 +248,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: TextStyle(
                                       color: Colors.white, fontSize: 17),
                                 ),
-                                onPressed: _onLoginPressed,
+                                onPressed:
+                                    _passwordController.text.isNotEmpty &&
+                                            _phoneNumberController
+                                                .text.isNotEmpty &&
+                                            _phoneNumberError == null &&
+                                            _passwordError == null
+                                        ? login
+                                        : null,
                                 style: ElevatedButton.styleFrom(
                                     primary: kPrimaryColor,
                                     padding: const EdgeInsets.symmetric(

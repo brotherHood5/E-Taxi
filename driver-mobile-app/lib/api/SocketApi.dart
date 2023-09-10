@@ -1,8 +1,19 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:socket_io_client/socket_io_client.dart';
 
 import '../utils/app_constants.dart';
+
+class SocketEvent {
+  static const String DRIVER_CONNECTED = "driver_connected";
+  static const String BOOKING_FOUND = "booking_found";
+
+  static const String UPDATE_LOCATION = "bookingSystem.updateDriverLocation";
+  static const String DRIVER_ACCEPT = "bookingSystem.driverAccept";
+
+  static const String DRIVER_FINISH = "bookingSystem.driverFinish";
+}
 
 class SocketApi {
   static final SocketApi _singleton = SocketApi._internal();
@@ -39,45 +50,44 @@ class SocketApi {
 
   static void init() {
     if (_io.connected) {
-      print("Socket is connected: ${_io.id}");
+      log('Socket is already connected: ${_io.id}', name: "Socket API");
       return;
     }
     if (accessToken == null) {
-      print("Socket is not connected");
-      throw Exception("Socket is not connected");
+      log('Missing access token socket', name: "Socket API");
+      throw Exception("Missing access token socket");
     }
 
     _io.connect();
 
     _io.onConnect((dynamic data) {
-      print("Socket is connected: ${_io.id}");
+      log('Socket is connected: ${_io.id}', name: "Socket API");
     });
 
     _io.onConnectError((dynamic data) {
-      print('Socket connect error: \n$data');
+      log('Socket connect error: \n$data', name: "Socket API");
     });
 
     _io.on('unauthorized', (dynamic data) {
-      print('Socket unauthorized');
+      log('Socket unauthorized', name: "Socket API");
     });
 
     _io.onError(
-      (dynamic error) => {print("Socket error: \n$error")},
+      (dynamic error) =>
+          {log("Socket error: \n$error", name: "Socket API", error: error)},
     );
 
     _io.onDisconnect((dynamic data) {
-      print('Socket disconnected1');
+      log('Socket disconnected', name: "Socket API");
     });
   }
 
-  // void registerStreamEvent<T>(String event, StreamSocket<T> streamSocket) {
-  //   _io.on(event, (dynamic data) {
-  //     streamSocket.addResponse(data);
-  //   });
-  // }
-
-  void emit(String event, [dynamic data]) {
-    _io.emit(event, data);
+  static void disconnect() {
+    if (_io.connected) {
+      accessToken = null;
+      _io.disconnect();
+      _io.close();
+    }
   }
 
   Socket get ins => _io;

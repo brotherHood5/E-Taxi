@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:grab_eat_ui/api/AuthService.dart';
+import 'package:grab_eat_ui/api/SocketApi.dart';
 import 'package:grab_eat_ui/models/Driver.dart';
 import 'package:grab_eat_ui/pages/auth/login.dart';
 import 'package:grab_eat_ui/widgets/ProfileMenuWidget.dart';
@@ -21,13 +24,18 @@ class _AccountScreenState extends State<AccountScreen> {
     var iconColor = Theme.of(context).primaryColor;
 
     onLogout() async {
+      try {
+        await AuthService.logout();
+        SocketApi.disconnect();
+      } catch (e) {
+        EasyLoading.showError(e.toString());
+        return;
+      }
       await clearCredential();
       await Future.delayed(Duration(milliseconds: 500));
       await Navigator.pushReplacement(context,
           MaterialPageRoute(builder: (context) => const LoginScreen()));
     }
-
-    ;
 
     Widget _body = FutureBuilder(
         future: getStoredData(),
