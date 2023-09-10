@@ -6,7 +6,6 @@ import 'package:grab_eat_ui/pages/earnings_page.dart';
 import 'package:grab_eat_ui/pages/home_page.dart';
 import 'package:grab_eat_ui/pages/inbox_page.dart';
 import 'package:grab_eat_ui/utils/helper.dart';
-import 'package:socket_io_client/socket_io_client.dart';
 
 class RootApp extends StatefulWidget {
   const RootApp({Key? key}) : super(key: key);

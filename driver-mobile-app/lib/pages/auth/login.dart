@@ -177,7 +177,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           TextFieldContainer(
                             child: TextFormField(
-                              autofocus: true,
                               controller: _phoneNumberController,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
