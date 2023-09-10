@@ -74,6 +74,7 @@ function updateLocation(coordinate) {
 	const customerIdValue = document.querySelector("input[name=customerId]").value;
 	socket.emit("call", "bookingSystem.updateDriverLocation", {
 		...coordinate,
+		inApp: customerIdValue ? true : undefined,
 		customerId: customerIdValue,
 	});
 }

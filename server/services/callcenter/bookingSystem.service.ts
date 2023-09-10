@@ -148,7 +148,21 @@ const BookingService: ServiceSchema = {
 						}
 						break;
 					}
-					case BookingStatus.DONE:
+					case BookingStatus.DONE: {
+						if (result.customerId && result.inApp) {
+							await ctx.emit("socket.appNotify", {
+								namespace: "/customers",
+								event: "booking_updated",
+								args: [result],
+								room: [result.customerId.toString()],
+							});
+						} else {
+							await ctx.emit("socket.smsNotify", {
+								to: result.phoneNumber,
+								message: `Chuyen di da hoan thanh`,
+							});
+						}break;
+					}				
 					default:
 						break;
 				}
@@ -390,10 +404,10 @@ const BookingService: ServiceSchema = {
 						}
 					}
 
-					// await this.broker.emit("drivers.updateStatus", {
-					// 	id: driverId,
-					// 	driverStatus: DriverStatus.ON_GOING,
-					// });
+					await this.broker.emit("drivers.updateStatus", {
+						id: driverId,
+						driverStatus: DriverStatus.ON_GOING,
+					});
 					const result: any = await this.broker.emit("booking.update", {
 						_id: data._id,
 						driverId,
@@ -422,6 +436,7 @@ const BookingService: ServiceSchema = {
 						status: BookingStatus.DONE,
 					}),
 				]);
+				
 				return result;
 			},
 		},
