@@ -12,6 +12,10 @@ class GeoService {
   }
 
   static Future<http.Response> reverseGeocode(double lat, double lon) {
-    return _client.get(Uri.parse("$_endpoint/reverse?lat=$lat&lon=$lon"));
+    return _client
+        .get(Uri.parse("$_endpoint/reverse").replace(queryParameters: {
+      "lat": lat.toString(),
+      "lon": lon.toString(),
+    }));
   }
 }
