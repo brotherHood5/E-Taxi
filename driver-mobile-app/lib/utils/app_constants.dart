@@ -24,7 +24,7 @@ class ApiConstants {
   static int timeoutSeconds = 10;
 
   // Local
-  static String host = '10.0.2.2';
+  static String host = '192.168.1.5';
   static int port = 3002;
 
   // Remote

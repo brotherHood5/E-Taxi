@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:grab_eat_ui/theme/colors.dart';
 
 class Upside extends StatelessWidget {
   const Upside({Key? key, required this.imgUrl}) : super(key: key);
@@ -9,12 +8,14 @@ class Upside extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+    Color primary = Theme.of(context).primaryColor;
+
     return Stack(
       children: [
         Container(
           width: size.width,
           height: size.height / 2,
-          color: kPrimaryColor,
+          color: primary,
           child: Padding(
             padding: const EdgeInsets.only(top: 10.0),
             child: Image.asset(

@@ -6,7 +6,6 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:grab_eat_ui/api/AuthService.dart';
 import 'package:grab_eat_ui/components/components.dart';
 import 'package:grab_eat_ui/pages/auth/verify_otp.dart';
-import 'package:grab_eat_ui/theme/colors.dart';
 import 'package:grab_eat_ui/utils/helper.dart';
 import 'package:grab_eat_ui/widgets/text_field_container.dart';
 
@@ -92,6 +91,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+    Color primary = Theme.of(context).primaryColor;
 
     final theme = Theme.of(context);
 
@@ -184,11 +184,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly
                               ],
-                              cursorColor: kPrimaryColor,
+                              cursorColor: primary,
                               decoration: InputDecoration(
                                   icon: Icon(
                                     Icons.phone,
-                                    color: kPrimaryColor,
+                                    color: primary,
                                   ),
                                   hintText: "Số điện thoại",
                                   errorText: _phoneNumberError,
@@ -214,11 +214,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.singleLineFormatter
                               ],
-                              cursorColor: kPrimaryColor,
+                              cursorColor: primary,
                               decoration: InputDecoration(
                                   icon: Icon(
                                     Icons.lock,
-                                    color: kPrimaryColor,
+                                    color: primary,
                                   ),
                                   hintText: "Mật khẩu",
                                   hintStyle: TextStyle(fontFamily: 'OpenSans'),
@@ -251,11 +251,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.singleLineFormatter
                               ],
-                              cursorColor: kPrimaryColor,
+                              cursorColor: primary,
                               decoration: InputDecoration(
                                   icon: Icon(
                                     Icons.lock,
-                                    color: kPrimaryColor,
+                                    color: primary,
                                   ),
                                   hintText: "Xác nhận mật khẩu",
                                   hintStyle: TextStyle(fontFamily: 'OpenSans'),
@@ -295,11 +295,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 onPressed: _onSignupPressed,
                                 style: ElevatedButton.styleFrom(
-                                    primary: kPrimaryColor,
+                                    primary: primary,
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 40, vertical: 20),
                                     textStyle: TextStyle(
-                                        letterSpacing: 2,
+                                        letterSpacing: 1,
                                         color: Colors.white,
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
