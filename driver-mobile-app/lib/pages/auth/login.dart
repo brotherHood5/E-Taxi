@@ -31,7 +31,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _phoneNumberError;
   String? _passwordError;
 
-  late VoidCallback? _onLoginPressed;
   late final navigator = Navigator.of(context);
 
   @override
@@ -76,13 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
             TextPosition(offset: _passwordController.text.length));
       }
     });
-
-    _onLoginPressed = _passwordController.text.isNotEmpty &&
-            _phoneNumberController.text.isNotEmpty &&
-            _phoneNumberError == null &&
-            _passwordError == null
-        ? login
-        : null;
   }
 
   Future<void> login([bool mounted = true]) async {
@@ -257,7 +249,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: TextStyle(
                                       color: Colors.white, fontSize: 17),
                                 ),
-                                onPressed: _onLoginPressed,
+                                onPressed:
+                                    _passwordController.text.isNotEmpty &&
+                                            _phoneNumberController
+                                                .text.isNotEmpty &&
+                                            _phoneNumberError == null &&
+                                            _passwordError == null
+                                        ? login
+                                        : null,
                                 style: ElevatedButton.styleFrom(
                                     primary: kPrimaryColor,
                                     padding: const EdgeInsets.symmetric(
