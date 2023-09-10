@@ -53,6 +53,20 @@ class _PlacePickerState extends State<PlacePicker> with OSMMixinObserver {
     final navigator = Navigator.of(context);
 
     return Scaffold(
+        floatingActionButton: Container(
+          margin: const EdgeInsets.only(bottom: 80),
+          child: FloatingActionButton(
+            onPressed: () {
+              _pickerMapController.osmBaseController
+                  .currentLocation()
+                  .then((res) => _pickerMapController.advancedPositionPicker());
+            },
+            child: const Icon(
+              Icons.my_location,
+              color: Colors.white,
+            ),
+          ),
+        ),
         body: SizedBox(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,

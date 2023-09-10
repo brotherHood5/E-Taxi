@@ -85,10 +85,14 @@ class DriverModel {
           map['driverStatus'] != null ? map['driverStatus'] as String : null,
       vehicleType:
           map['vehicleType'] != null ? map['vehicleType'] as String : null,
-      phoneNumberVerified: map['phoneNumberVerified'] as bool,
-      enable: map['enable'] as bool,
-      active: map['active'] as bool,
-      roles: List<String>.from((map['roles'] as List<dynamic>)),
+      phoneNumberVerified: map['phoneNumberVerified'] != null
+          ? map['phoneNumberVerified'] as bool
+          : true,
+      enable: map['enable'] != null ? map['enable'] as bool : true,
+      active: map['active'] != null ? map['active'] as bool : true,
+      roles: map['roles'] != null
+          ? List<String>.from((map['roles'] as List<dynamic>))
+          : [UserRole.DRIVER],
       createdAt:
           map['createdAt'] != null ? DateTime.parse(map['createdAt']) : null,
       updatedAt:

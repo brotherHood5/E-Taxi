@@ -1,12 +1,15 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:grab_clone/helpers/helper.dart';
 import 'package:grab_clone/models/Booking.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../api/SocketApi.dart';
+import '../../models/BookingStatus.dart';
 
 class DriverTrackingScreen extends StatefulWidget {
   const DriverTrackingScreen({super.key});
@@ -18,7 +21,7 @@ class DriverTrackingScreen extends StatefulWidget {
 class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     with OSMMixinObserver {
   late MapController _controller;
-  final MarkerIcon pickupMarker = MarkerIcon(
+  final MarkerIcon destMarker = MarkerIcon(
     iconWidget: Image.asset(
       "assets/images/dest_marker.png",
       scale: 0.1,
@@ -27,6 +30,17 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
       fit: BoxFit.contain,
     ),
   );
+  final MarkerIcon pickupMarker = MarkerIcon(
+    iconWidget: Image.asset(
+      "assets/images/dest_marker.png",
+      scale: 0.1,
+      color: Colors.red,
+      width: 60,
+      height: 60,
+      fit: BoxFit.contain,
+    ),
+  );
+
   final MarkerIcon driverMarker = MarkerIcon(
     iconWidget: Image.asset(
       "assets/images/taxi-driver.png",
@@ -39,18 +53,22 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   final SocketApi _socket = SocketApi();
   GeoPoint? _lastKnownDriverLocation = null;
   late BookingModel _currentBooking;
+  late GeoPoint pickupGeo;
+  late GeoPoint destGeo;
 
   @override
   void initState() {
     super.initState();
-    _socket.ins.off("driver_update_location");
-
     getCurrentBooking().then((value) => {
+          log("Current Booking: $value", name: "DriverTrackingScreen"),
           _currentBooking = value!,
-          _controller = MapController(
-              initPosition: GeoPoint(
-                  latitude: _currentBooking.pickupAddr!.lat!,
-                  longitude: _currentBooking.pickupAddr!.lon!)),
+          pickupGeo = GeoPoint(
+              latitude: _currentBooking.pickupAddr!.lat!,
+              longitude: _currentBooking.pickupAddr!.lon!),
+          destGeo = GeoPoint(
+              latitude: _currentBooking.destAddr!.lat!,
+              longitude: _currentBooking.destAddr!.lon!),
+          _controller = MapController(initPosition: pickupGeo),
           _controller.addObserver(this),
         });
   }
@@ -58,6 +76,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
   @override
   void dispose() {
     _controller.dispose();
+    _socket.ins.off("booking_updated", _onBookingUpdated);
     _socket.ins.off("driver_update_location");
     super.dispose();
   }
@@ -73,6 +92,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
                 GeoPoint pickupPoint = GeoPoint(
                     latitude: snapshot.data!.pickupAddr!.lat!,
                     longitude: snapshot.data!.pickupAddr!.lon!);
+                GeoPoint destAddr = GeoPoint(
+                    latitude: snapshot.data!.destAddr!.lat!,
+                    longitude: snapshot.data!.destAddr!.lon!);
                 return OSMFlutter(
                     controller: _controller,
                     mapIsLoading:
@@ -81,6 +103,8 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
                       staticPoints: [
                         StaticPositionGeoPoint(
                             "pickup", pickupMarker, [pickupPoint]),
+                        StaticPositionGeoPoint(
+                            "destAddr", destMarker, [destAddr]),
                       ],
                       roadConfiguration: const RoadOption(
                         roadWidth: 30,
@@ -117,40 +141,51 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen>
     }
 
     _lastKnownDriverLocation = p;
+
     await _controller.addMarker(p, markerIcon: driverMarker);
-    await _controller.removeLastRoad();
-    RoadInfo roadInfo = await _controller.drawRoad(
-      p,
-      GeoPoint(
-          latitude: _currentBooking.pickupAddr!.lat!,
-          longitude: _currentBooking.pickupAddr!.lon!),
-      roadType: RoadType.car,
-    );
-    print("${roadInfo.distance}km");
-    print("${roadInfo.duration}sec");
-    print("${roadInfo.instructions}");
+    await _controller.goToLocation(p);
+  }
+
+  void _onBookingUpdated(dynamic data) async {
+    if (data == null) {
+      return;
+    }
+    BookingModel req = BookingModel.fromMap(data);
+    switch (req.status) {
+      case BookingStatus.FAILED:
+        EasyLoading.showError("Không tìm được tài xế. Thử lại sau");
+        await clearCurrentBooking();
+        break;
+      case BookingStatus.DONE:
+        await clearCurrentBooking();
+        await EasyLoading.showInfo("Đã hoàn thành chuyến đi");
+        Navigator.of(context).pop();
+        break;
+    }
   }
 
   @override
   Future<void> mapIsReady(bool isReady) async {
-    print("MAP IS LOADED");
     if (isReady) {
+      await _controller.drawRoad(pickupGeo, destGeo);
       SharedPreferences pref = await SharedPreferences.getInstance();
       String? driverLocJson = pref.getString("driverLoc");
       if (driverLocJson != null) {
-        print("driverLocJson");
-        print(driverLocJson);
         Map<String, dynamic> driverLoc = jsonDecode(driverLocJson);
         await _updateDriverLocation(GeoPoint(
-            latitude: double.parse(driverLoc["lat"]),
-            longitude: double.parse(driverLoc["lon"])));
+            latitude: double.parse(driverLoc["lat"].toString()),
+            longitude: double.parse(driverLoc["lon"].toString())));
       }
+      SocketApi.init();
+      _socket.ins.on("booking_updated", _onBookingUpdated);
       _socket.ins.on("driver_update_location", (data) async {
-        print("driver_update_location");
-        print(data);
         GeoPoint p = GeoPoint(
             latitude: data["lat"].toDouble(),
             longitude: data["lon"].toDouble());
+
+        await SharedPreferences.getInstance().then((pref) async {
+          await pref.setString("driverLoc", jsonEncode(data));
+        });
         await _updateDriverLocation(p);
       });
     }

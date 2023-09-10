@@ -39,6 +39,17 @@ class _VehicleChosenButtonState extends State<VehicleChosenButton> {
       children: [
         ElevatedButton(
           onPressed: () async {
+            var value = await getCurrentBooking();
+            if (value != null) {
+              EasyLoading.showError(
+                "Bạn đang có chuyến đi",
+                maskType: EasyLoadingMaskType.black,
+                duration: const Duration(seconds: 1),
+                dismissOnTap: true,
+              );
+              return;
+            }
+
             GeoPoint? pickUpGeoPoint = await getPickupGeoPoint();
             if (pickUpGeoPoint == null) {
               EasyLoading.showError(
@@ -65,7 +76,7 @@ class _VehicleChosenButtonState extends State<VehicleChosenButton> {
                   );
                 }));
             if (destGeoPoint != null) {
-              var p1 = await navigator.push(PageRouteBuilder(
+              navigator.push(PageRouteBuilder(
                   pageBuilder: (context, animation, secondaryAnimation) =>
                       BookRideScreen(
                         vehicleType: widget.vehicleType,
