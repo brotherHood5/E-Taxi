@@ -138,34 +138,28 @@ class VerifyPhoneNumberState extends State<VerifyOtpScreen> {
                 color: kPrimaryColor,
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             RichText(
-                text: TextSpan(
-                    text: "otp_screen_hint_1".tr,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black38,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    children: [
-                  TextSpan(
-                    text: " ${widget.phonePrefix}  ${widget.phoneNumber}.\n",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                  text: "otp_screen_hint".tr,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black38,
+                    fontWeight: FontWeight.bold,
                   ),
-                  TextSpan(
-                    text: "otp_screen_hint_2".tr,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black38,
-                      fontWeight: FontWeight.bold,
+                  children: [
+                    TextSpan(
+                      text: " ${widget.phonePrefix}  ${widget.phoneNumber}.\n",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  )
-                ])),
-            const SizedBox(height: 30),
+                  ]),
+            ),
+            const SizedBox(height: 20),
             OTPTextField(
               hasError: isOtpWrong,
               obscureText: false,
