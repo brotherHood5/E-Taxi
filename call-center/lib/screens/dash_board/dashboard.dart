@@ -98,7 +98,6 @@ class _DashboardState extends State<Dashboard> {
     return Scaffold(
       body: Column(
         children: [
-          //Let's start by adding the Navigation Rail
           Expanded(
             child: Padding(
               padding:
@@ -121,7 +120,6 @@ class _DashboardState extends State<Dashboard> {
                           width: 40.0,
                         ),
                         Expanded(
-                          // To make sure DataTable takes up the available space
                           child: ValueListenableBuilder<String>(
                             valueListenable: phoneNumber,
                             builder: (BuildContext context, String value,
@@ -193,8 +191,6 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ],
                     ),
-
-                    //Now let's set the article section
                     const SizedBox(
                       height: 30.0,
                     ),
@@ -350,7 +346,9 @@ class _DashboardState extends State<Dashboard> {
               children: [
                 ElevatedButton(
                     onPressed: () async {
-                      var req = _bookingFormController.bookingReq;
+                      var req = _bookingFormController.getBookingReq();
+                      print(req.toString());
+
                       if (req.isValidBookingReq()) {
                         await _bookRide(req);
                         await showDialog(

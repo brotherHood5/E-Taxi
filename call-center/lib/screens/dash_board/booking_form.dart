@@ -14,7 +14,7 @@ class BookingFormController {
     destAddr: Location(),
     pickupAddr: Location(),
   );
-
+  late BookingReq Function() getBookingReq;
   void dispose() {}
 }
 
@@ -54,6 +54,7 @@ class _BookingFormState extends State<BookingForm> {
     controller.bookingReq.vehicleType = vehicleType;
     controller.clear = clearForm;
     controller.insertBookReq = insertToForm;
+    controller.getBookingReq = () => controller.bookingReq;
     initListener();
     phoneController.text = "";
   }
@@ -88,15 +89,14 @@ class _BookingFormState extends State<BookingForm> {
     destDistrictText.text = "";
     destCityText.text = "";
 
-    BookingFormController controller = widget.controller;
-    controller.bookingReq = controller.bookingReq.copyWith(
-      phoneNumber: '',
-      vehicleType: '2',
-      destAddr: Location(),
-      pickupAddr: Location(),
-    );
     if (!mounted) return;
     setState(() {
+      widget.controller.bookingReq = widget.controller.bookingReq.copyWith(
+        phoneNumber: '',
+        vehicleType: '2',
+        destAddr: Location(),
+        pickupAddr: Location(),
+      );
       vehicleType = "2";
     });
   }
@@ -115,53 +115,51 @@ class _BookingFormState extends State<BookingForm> {
     destCityText.text = req.destAddr?.city ?? "";
 
     // Change the value of the bookingReq
-    BookingFormController controller = widget.controller;
-    controller.bookingReq = controller.bookingReq.deepCopyWith(
-      phoneNumber: req.phoneNumber,
-      pickupAddr: req.pickupAddr,
-      destAddr: req.destAddr,
-      vehicleType: req.vehicleType,
-    );
-    setState(
-      () => vehicleType = req.vehicleType!,
-    );
+    setState(() => {
+          widget.controller.bookingReq =
+              widget.controller.bookingReq.deepCopyWith(
+            phoneNumber: req.phoneNumber,
+            pickupAddr: req.pickupAddr,
+            destAddr: req.destAddr,
+            vehicleType: req.vehicleType,
+          ),
+          vehicleType = req.vehicleType!,
+        });
   }
 
   void initListener() {
-    BookingFormController controller = widget.controller;
-    BookingReq bookingReq = controller.bookingReq;
     phoneController.addListener(() {
-      bookingReq.phoneNumber = phoneController.text;
+      widget.controller.bookingReq.phoneNumber = phoneController.text;
     });
     pickupNoText.addListener(() {
-      bookingReq.pickupAddr.homeNo = pickupNoText.text;
+      widget.controller.bookingReq.pickupAddr.homeNo = pickupNoText.text;
     });
     pickupStreetText.addListener(() {
-      bookingReq.pickupAddr.street = pickupStreetText.text;
+      widget.controller.bookingReq.pickupAddr.street = pickupStreetText.text;
     });
     pickupWardText.addListener(() {
-      bookingReq.pickupAddr.ward = pickupWardText.text;
+      widget.controller.bookingReq.pickupAddr.ward = pickupWardText.text;
     });
     pickupDistrictText.addListener(() {
-      bookingReq.pickupAddr.district = pickupWardText.text;
+      widget.controller.bookingReq.pickupAddr.district = pickupWardText.text;
     });
     pickupCityText.addListener(() {
-      bookingReq.pickupAddr.city = pickupCityText.text;
+      widget.controller.bookingReq.pickupAddr.city = pickupCityText.text;
     });
     destNoText.addListener(() {
-      bookingReq.destAddr.homeNo = destNoText.text;
+      widget.controller.bookingReq.destAddr.homeNo = destNoText.text;
     });
     destStreetText.addListener(() {
-      bookingReq.destAddr.street = destStreetText.text;
+      widget.controller.bookingReq.destAddr.street = destStreetText.text;
     });
     destWardText.addListener(() {
-      bookingReq.destAddr.ward = destWardText.text;
+      widget.controller.bookingReq.destAddr.ward = destWardText.text;
     });
     destDistrictText.addListener(() {
-      bookingReq.destAddr.district = destDistrictText.text;
+      widget.controller.bookingReq.destAddr.district = destDistrictText.text;
     });
     destCityText.addListener(() {
-      bookingReq.destAddr.city = destCityText.text;
+      widget.controller.bookingReq.destAddr.city = destCityText.text;
     });
   }
 
