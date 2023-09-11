@@ -12,11 +12,15 @@
     <div id="events">
     </div>
 
-    <script src="http://localhost:3003/socket.io/socket.io.js"></script>
+    <!-- <script src="http://localhost:3003/socket.io/socket.io.js"></script> -->
+    <script src="http://hausuper-s.me:4003/socket.io/socket.io.js"></script>
+
     <script>
         const eventDiv = document.getElementById("events");
         const resultDiv = document.getElementById("res");
-        var socket = io("ws://localhost:3003/monitor", {
+        var local = "ws://localhost:3003/monitor";
+        var server = "ws://hausuper-s.me:4003/monitor";
+        var socket = io(server, {
             transports: ['websocket', 'polling', 'flashsocket'],
         });
 
@@ -32,11 +36,32 @@
             socket.on("disconnect", function () {
                 console.log("Websocket disconnected!");
             });
+            socket.emit("call", "monitorSystem.list", {
+                populate: "detail",
+                sort: "-updatedAt",
+                page: 1,
+                pageSize: 30,
+            }, (err, res) => {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                loadInitBookingList(res.rows);
+            });
         });
 
         socket.on("connect_error", (error) => {
             console.log(error);
         });
+
+        function loadInitBookingList(list) {
+            console.log(list);
+            list.forEach((msg) => {
+                var el = document.createElement("div");
+                el.innerHTML = build(msg);
+                eventDiv.appendChild(el);
+            });
+        }
 
         function showList(id) {
             const ul = document.getElementById(id);
@@ -52,6 +77,7 @@
                 button.style.marginBottom = "1rem";
             }
         }
+
         function build(msg) {
             return `<button style="margin-bottom: 1rem;background-color: #c0c0c0;" id="${msg.bookingId}" onclick="showList('${msg.bookingId}-logs')">` + `${msg.bookingId} - ${msg.detail.phoneNumber}` + `</button>` +
                 `<ul style="display: none;" id="${msg.bookingId}-logs">` +
@@ -69,7 +95,7 @@
             }
             var el = document.createElement("div");
             el.innerHTML = build(msg);
-            eventDiv.appendChild(el);
+            eventDiv.insertBefore(el, eventDiv.firstChild);
         });
 
         window.socket = socket;

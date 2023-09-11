@@ -103,6 +103,10 @@ const MonitorSystemService: ServiceSchema = {
 				});
 			},
 		},
+
+		find: {
+			cache: false,
+		},
 	},
 
 	methods: {

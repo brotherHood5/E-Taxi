@@ -73,12 +73,34 @@ const CoordSystemService: ServiceSchema = {
 				) {
 					return Promise.reject(new Error("Invalid address, please check again"));
 				}
+
 				// Cap nhat dia chi da phan giai vo db tuong duong cai dat xe do
-				const value = await this.broker.call("bookingSystem.updateBookingAddress", {
-					id: req._id,
-					pickupAddr: req.pickupAddr,
-					destAddr: req.destAddr,
+				let value = await this.broker.call<IBooking, any>(
+					"bookingSystem.updateBookingAddress",
+					{
+						id: req._id,
+						pickupAddr: req.pickupAddr,
+						destAddr: req.destAddr,
+					},
+				);
+
+				const distance: number = this.distanceBetweenPoints(
+					Number(req.pickupAddr.lat),
+					Number(req.pickupAddr.lon),
+					Number(req.destAddr.lat),
+					Number(req.destAddr.lon),
+				);
+				const price: any = await ctx.call("price.calculatePrice", {
+					vehicleType: req.vehicleType,
+					distance,
 				});
+
+				value = await ctx.call("bookingSystem.update", {
+					id: value._id,
+					distance: (Math.round((distance + Number.EPSILON) * 1000) / 1000).toString(),
+					price: price.toString(),
+				});
+
 				this.addAMQPJob("booking.processing", value);
 				// Free staff
 				if (userId && this.staffSocket[userId]) {
@@ -134,7 +156,26 @@ const CoordSystemService: ServiceSchema = {
 		},
 	},
 
-	methods: {},
+	methods: {
+		distanceBetweenPoints(
+			this,
+			lat1: number,
+			lon1: number,
+			lat2: number,
+			lon2: number,
+		): number {
+			const R = 6371;
+			const dLat = ((lat2 - lat1) * Math.PI) / 180;
+			const dLon = ((lon2 - lon1) * Math.PI) / 180;
+			lat1 = (lat1 * Math.PI) / 180;
+			lat2 = (lat2 * Math.PI) / 180;
+			const a =
+				Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+			const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+			const d = R * c;
+			return d;
+		},
+	},
 
 	started() {
 		this.staffSocket = {};
