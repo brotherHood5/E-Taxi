@@ -162,8 +162,9 @@ const BookingService: ServiceSchema = {
 								to: result.phoneNumber,
 								message: `Chuyen di da hoan thanh`,
 							});
-						}break;
-					}				
+						}
+						break;
+					}
 					default:
 						break;
 				}
@@ -437,7 +438,7 @@ const BookingService: ServiceSchema = {
 						status: BookingStatus.DONE,
 					}),
 				]);
-				
+
 				return result;
 			},
 		},
@@ -510,7 +511,8 @@ const BookingService: ServiceSchema = {
 				destAddr: [{ type: "object" }, { type: "string" }],
 			},
 			async handler(this: Service, ctx: any) {
-				const result = await this.createNew(ctx.params);
+				const data = ctx.params;
+				const result = await this.createNew(data);
 				this.addAMQPJob("booking.new", result);
 				return result;
 			},

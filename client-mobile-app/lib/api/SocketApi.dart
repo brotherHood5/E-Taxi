@@ -60,10 +60,10 @@ class SocketApi {
       print('Socket unauthorized');
     });
 
-    _io.on("driver_update_location", (data) {
-      print("Data");
-      print(data);
-    });
+    // _io.on("driver_update_location", (data) {
+    //   print("Data");
+    //   print(data);
+    // });
 
     _io.onError(
       (dynamic error) => {print("Socket error: \n$error")},
@@ -74,17 +74,14 @@ class SocketApi {
     });
   }
 
-  // void registerStreamEvent<T>(String event, StreamSocket<T> streamSocket) {
-  //   _io.on(event, (dynamic data) {
-  //     streamSocket.addResponse(data);
-  //   });
-  // }
-
-  void emit(String event, [dynamic data]) {
-    _io.emit(event, data);
-  }
-
   Socket get ins => _io;
+
+  static void disconnect() {
+    if (_io.connected) {
+      _io.disconnect();
+      _io.close();
+    }
+  }
 }
 
 class StreamSocket<T> {

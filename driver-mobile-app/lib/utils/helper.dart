@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/AuthService.dart';
 import '../api/GeoService.dart';
 import '../models/Booking.dart';
-import '../models/Customer.dart';
 
 showLoaderDialog(BuildContext context) {
   Dialog alert = const Dialog(

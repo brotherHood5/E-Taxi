@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 class AppConstants {
   static const String helloNiceToMeetYou = 'Hello, nice to meet you!';
   static const String getMovingWithETaxi = 'Get moving with E-Taxi';
+  static const String byCreating = 'By creating an account, you agree to our';
+  static const String termsOfService = 'Terms of Service';
+  static const String privacyPolicy = 'Privacy Policy';
+  static const String enterMobileNumber = 'Enter your mobile number';
+  static const String phoneVerification = 'Phone Verification';
+  static const String enterOtp = 'Enter your OTP code below';
+  static const String resendCode = 'Resend code in';
+  static const String seconds = 'seconds';
 }
 
+final LocationSettings locationSettings = AndroidSettings(
+  accuracy: LocationAccuracy.high,
+  distanceFilter: 10,
+);
+
 class ApiConstants {
-  static bool isDev = true;
-  static int timeoutSeconds = 30;
+  static bool isDev = false;
+  static int timeoutSeconds = 10;
 
   // Local
-  static String host = '192.168.0.163';
+  static String host = '192.168.1.5';
   static int port = 3002;
 
   // Remote

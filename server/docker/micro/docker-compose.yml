@@ -250,7 +250,7 @@ services:
       rabbitmq: 
         condition: service_healthy
         restart: true
-      guard:
+      helper_services:
         condition: service_started
 
   # bookingSystem:

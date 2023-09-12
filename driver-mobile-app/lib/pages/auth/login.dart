@@ -3,15 +3,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:get/get.dart';
+import 'package:grab_eat_ui/api/SocketApi.dart';
+import 'package:grab_eat_ui/components/components.dart';
+import 'package:grab_eat_ui/pages/auth/sign_up.dart';
 import 'package:grab_eat_ui/pages/root_app.dart';
+import 'package:grab_eat_ui/widgets/text_field_container.dart';
 
-import '../../utils/app_constants.dart';
-import '../../utils/helper.dart';
+import '../../../api/AuthService.dart';
+import '../../../utils/app_constants.dart';
+import '../../../utils/helper.dart';
 import 'finish_sign_up.dart';
-import 'sign_up.dart';
 import 'verify_otp.dart';
-import '../../api/AuthService.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,20 +24,19 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneNumberController = TextEditingController();
-
   final TextEditingController _passwordController = TextEditingController();
-  bool _hiddenPassword = true;
-  String? _phoneNumberError = null;
-  String? _passwordError = null;
 
-  late VoidCallback? _onLoginPressed;
+  bool _hiddenPassword = true;
+  String? _phoneNumberError;
+  String? _passwordError;
+
   late final navigator = Navigator.of(context);
 
   @override
   void initState() {
     super.initState();
-    _phoneNumberController.text = "0972360214";
-    _passwordController.text = "Vinh1706!";
+    // _phoneNumberController.text = "0972360214";
+    // _passwordController.text = "Vinh1706!";
 
     _phoneNumberController.addListener(() {
       setState(() {
@@ -73,13 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
             TextPosition(offset: _passwordController.text.length));
       }
     });
-
-    _onLoginPressed = _passwordController.text.isNotEmpty &&
-            _phoneNumberController.text.isNotEmpty &&
-            _phoneNumberError == null &&
-            _passwordError == null
-        ? login
-        : null;
   }
 
   Future<void> login([bool mounted = true]) async {
@@ -93,7 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
         dismissOnTap: false);
     try {
       final res = await AuthService.login(phoneNumber, password);
-      print(res.body);
       if (res.statusCode == 200) {
         var body = jsonDecode(res.body);
         EasyLoading.dismiss();
@@ -113,6 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
             userJsonEncoded: jsonEncode(body["user"]),
             accessToken: body["accessToken"],
             refreshToken: body["refreshToken"]);
+        SocketApi.setAuthToken(body["accessToken"]);
         navigator.pushReplacement(
             MaterialPageRoute(builder: (context) => const RootApp()));
         return;
@@ -141,105 +135,173 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Size size = MediaQuery.of(context).size;
+    Color primary = Theme.of(context).primaryColor;
 
-    Widget _loginForm = Center(
+    Widget _loginForm = SizedBox(
+      width: size.width,
+      height: size.height,
       child: SingleChildScrollView(
-          child: Container(
-        margin: const EdgeInsets.only(top: layoutXLarge),
-        padding: const EdgeInsets.symmetric(horizontal: layoutMedium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
           children: [
-            Text("welcome_text".tr, style: theme.textTheme.titleLarge),
-            const SizedBox(height: layoutSmall),
-            Text("guild_text".tr, style: theme.textTheme.titleMedium),
-            const SizedBox(height: layoutXLarge),
-            Text("sdt_text".tr, style: theme.textTheme.titleSmall),
-            const SizedBox(height: layoutSmall),
-            TextField(
-              autofocus: true,
-              controller: _phoneNumberController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(
-                hintText: "sdt_hint_text".tr,
-                errorText: _phoneNumberError,
-                border: const OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(borderRadiusSmall)),
-                ),
-                suffixIcon: _phoneNumberController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () => _phoneNumberController.clear(),
-                      )
-                    : null,
-              ),
+            const Upside(
+              imgUrl: "assets/images/login.png",
             ),
-            const SizedBox(height: layoutSmall),
-            Text("password_text".tr, style: theme.textTheme.titleSmall),
-            const SizedBox(height: layoutSmall),
-            TextField(
-              controller: _passwordController,
-              obscureText: _hiddenPassword,
-              keyboardType: TextInputType.text,
-              inputFormatters: [
-                FilteringTextInputFormatter.singleLineFormatter
-              ],
-              decoration: InputDecoration(
-                hintText: "password_hint_text".tr,
-                errorText: _passwordError,
-                border: const OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(borderRadiusSmall)),
-                ),
-                suffixIcon: _passwordController.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                            _hiddenPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey),
-                        onPressed: () => {
-                          setState(() {
-                            _hiddenPassword = !_hiddenPassword;
-                          })
-                        },
-                      )
-                    : null,
-              ),
-            ),
-            Container(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                  onPressed: () => {
-                        navigator.pushReplacement(MaterialPageRoute(
-                            builder: (context) => const SignUpScreen()))
-                      },
-                  child: Text('signup_btn_text'.tr)),
-            ),
-            const SizedBox(height: layoutSmall),
-            ElevatedButton(
-                onPressed: _onLoginPressed,
-                style: ButtonStyle(
-                  minimumSize: MaterialStateProperty.all(
-                      const Size(double.infinity, minTouchSize)),
-                  elevation: MaterialStateProperty.all(0),
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(borderRadiusXSmall),
-                    ),
+            const PageTitleBar(title: 'Đăng nhập ngay'),
+            Padding(
+              padding: const EdgeInsets.only(top: 320.0),
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(50),
+                    topRight: Radius.circular(50),
                   ),
                 ),
-                child: Text("login_btn_text".tr)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    Form(
+                      child: Column(
+                        children: [
+                          TextFieldContainer(
+                            child: TextFormField(
+                              controller: _phoneNumberController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              cursorColor: primary,
+                              decoration: InputDecoration(
+                                  icon: Icon(
+                                    Icons.phone,
+                                    color: primary,
+                                  ),
+                                  hintText: "Số điện thoại",
+                                  errorText: _phoneNumberError,
+                                  suffixIcon: _phoneNumberController
+                                          .text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear,
+                                              color: Colors.grey),
+                                          onPressed: () =>
+                                              _phoneNumberController.clear(),
+                                        )
+                                      : null,
+                                  hintStyle:
+                                      const TextStyle(fontFamily: 'OpenSans'),
+                                  border: InputBorder.none),
+                            ),
+                          ),
+                          TextFieldContainer(
+                            child: TextFormField(
+                              controller: _passwordController,
+                              obscureText: _hiddenPassword,
+                              keyboardType: TextInputType.text,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.singleLineFormatter
+                              ],
+                              cursorColor: primary,
+                              decoration: InputDecoration(
+                                  icon: Icon(
+                                    Icons.lock,
+                                    color: primary,
+                                  ),
+                                  hintText: "Mật khẩu",
+                                  errorText: _passwordError,
+                                  errorMaxLines: 3,
+                                  hintStyle: TextStyle(fontFamily: 'OpenSans'),
+                                  suffixIcon:
+                                      _passwordController.text.isNotEmpty
+                                          ? IconButton(
+                                              icon: Icon(
+                                                  _hiddenPassword
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
+                                                  color: Colors.grey),
+                                              onPressed: () => {
+                                                setState(() {
+                                                  _hiddenPassword =
+                                                      !_hiddenPassword;
+                                                })
+                                              },
+                                            )
+                                          : null,
+                                  border: InputBorder.none),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 10),
+                            width: size.width * 0.8,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(29),
+                              child: ElevatedButton(
+                                child: Text(
+                                  "Đăng nhập",
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 16),
+                                ),
+                                onPressed:
+                                    _passwordController.text.isNotEmpty &&
+                                            _phoneNumberController
+                                                .text.isNotEmpty &&
+                                            _phoneNumberError == null &&
+                                            _passwordError == null
+                                        ? login
+                                        : null,
+                                style: ElevatedButton.styleFrom(
+                                    primary: primary,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 40, vertical: 20),
+                                    textStyle: TextStyle(
+                                        letterSpacing: 1,
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'OpenSans')),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          UnderPart(
+                            title: "Chưa có tài khoản?",
+                            navigatorText: "Đăng ký",
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SignUpScreen()));
+                            },
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          )
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            )
           ],
         ),
-      )),
+      ),
     );
 
-    return Scaffold(
-      body: _loginForm,
+    return SafeArea(
+      child: Scaffold(
+        body: _loginForm,
+      ),
     );
   }
 }

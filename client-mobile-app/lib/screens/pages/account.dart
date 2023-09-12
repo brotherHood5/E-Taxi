@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grab_clone/api/AuthService.dart';
 import '../../constants.dart';
 import '../../helpers/helper.dart';
 
@@ -107,11 +108,15 @@ class _AccountScreenState extends State<AccountScreen> {
                       Text("Số điện thoại: ${user.phoneNumber}"),
                       ElevatedButton(
                           onPressed: () async {
-                            await clearCredential();
-                            await Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const LoginScreen()));
+                            try {
+                              await AuthService.logout();
+                              await clearCredential();
+                              await Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const LoginScreen()));
+                            } catch (e) {}
                           },
                           child: Text("Đăng xuất")),
                     ],

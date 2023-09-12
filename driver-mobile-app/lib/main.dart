@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:grab_eat_ui/pages/auth/finish_sign_up.dart';
-import 'package:grab_eat_ui/pages/auth/login.dart';
-import 'package:grab_eat_ui/pages/auth/verify_otp.dart';
-import 'package:grab_eat_ui/pages/login_page.dart';
-import 'package:grab_eat_ui/pages/root_app.dart';
 import 'package:grab_eat_ui/pages/splash_screen.dart';
 
 class Messages extends Translations {
@@ -29,9 +24,7 @@ class Messages extends Translations {
           "forgot_password_text": "Quên mật khẩu",
           "password_wrong_text": "Mật khẩu không đúng, bạn còn {} lần thử lại",
           "otp_screen_title": "Nhập mã xác thực",
-          "otp_screen_hint_1": "Mã xác thực sẽ được gửi đến số",
-          "otp_screen_hint_2":
-              "Vui lòng kiểm tra tin nhắn và nhập mã xác thực vào đây.",
+          "otp_screen_hint": "Vui lòng nhập mã xác thực vừa được gửi đến số",
           "invalid_otp": "Mã xác thực không chính xác. Vui lòng nhập lại.",
           "resend_otp_text": "Gửi lại mã xác thực",
           "finish_signup_title": "Hoàn tất đăng ký",

@@ -187,7 +187,7 @@ class _FinishSignUpScreenState extends State<FinishSignUpScreen> {
             child: Text(
               "Xong",
               style: theme.textTheme.titleMedium!.merge(const TextStyle(
-                  color: Colors.black, fontWeight: FontWeight.bold)),
+                  color: Colors.white, fontWeight: FontWeight.bold)),
             )),
       ),
     );

@@ -16,7 +16,7 @@ class BookingModel {
   String? status;
   String? price;
   String? distance;
-  final bool inApp = true;
+  bool inApp = true;
   DateTime? createdAt;
   DateTime? updatedAt;
   BookingModel({
@@ -31,6 +31,7 @@ class BookingModel {
     this.status,
     this.price,
     this.distance,
+    this.inApp = true,
     this.createdAt,
     this.updatedAt,
   });
@@ -47,6 +48,7 @@ class BookingModel {
     String? status,
     String? price,
     String? distance,
+    bool? inApp,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -62,6 +64,7 @@ class BookingModel {
       status: status ?? this.status,
       price: price ?? this.price,
       distance: distance ?? this.distance,
+      inApp: inApp ?? this.inApp,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -69,7 +72,7 @@ class BookingModel {
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
-      'id': id,
+      '_id': id,
       'phoneNumber': phoneNumber,
       'customerId': customerId,
       'driverId': driverId,
@@ -80,6 +83,7 @@ class BookingModel {
       'status': status,
       'price': price,
       'distance': distance,
+      'inApp': inApp,
       'createdAt': createdAt?.toString(),
       'updatedAt': updatedAt?.toString(),
     };
@@ -107,6 +111,7 @@ class BookingModel {
       status: map['status'] != null ? map['status'] as String : null,
       price: map['price'] != null ? map['price'] as String : null,
       distance: map['distance'] != null ? map['distance'] as String : null,
+      inApp: map['inApp'] != null ? map['inApp'] as bool : true,
       createdAt:
           map['createdAt'] != null ? DateTime.parse(map['createdAt']) : null,
       updatedAt:
@@ -121,7 +126,7 @@ class BookingModel {
 
   @override
   String toString() {
-    return 'BookingModel(id: $id, phoneNumber: $phoneNumber, customerId: $customerId, driverId: $driverId, driver: $driver, vehicleType: $vehicleType, pickupAddr: $pickupAddr, destAddr: $destAddr, status: $status, price: $price, distance: $distance, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'BookingModel(id: $id, phoneNumber: $phoneNumber, customerId: $customerId, driverId: $driverId, driver: $driver, vehicleType: $vehicleType, pickupAddr: $pickupAddr, destAddr: $destAddr, status: $status, price: $price, distance: $distance, inApp: $inApp, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -139,6 +144,7 @@ class BookingModel {
         other.status == status &&
         other.price == price &&
         other.distance == distance &&
+        other.inApp == inApp &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
@@ -156,6 +162,7 @@ class BookingModel {
         status.hashCode ^
         price.hashCode ^
         distance.hashCode ^
+        inApp.hashCode ^
         createdAt.hashCode ^
         updatedAt.hashCode;
   }
