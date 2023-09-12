@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
@@ -108,6 +109,7 @@ class _HomePageState extends State<HomePage> with OSMMixinObserver {
               roadColor: Colors.green,
               roadWidth: 50,
               roadBorderWidth: 20,
+              zoomInto: false,
               roadBorderColor: Colors.black),
           markerOption: MarkerOption(
             defaultMarker: const MarkerIcon(
@@ -210,7 +212,7 @@ class _HomePageState extends State<HomePage> with OSMMixinObserver {
                             prefs.setBool("isFinish", false);
                           }),
                           _mapController.removeMarker(_points["pickupAddr"]!),
-                          _mapController.removeLastRoad()
+                          _mapController.clearAllRoads()
                         ]);
                         _drawRoadToDest()
                             .then((res) => _isMapLoading.value = false)
@@ -220,13 +222,16 @@ class _HomePageState extends State<HomePage> with OSMMixinObserver {
                           _socket.emitWithAck("call", [
                             SocketEvent.DRIVER_FINISH,
                             {
-                              "bookingId": _acceptedBook.value?.id,
+                              "_id": _acceptedBook.value?.id,
                             },
                           ], ack: (data) async {
-                            // if (data["code"] != null && data["code"] == 404) {
-                            //   _isMapLoading.value = false;
-                            //   return;
-                            // }
+                            log("Finish Booking: ${data}", name: "Home Page");
+                            if (!(data is List)) {
+                              if (data["code"] != null && data["code"] == 404) {
+                                _isMapLoading.value = false;
+                                return;
+                              }
+                            }
 
                             _isPickupDoneButton.value = true;
                             _isFinishButton.value = true;
@@ -356,6 +361,7 @@ class _HomePageState extends State<HomePage> with OSMMixinObserver {
   }
 
   Future<void> _drawRoadToDest() async {
+    _mapController.removeMarker(_points["pickupAddr"]!);
     await _mapController.addMarker(_points["destAddr"]!,
         markerIcon: MarkerIcon(
           icon: Icon(
@@ -384,19 +390,36 @@ class _HomePageState extends State<HomePage> with OSMMixinObserver {
   // ------------------------------------------
   Future<void> _acceptBooking() async {
     _cancelTimer?.cancel();
-    Navigator.pop(context);
+    Navigator.of(context).pop();
     log("Accept Booking: ${_currBookingRequest?.id}", name: "Home Page");
     try {
-      _socket.emit("call", [
+      _socket.emitWithAck("call", [
         SocketEvent.DRIVER_ACCEPT,
         _currBookingRequest?.toMap(),
-      ]);
-      await saveCurrentBooking();
-      _isPickupDoneButton.value = false;
-      _isFinishButton.value = false;
-      _acceptedBook.value = _currBookingRequest;
+      ], ack: (data) async {
+        if (data == null) {
+          await clearCurrentBooking();
+        }
+        if (data is List) {
+          log("Accept Booking: ${data}", name: "Home Page");
+          await saveCurrentBooking();
+          _isPickupDoneButton.value = false;
+          _isFinishButton.value = false;
+          _acceptedBook.value = _currBookingRequest;
+        } else {
+          if (data["code"] != null && data["code"] == 500) {
+            await clearCurrentBooking();
+            if (data["message"] != null) {
+              EasyLoading.showError(
+                  "Chuyến đi đã có người chấp nhận hoặc bị huỷ ");
+            }
+          }
+          log("Accept Booking: ${data}", name: "Home Page");
+        }
+      });
     } catch (e) {
       await clearCurrentBooking();
+      log(e.toString(), error: e, name: "Home Page");
     }
   }
 
@@ -576,7 +599,7 @@ class _HomePageState extends State<HomePage> with OSMMixinObserver {
 
   Future<void> onLocationChanged(Position? position) async {
     if (position == null) return;
-
+    log("Update Location: ${position.toString()}", name: "Home Page");
     // Send new location to server
     try {
       _socket.emit("call", [

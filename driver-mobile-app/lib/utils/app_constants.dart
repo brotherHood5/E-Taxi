@@ -20,11 +20,11 @@ final LocationSettings locationSettings = AndroidSettings(
 );
 
 class ApiConstants {
-  static bool isDev = false;
-  static int timeoutSeconds = 10;
+  static bool isDev = true;
+  static int timeoutSeconds = 20;
 
   // Local
-  static String host = '192.168.1.5';
+  static String host = '10.0.2.2'; //192.168.1.5
   static int port = 3002;
 
   // Remote

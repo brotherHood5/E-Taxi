@@ -38,7 +38,7 @@ class AuthService {
   }
 
   static Future<http.Response> verifyOtp(String phoneNumber, String otp) {
-    return http
+    return _client
         .get(Uri.parse(
             "$_endpoint/verify-otp?phoneNumber=$phoneNumber&otp=$otp"))
         .timeout(const Duration(seconds: 10));
@@ -49,6 +49,7 @@ class AuthService {
     return http.put(Uri.parse("$_endpoint/$id"), body: {
       'fullName': fullName,
       'vehicleType': vehicleType,
+      'driverStatus': 'ACTIVE',
     }).timeout(const Duration(seconds: 10));
   }
 
