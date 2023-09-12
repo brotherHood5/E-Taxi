@@ -2,6 +2,5 @@
 
 docker compose stop
 docker compose down
-docker image prune -f
-docker compose build --no-cache
-docker compose up -d --remove-orphans
+docker image rm -f e-taxi-micro:latest
+docker compose up --build -d --remove-orphans
