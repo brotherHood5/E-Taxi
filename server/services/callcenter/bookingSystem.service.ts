@@ -1,6 +1,7 @@
 import type { Channel } from "amqplib";
 import type { Cachers, Context, Service, ServiceSchema } from "moleculer";
 import { Config } from "../../common";
+import { ServiceError } from "../../core/errors/global";
 import type { AddressEntity, IAddress, IBooking, IDriver } from "../../entities";
 import { BookingStatus, DriverStatus } from "../../entities";
 import { AMQPMixin, DbMixin } from "../../mixins";
@@ -385,12 +386,12 @@ const BookingService: ServiceSchema = {
 					});
 					// Kiem tra xem booking co ton tai khong
 					if (!fetchedBooking) {
-						throw new Error("Booking not found");
+						throw new ServiceError("Booking not found");
 					} else if (fetchedBooking.status !== BookingStatus.PROCESSING) {
-						throw new Error("Booking time out");
+						throw new ServiceError("Booking time out");
 					} else if (fetchedBooking.driverId) {
 						// Kiem tra xem booking da duoc accept boi driver khac chua
-						throw new Error("Booking has been accepted by another driver");
+						throw new ServiceError("Booking has been accepted by another driver");
 					} else {
 						// Kiem tra xem booking co bi lock boi driver khac khong
 						const result = await this.redisClient.set(
@@ -401,7 +402,7 @@ const BookingService: ServiceSchema = {
 							10,
 						);
 						if (!result) {
-							throw new Error("Booking has been accepting by another driver");
+							throw new ServiceError("Booking has been accepting by another driver");
 						}
 					}
 
@@ -416,7 +417,7 @@ const BookingService: ServiceSchema = {
 					});
 					return result[0];
 				} catch (error) {
-					throw new Error(error);
+					throw new ServiceError(error.message);
 				}
 			},
 		},

@@ -104,23 +104,34 @@ var authToken = "";
 async function login() {
 	const phoneNumber = document.querySelector("input[name=phoneNumber]").value;
 	const password = document.querySelector("input[name=password]").value;
-	const response = await fetch(`${baseUrl}/drivers/login`, {
-		method: "POST",
-		body: JSON.stringify({ phoneNumber, password }), // string or object
-		headers: {
-			"Content-Type": "application/json",
-		},
-	});
-	const myJson = await response.json();
-	console.log(myJson);
+	try{
+		const response = await fetch(`${baseUrl}/drivers/login`, {
+			method: "POST",
+			body: JSON.stringify({ phoneNumber, password }), // string or object
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+		const myJson = await response.json();
+		console.log(myJson);
+		if (myJson.code != 422) {
+			authToken = myJson.accessToken;
+		}
 
-	authToken = myJson.accessToken;
+	}catch(e) {}
 	main();
 }
 
 window.onload = function () {
-	window.addEventListener("beforeunload", function () {
+	window.addEventListener("beforeunload",async function ()  {
 		if (window.socket) {
+			const response = await fetch(`${baseUrl}/drivers/logout`, {
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					"Authorization": `Bearer ${authToken}`,
+				},
+			});
 			console.log("Closing socket");
 			window.socket.close();
 			window.socket = null;
