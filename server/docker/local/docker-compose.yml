@@ -1,6 +1,20 @@
 version: "3.3"
 
 services:
+  api:
+    image: e-taxi-micro:latest
+    env_file: docker-compose.env
+    environment:
+      SERVICES: api/apiCallCenter.service.js,api/apiCustomer.service.js,api/apiDriver.service.js,common/socket.service.js
+    depends_on:
+      - helper_services
+      - core_services
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+      - "3002:3002"
+      - "3003:3003"
+
   helper_services: 
     build:
       context: ../..
